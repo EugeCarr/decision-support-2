@@ -105,7 +105,7 @@ class PET_Manufacturer(Agent):
 
     def refresh_unit_process_cost(self):
         # process cost is given by a normal distribution
-        mean = 2.8576 / pow(self.production_volume, 0.152)
+        mean = 2.8576 / np.power(self.production_volume, 0.152)
         std_dev = 0.005
         self.unit_process_cost = np.random.normal(mean, std_dev, None)
         return
