@@ -24,5 +24,5 @@ class PET_Manufacturer(Agent):
         self.production_growth_projection = np.empty(120)  # 10 years of month-on-month growth %
         self.unit_sale_price_projection = np.empty(120)  # 10 years of sale prices (floats)
         self.unit_feedstock_cost_projection = np.empty(120)  # 10 years of feedstock costs (floats)
-        self.unit_process_cost_projection = float  # 10 years of process costs (floats)
+        self.unit_process_cost_projection = np.empty(120)  # 10 years of process costs (floats)
         return
