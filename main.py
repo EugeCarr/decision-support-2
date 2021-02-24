@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     months = 120
 
-    simulate(months, table=False, plot=True)
+    simulate(months, table=False, plot=False)
 
     end = datetime.now()
     elapsed = end - start

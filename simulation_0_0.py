@@ -24,8 +24,6 @@ def simulate(months, table=bool, plot=bool):
 
     pet_manufacturer.record_timestep()
 
-    print(pow(pet_manufacturer.production_volume, -0.152))
-
     # Run simulation for defined number of months
     while pet_manufacturer.month < months - 1:
         pet_manufacturer.time_step()
