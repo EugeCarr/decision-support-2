@@ -16,11 +16,20 @@ class PET_Manufacturer(Agent):
 
         self.month = int(0)  # current month which will be incremented at each time step
 
-        # define current values
-        self.production_volume = float  # total PET production per annum
-        self.unit_sale_price = float  # sale price of one unit of PET
-        self.unit_feedstock_cost = float  # feedstock cost per unit of PET produced
-        self.unit_process_cost = float  # cost of running process per unit of PET produced
+        # define independent variables for current time
+        self.production_volume = np.float64()  # total PET production per annum
+        self.unit_sale_price = np.float64()  # sale price of one unit of PET
+        self.unit_feedstock_cost = np.float64()  # feedstock cost per unit of PET produced
+        self.unit_process_cost = np.float64  # cost of running process per unit of PET produced
+
+        self.tax_rate = np.float64  # current tax on profits
+        self.levy_rate = np.float64  # current levy on production/emission/consumption/etc.
+
+        # define dependent variables
+        self.gross_profit = np.float64  # profits prior to taxes and levies
+        self.tax_payable = np.float64
+        self.levies_payable = np.float64
+        self.net_profit = np.float64  # monthly profit after tax and levies
 
         # define projections
         self.production_projection = np.empty(120)  # 10 years of production volumes (floats)
@@ -28,14 +37,22 @@ class PET_Manufacturer(Agent):
         self.unit_feedstock_cost_projection = np.empty(120)  # 10 years of feedstock costs (floats)
         self.unit_process_cost_projection = np.empty(120)  # 10 years of process costs (floats)
 
+        self.tax_projection = np.empty(120)  # tax rate projection for 10 years (floats)
+        self.levy_projection = np.empty(120)  # levy rate projection for 10 years (floats)
+
         # define arrays to store records
         self.production_history = np.empty(120)
         self.sale_price_history = np.empty(120)
         self.feedstock_cost_history = np.empty(120)
         self.process_cost_history = np.empty(120)
+        self.gross_profit_history = np.empty(120)
+        self.tax_history = np.empty(120)
+        self.levy_history = np.empty(120)
+        self.net_profit_history = np.empty(120)
+
         return
 
-# region -- methods to calculate values at the current time for each variable
+# region -- methods to calculate values at the current time for each independent variable
     def refresh_production_volume(self):
         # production volume is defined by growth rates in 2 periods
 
@@ -81,7 +98,7 @@ class PET_Manufacturer(Agent):
         self.unit_process_cost = np.random.normal(mean, std_dev, None)
         return
 
-    def refresh_state(self):
+    def refresh_independents(self):
         # calculate new values for all variables
         self.refresh_production_volume()
         self.refresh_unit_sale_price()
@@ -90,24 +107,59 @@ class PET_Manufacturer(Agent):
         return
 
 # endregion
+# region -- methods for dependent variables
+    def calculate_gross_profit(self):
+        production_in_month = self.production_volume / 12
+        revenue = production_in_month * self.unit_sale_price
+        costs = production_in_month * (self.unit_feedstock_cost + self.unit_process_cost)
+        self.gross_profit = revenue - costs
+        return
+
+    def calculate_tax_payable(self):
+        self.tax_payable = self.gross_profit * self.tax_rate
+        return
+
+    def calculate_levies_payable(self):
+        """This will calculate the levies payable on production/consumption/emission, once they are defined"""
+        self.levies_payable = 0
+        return
+
+    def calculate_net_profit(self):
+        self.net_profit = self.gross_profit - (self.tax_payable + self.levies_payable)
+        return
+
+    def calculate_dependents(self):
+        self.calculate_gross_profit()
+        self.calculate_tax_payable()
+        self.calculate_levies_payable()
+        self.calculate_net_profit()
+        return
+# endregion
 
     def record_timestep(self):
-        # method to write current state variables to a record
+        # method to write current variables (independent and dependent) to records
         self.production_history[self.month] = self.production_volume
         self.sale_price_history[self.month] = self.unit_sale_price
         self.feedstock_cost_history[self.month] = self.unit_feedstock_cost
         self.process_cost_history[self.month] = self.unit_process_cost
+        self.gross_profit_history[self.month] = self.gross_profit
+        self.tax_history[self.month] = self.tax_payable
+        self.levy_history[self.month] = self.levies_payable
+        self.net_profit_history[self.month] = self.net_profit
         return
 
-    def advance_month(self):
+    def new_month(self):
+        # methods to be called every time the month is advanced
+        self.refresh_independents()
+        self.calculate_dependents()
         self.record_timestep()
-        self.refresh_state()
         return
 
 # region -- methods to make projections into the future
     def project_volume(self):
-        """This will calculate the projected PET production volume for the next 10 years,
+        """This will calculate the projected (annualised) PET production volume for each month for 10 years,
         recording it to self.production_projection"""
+        self.production_projection.fill(1000)  # constant value for now
         return
 
     def project_sale_price(self):
