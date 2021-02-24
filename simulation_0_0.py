@@ -5,7 +5,7 @@ from tabulate import tabulate
 from matplotlib import pyplot as plt
 
 
-def simulate(months):
+def simulate(months, plot=bool):
     # Initialise the manufacturer agent with all values for t = 0
     pet_manufacturer = agent.PET_Manufacturer('PET Manufacturer', months)
 
@@ -37,10 +37,12 @@ def simulate(months):
     headers = ["Month", "Profit"]
     print(tabulate(table, headers))
 
-    y = pet_manufacturer.net_profit_history
-    x = t
-    plt.plot(x, y)
-    plt.xlabel('Month')
-    plt.ylabel('Profit')
-    plt.show()
+    if plot:
+        y = pet_manufacturer.net_profit_history
+        x = t
+        plt.plot(x, y)
+        plt.xlabel('Month')
+        plt.ylabel('Profit')
+        plt.show()
+
     return
