@@ -34,21 +34,21 @@ class PET_Manufacturer(Agent):
         self.net_profit = np.float64  # monthly profit after tax and levies
         self.projection_met = 0
 
-        projection_time = 120  # how many months into the future will be predicted?
+        self.projection_time = 120  # how many months into the future will be predicted?
 
         # define projections
-        self.production_projection = np.zeros(projection_time)  # 10 years of production volumes (floats)
-        self.unit_sale_price_projection = np.zeros(projection_time)  # 10 years of sale prices (floats)
-        self.unit_feedstock_cost_projection = np.zeros(projection_time)  # 10 years of feedstock costs (floats)
-        self.unit_process_cost_projection = np.zeros(projection_time)  # 10 years of process costs (floats)
+        self.production_projection = np.zeros(self.projection_time)  # 10 years of production volumes (floats)
+        self.unit_sale_price_projection = np.zeros(self.projection_time)  # 10 years of sale prices (floats)
+        self.unit_feedstock_cost_projection = np.zeros(self.projection_time)  # 10 years of feedstock costs (floats)
+        self.unit_process_cost_projection = np.zeros(self.projection_time)  # 10 years of process costs (floats)
 
-        self.gross_profit_projection = np.zeros(projection_time)
-        self.tax_payable_projection = np.zeros(projection_time)
-        self.levies_payable_projection = np.zeros(projection_time)
-        self.net_profit_projection = np.zeros(projection_time)
+        self.gross_profit_projection = np.zeros(self.projection_time)
+        self.tax_payable_projection = np.zeros(self.projection_time)
+        self.levies_payable_projection = np.zeros(self.projection_time)
+        self.net_profit_projection = np.zeros(self.projection_time)
 
-        self.tax_rate_projection = np.zeros(projection_time)  # tax rate projection for 10 years (floats)
-        self.levy_projection = np.zeros(projection_time)  # levy rate projection for 10 years (floats)
+        self.tax_rate_projection = np.zeros(self.projection_time)  # tax rate projection for 10 years (floats)
+        self.levy_projection = np.zeros(self.projection_time)  # levy rate projection for 10 years (floats)
 
         # define arrays to store records
         history_length = sim_time
@@ -78,7 +78,10 @@ class PET_Manufacturer(Agent):
         growth_rate_1 = 1.03  # YoY growth rate for the second simulation period, expressed as a ratio
         growth_rate_1_monthly = np.power(growth_rate_1, 1 / 12)  # annual growth rate changed to month-on-month
 
-        if self.month <= sim_period_0_months:
+        if self.month == 0:
+            self.production_volume = 1000
+
+        elif self.month <= sim_period_0_months:
             self.production_volume = self.production_volume * growth_rate_0_monthly
 
         elif self.month <= sim_period_1_months:
@@ -173,7 +176,12 @@ class PET_Manufacturer(Agent):
     def project_volume(self):
         """This will calculate the projected (annualised) PET production volume for each month for 10 years,
         recording it to self.production_projection"""
-        self.production_projection.fill(1000)  # constant value for now
+        predicted_annual_growth_rate = 1.02
+        monthly_growth_rate = np.power(predicted_annual_growth_rate, 1/12)
+        self.production_projection[0] = self.production_volume
+        for i in range(self.projection_time - 1):
+            self.production_projection[i + 1] = self.production_projection[i] * monthly_growth_rate
+
         return
 
     def project_sale_price(self):
