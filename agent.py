@@ -50,7 +50,7 @@ class PET_Manufacturer(Agent):
         self.levy_projection = np.zeros(projection_time)  # levy rate projection for 10 years (floats)
 
         # define arrays to store records
-        history_length = sim_time + 1  # first entry in history records don't count
+        history_length = sim_time
         self.production_history = np.zeros(history_length)
         self.sale_price_history = np.zeros(history_length)
         self.feedstock_cost_history = np.zeros(history_length)
@@ -90,21 +90,21 @@ class PET_Manufacturer(Agent):
     def refresh_unit_sale_price(self):
         # unit sale price is given by a normal distribution
         mean = float(4)
-        std_dev = 0.2
+        std_dev = 0.01
         self.unit_sale_price = np.random.normal(mean, std_dev, None)
         return
 
     def refresh_unit_feedstock_cost(self):
         # unit feedstock cost is given by a normal distribution
         mean = float(2)
-        std_dev = 0.1
+        std_dev = 0.01
         self.unit_feedstock_cost = np.random.normal(mean, std_dev, None)
         return
 
     def refresh_unit_process_cost(self):
         # process cost is given by a normal distribution
         mean = float(1)
-        std_dev = 0.2
+        std_dev = 0.01
         self.unit_process_cost = np.random.normal(mean, std_dev, None)
         return
 

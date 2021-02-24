@@ -1,6 +1,8 @@
 """This file defines simulation parameters for the first build of the model"""
 import agent
 import numpy as np
+from tabulate import tabulate
+from matplotlib import pyplot as plt
 
 
 def simulate(months):
@@ -22,8 +24,23 @@ def simulate(months):
     pet_manufacturer.project_dependents()
 
     # Run simulation for defined number of months
-    while pet_manufacturer.month < months:
-        print(pet_manufacturer.month, pet_manufacturer.net_profit)
+    while pet_manufacturer.month < months - 1:
         pet_manufacturer.time_step()
 
+    # data output & analysis
+    t = np.arange(0, months, 1)
+
+    table = []
+    for i in range(0, months):
+        table.append([t[i], pet_manufacturer.net_profit_history[i]])
+
+    headers = ["Month", "Profit"]
+    print(tabulate(table, headers))
+
+    y = pet_manufacturer.net_profit_history
+    x = t
+    plt.plot(x, y)
+    plt.xlabel('Month')
+    plt.ylabel('Profit')
+    plt.show()
     return
