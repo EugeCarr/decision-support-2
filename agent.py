@@ -55,6 +55,9 @@ class PET_Manufacturer(Agent):
         elif self.month <= sim_period_1_months:
             self.production_volume = self.production_volume * growth_rate_1_monthly
 
+        else:
+            raise ValueError('production growth not defined for month', self.month)
+
         return
 
     def refresh_unit_sale_price(self):
