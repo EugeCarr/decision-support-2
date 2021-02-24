@@ -155,7 +155,7 @@ class PET_Manufacturer(Agent):
         self.net_profit_history[self.month] = self.net_profit
         return
 
-    def new_month(self):
+    def update_current_state(self):
         # methods to be called every time the month is advanced
         self.refresh_independents()
         self.calculate_dependents()
@@ -234,3 +234,10 @@ class PET_Manufacturer(Agent):
         self.project_dependents()
         return
     # endregion
+
+    def time_step(self):
+        self.month += 1
+        self.update_current_state()
+        if self.month % 12 == 0:
+            self.new_projection()
+        return

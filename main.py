@@ -1,5 +1,6 @@
 # this is the run file
 from datetime import datetime
+import simulation_0_0
 
 if __name__ == '__main__':
     now = datetime.now()
@@ -9,3 +10,5 @@ if __name__ == '__main__':
           start, '\n',
           '=============================================== \n',
           )
+
+    simulation_0_0.simulate(120)
