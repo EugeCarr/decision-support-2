@@ -3,16 +3,18 @@ import numpy as np
 
 
 class Agent(object):
-    def __init__(self, name):
+    def __init__(self, name, sim_time):
         assert type(name) == str, ('name must be a string. input value is a', type(name))
+        assert type(sim_time) == int, ('sim_time must be an integer. input value is a', type(sim_time))
+        assert sim_time > 0, 'sim_time must be greater than zero'
         self.name = name
         return
 
 
 class PET_Manufacturer(Agent):
     # object initialisation
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self, name, sim_time):
+        super().__init__(name, sim_time)
 
         self.month = int(0)  # current month which will be incremented at each time step
 
@@ -31,29 +33,32 @@ class PET_Manufacturer(Agent):
         self.levies_payable = np.float64
         self.net_profit = np.float64  # monthly profit after tax and levies
 
+        projection_time = 120  # how many months into the future will be predicted?
+
         # define projections
-        self.production_projection = np.empty(120)  # 10 years of production volumes (floats)
-        self.unit_sale_price_projection = np.empty(120)  # 10 years of sale prices (floats)
-        self.unit_feedstock_cost_projection = np.empty(120)  # 10 years of feedstock costs (floats)
-        self.unit_process_cost_projection = np.empty(120)  # 10 years of process costs (floats)
+        self.production_projection = np.zeros(projection_time)  # 10 years of production volumes (floats)
+        self.unit_sale_price_projection = np.zeros(projection_time)  # 10 years of sale prices (floats)
+        self.unit_feedstock_cost_projection = np.zeros(projection_time)  # 10 years of feedstock costs (floats)
+        self.unit_process_cost_projection = np.zeros(projection_time)  # 10 years of process costs (floats)
 
-        self.gross_profit_projection = np.empty(120)
-        self.tax_payable_projection = np.empty(120)
-        self.levies_payable_projection = np.empty(120)
-        self.net_profit_projection = np.empty(120)
+        self.gross_profit_projection = np.zeros(projection_time)
+        self.tax_payable_projection = np.zeros(projection_time)
+        self.levies_payable_projection = np.zeros(projection_time)
+        self.net_profit_projection = np.zeros(projection_time)
 
-        self.tax_rate_projection = np.empty(120)  # tax rate projection for 10 years (floats)
-        self.levy_projection = np.empty(120)  # levy rate projection for 10 years (floats)
+        self.tax_rate_projection = np.zeros(projection_time)  # tax rate projection for 10 years (floats)
+        self.levy_projection = np.zeros(projection_time)  # levy rate projection for 10 years (floats)
 
         # define arrays to store records
-        self.production_history = np.empty(120)
-        self.sale_price_history = np.empty(120)
-        self.feedstock_cost_history = np.empty(120)
-        self.process_cost_history = np.empty(120)
-        self.gross_profit_history = np.empty(120)
-        self.tax_history = np.empty(120)
-        self.levy_history = np.empty(120)
-        self.net_profit_history = np.empty(120)
+        history_length = sim_time + 1  # first entry in history records don't count
+        self.production_history = np.zeros(history_length)
+        self.sale_price_history = np.zeros(history_length)
+        self.feedstock_cost_history = np.zeros(history_length)
+        self.process_cost_history = np.zeros(history_length)
+        self.gross_profit_history = np.zeros(history_length)
+        self.tax_history = np.zeros(history_length)
+        self.levy_history = np.zeros(history_length)
+        self.net_profit_history = np.zeros(history_length)
 
         return
 

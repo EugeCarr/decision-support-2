@@ -5,7 +5,7 @@ import numpy as np
 
 def simulate(months):
     # Initialise the manufacturer agent with all values for t = 0
-    pet_manufacturer = agent.PET_Manufacturer('PET Manufacturer')
+    pet_manufacturer = agent.PET_Manufacturer('PET Manufacturer', months)
 
     # starting values
     pet_manufacturer.production_volume = 0
@@ -22,7 +22,8 @@ def simulate(months):
     pet_manufacturer.project_dependents()
 
     # Run simulation for defined number of months
-    while pet_manufacturer.month <= months:
+    while pet_manufacturer.month < months:
+        print(pet_manufacturer.month, pet_manufacturer.net_profit)
         pet_manufacturer.time_step()
 
     return
