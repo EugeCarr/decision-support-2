@@ -37,7 +37,12 @@ class PET_Manufacturer(Agent):
         self.unit_feedstock_cost_projection = np.empty(120)  # 10 years of feedstock costs (floats)
         self.unit_process_cost_projection = np.empty(120)  # 10 years of process costs (floats)
 
-        self.tax_projection = np.empty(120)  # tax rate projection for 10 years (floats)
+        self.gross_profit_projection = np.empty(120)
+        self.tax_payable_projection = np.empty(120)
+        self.levies_payable_projection = np.empty(120)
+        self.net_profit_projection = np.empty(120)
+
+        self.tax_rate_projection = np.empty(120)  # tax rate projection for 10 years (floats)
         self.levy_projection = np.empty(120)  # levy rate projection for 10 years (floats)
 
         # define arrays to store records
@@ -177,10 +182,54 @@ class PET_Manufacturer(Agent):
         self.unit_process_cost_projection.fill(1)  # fixed value (mean of normal dist from self.refresh_...)
         return
 
-    def make_projections(self):
+    def project_gross_profit(self):
+        # calculate revenues and costs at each month
+        monthly_production_projection = self.production_projection / 12
+
+        revenue_projection = np.multiply(monthly_production_projection, self.unit_sale_price_projection)
+        feed_cost_projection = np.multiply(monthly_production_projection, self.unit_feedstock_cost_projection)
+        process_cost_projection = np.multiply(monthly_production_projection, self.unit_process_cost_projection)
+        total_cost_projection = np.add(feed_cost_projection, process_cost_projection)
+
+        self.gross_profit_projection = np.subtract(revenue_projection, total_cost_projection)
+        return
+
+    def project_tax_payable(self):
+        self.tax_payable_projection = np.multiply(self.gross_profit_projection, self.tax_rate_projection)
+        return
+
+    def project_levies_payable(self):
+        """This will calculate projected levies payable, once they are defined."""
+        length = len(self.levies_payable_projection)
+        self.levies_payable_projection = np.zeros(length)
+        return
+
+    def project_net_profit(self):
+        p_0 = self.gross_profit_projection
+        p_1 = np.subtract(p_0, self.tax_payable_projection)
+        p_2 = np.subtract(p_1, self.levies_payable_projection)
+        self.net_profit_projection = p_2
+        return
+
+    def project_independents(self):
+        # calculate projections for independent variables
         self.project_volume()
         self.project_sale_price()
         self.project_feedstock_cost()
         self.project_process_cost()
         return
+
+    def project_dependents(self):
+        # calculate projections for dependent variables (i.e. must run after self.project_independents)
+        self.project_gross_profit()
+        self.project_tax_payable()
+        self.project_levies_payable()
+        self.project_net_profit()
+        return
+
+    def new_projection(self):
+        self.project_independents()
+        self.project_dependents()
+        return
+
 # endregion
