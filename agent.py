@@ -32,6 +32,7 @@ class PET_Manufacturer(Agent):
         self.tax_payable = np.float64
         self.levies_payable = np.float64
         self.net_profit = np.float64  # monthly profit after tax and levies
+        self.projection_met = 0
 
         projection_time = 120  # how many months into the future will be predicted?
 
@@ -59,6 +60,7 @@ class PET_Manufacturer(Agent):
         self.tax_history = np.zeros(history_length)
         self.levy_history = np.zeros(history_length)
         self.net_profit_history = np.zeros(history_length)
+        self.projection_met_history = np.zeros(history_length)
 
         return
 
@@ -158,13 +160,13 @@ class PET_Manufacturer(Agent):
         self.tax_history[self.month] = self.tax_payable
         self.levy_history[self.month] = self.levies_payable
         self.net_profit_history[self.month] = self.net_profit
+        self.projection_met_history[self.month] = self.projection_met
         return
 
     def update_current_state(self):
         # methods to be called every time the month is advanced
         self.refresh_independents()
         self.calculate_dependents()
-        self.record_timestep()
         return
 
     # region -- methods for making projections into the future
@@ -240,9 +242,37 @@ class PET_Manufacturer(Agent):
         return
     # endregion
 
+    def projection_check(self):
+        # checks whether the next target will be met on the basis of latest projection
+        # monthly profit targets at years 5 and 10
+        target_year_5 = 80
+        target_year_10 = 85
+
+        time_to_yr5 = 60 - self.month
+        time_to_yr_10 = 120 - self.month
+
+        if time_to_yr5 > 0:
+            if self.net_profit_projection[time_to_yr5] >= target_year_5:
+                self.projection_met = 1
+            else:
+                self.projection_met = 0
+
+        elif time_to_yr_10 > 0:
+            if self.net_profit_projection[time_to_yr_10] >= target_year_10:
+                self.projection_met = 1
+            else:
+                self.projection_met = 0
+
+        else:
+            pass
+
+        return
+
     def time_step(self):
         self.month += 1
         self.update_current_state()
         if self.month % 12 == 0:
             self.new_projection()
+            self.projection_check()
+        self.record_timestep()
         return

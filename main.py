@@ -1,6 +1,6 @@
 # this is the run file
 from datetime import datetime
-import simulation_0_0
+from simulation_0_0 import simulate
 
 if __name__ == '__main__':
     start = datetime.now()
@@ -11,9 +11,12 @@ if __name__ == '__main__':
           '=============================================== \n',
           )
 
-    simulation_0_0.simulate(120, False)
+    months = 120
+
+    simulate(months, False, False)
 
     end = datetime.now()
     elapsed = end - start
     elapsed = elapsed.total_seconds()
-    print('Simulation time:', elapsed, 'seconds')
+    print(' Iterations:', months,
+          '\n Simulation time:', elapsed, 'seconds')

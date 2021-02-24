@@ -5,7 +5,7 @@ from tabulate import tabulate
 from matplotlib import pyplot as plt
 
 
-def simulate(months, plot=bool):
+def simulate(months, table=bool, plot=bool):
     # Initialise the manufacturer agent with all values for t = 0
     pet_manufacturer = agent.PET_Manufacturer('PET Manufacturer', months)
 
@@ -20,25 +20,28 @@ def simulate(months, plot=bool):
     pet_manufacturer.calculate_dependents()
 
     # make projections from t = 0
-    pet_manufacturer.project_independents()
-    pet_manufacturer.project_dependents()
+    pet_manufacturer.new_projection()
+    pet_manufacturer.projection_check()
+
+    pet_manufacturer.record_timestep()
 
     # Run simulation for defined number of months
     while pet_manufacturer.month < months - 1:
         pet_manufacturer.time_step()
 
     # data output & analysis
-    t = np.arange(0, months, 1)
+    if table:
+        t = np.arange(0, months, 1)
 
-    table = []
-    for i in range(0, months):
-        table.append([t[i], pet_manufacturer.net_profit_history[i]])
+        table = []
+        for i in range(0, months):
+            table.append([t[i], pet_manufacturer.projection_met_history[i]])
 
-    headers = ["Month", "Profit"]
-    print(tabulate(table, headers))
+        headers = ["Month", "Profit"]
+        print(tabulate(table, headers))
 
     if plot:
-        y = pet_manufacturer.net_profit_history
+        y = pet_manufacturer.projection_met_history
         x = t
         plt.plot(x, y)
         plt.xlabel('Month')
