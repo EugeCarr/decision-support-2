@@ -10,10 +10,9 @@ def simulate(months, table=bool, plot=bool):
     pet_manufacturer = agent.PET_Manufacturer('PET Manufacturer', months)
 
     # starting values
-    pet_manufacturer.production_volume = 0
+    pet_manufacturer.production_volume = np.float64(1000)
     pet_manufacturer.refresh_independents()
 
-    pet_manufacturer.production_volume = np.float64(1000)
     pet_manufacturer.tax_rate = 0.19
     pet_manufacturer.levy_rate = 0
 
@@ -25,27 +24,36 @@ def simulate(months, table=bool, plot=bool):
 
     pet_manufacturer.record_timestep()
 
+    print(pow(pet_manufacturer.production_volume, -0.152))
+
     # Run simulation for defined number of months
     while pet_manufacturer.month < months - 1:
         pet_manufacturer.time_step()
 
     # data output & analysis
+    t = np.arange(0, months, 1)
     if table:
-        t = np.arange(0, months, 1)
-
         table = []
         for i in range(0, months):
-            table.append([t[i], pet_manufacturer.projection_met_history[i]])
+            table.append([t[i], pet_manufacturer.net_profit_history[i]])
 
         headers = ["Month", "Profit"]
         print(tabulate(table, headers))
 
     if plot:
-        y = pet_manufacturer.projection_met_history
+        y = pet_manufacturer.process_cost_history
+        y1 = pet_manufacturer.production_history
         x = t
-        plt.plot(x, y)
-        plt.xlabel('Month')
-        plt.ylabel('Profit')
+        fig, ax1 = plt.subplots()
+        ax1.plot(x, y)
+        ax2 = ax1.twinx()
+        ax2.plot(x, y1, color='red')
+
+        ax1.set_xlabel('Month')
+        ax1.set_ylabel('Processing unit cost')
+        ax2.set_ylabel('Production Volume')
+
+        fig.tight_layout()
         plt.show()
 
     return
