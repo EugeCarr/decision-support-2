@@ -57,7 +57,7 @@ class PET_Manufacturer(Agent):
 
         return
 
-# region -- methods to calculate values at the current time for each independent variable
+    # region -- methods to calculate values at the current time for each independent variable
     def refresh_production_volume(self):
         # production volume is defined by growth rates in 2 periods
 
@@ -111,8 +111,9 @@ class PET_Manufacturer(Agent):
         self.refresh_unit_process_cost()
         return
 
-# endregion
-# region -- methods for dependent variables
+    # endregion
+
+    # region -- methods for dependent variables
     def calculate_gross_profit(self):
         production_in_month = self.production_volume / 12
         revenue = production_in_month * self.unit_sale_price
@@ -139,7 +140,8 @@ class PET_Manufacturer(Agent):
         self.calculate_levies_payable()
         self.calculate_net_profit()
         return
-# endregion
+
+    # endregion
 
     def record_timestep(self):
         # method to write current variables (independent and dependent) to records
@@ -160,7 +162,7 @@ class PET_Manufacturer(Agent):
         self.record_timestep()
         return
 
-# region -- methods to make projections into the future
+    # region -- methods for making projections into the future
     def project_volume(self):
         """This will calculate the projected (annualised) PET production volume for each month for 10 years,
         recording it to self.production_projection"""
@@ -231,5 +233,4 @@ class PET_Manufacturer(Agent):
         self.project_independents()
         self.project_dependents()
         return
-
-# endregion
+    # endregion
