@@ -79,7 +79,7 @@ class PET_Manufacturer(Agent):
         growth_rate_1_monthly = np.power(growth_rate_1, 1 / 12)  # annual growth rate changed to month-on-month
 
         if self.month == 0:
-            self.production_volume = 1000
+            self.production_volume = 1000  # production volume starts at 1000 units per annum
 
         elif self.month <= sim_period_0_months:
             self.production_volume = self.production_volume * growth_rate_0_monthly
@@ -107,7 +107,8 @@ class PET_Manufacturer(Agent):
         return
 
     def refresh_unit_process_cost(self):
-        # process cost is given by a normal distribution
+        # process cost is given by a normal distribution around a mean which is a weakly decreasing function of
+        # production volume, such that a doubling in production reduces processing unit cost by 10%, starting from 1
         mean = 2.8576 / np.power(self.production_volume, 0.152)
         std_dev = 0.005
         self.unit_process_cost = np.random.normal(mean, std_dev, None)
@@ -178,9 +179,9 @@ class PET_Manufacturer(Agent):
         recording it to self.production_projection"""
         predicted_annual_growth_rate = 1.02
         monthly_growth_rate = np.power(predicted_annual_growth_rate, 1/12)
-        self.production_projection[0] = self.production_volume
-        for i in range(self.projection_time - 1):
-            self.production_projection[i + 1] = self.production_projection[i] * monthly_growth_rate
+        initial_volume = self.production_volume
+        for i in range(self.projection_time):
+            self.production_projection[i] = initial_volume * pow(monthly_growth_rate, i)
 
         return
 
