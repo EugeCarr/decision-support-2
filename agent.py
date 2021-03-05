@@ -22,16 +22,16 @@ class PET_Manufacturer(Agent):
         self.production_volume = np.float64()  # total PET production per annum
         self.unit_sale_price = np.float64()  # sale price of one unit of PET
         self.unit_feedstock_cost = np.float64()  # feedstock cost per unit of PET produced
-        self.unit_process_cost = np.float64  # cost of running process per unit of PET produced
+        self.unit_process_cost = np.float64()  # cost of running process per unit of PET produced
 
-        self.tax_rate = np.float64  # current tax on profits
+        self.tax_rate = np.float64()  # current tax on profits
         self.levy_rate = np.float64  # current levy on production/emission/consumption/etc.
 
         # define dependent variables
-        self.gross_profit = np.float64  # profits prior to taxes and levies
-        self.tax_payable = np.float64
-        self.levies_payable = np.float64
-        self.net_profit = np.float64  # monthly profit after tax and levies
+        self.gross_profit = np.float64()  # profits prior to taxes and levies
+        self.tax_payable = np.float64()
+        self.levies_payable = np.float64()
+        self.net_profit = np.float64()  # monthly profit after tax and levies
         self.projection_met = 0
 
         self.projection_time = 120  # how many months into the future will be predicted?
@@ -61,6 +61,14 @@ class PET_Manufacturer(Agent):
         self.levy_history = np.zeros(history_length)
         self.net_profit_history = np.zeros(history_length)
         self.projection_met_history = np.zeros(history_length)
+
+        # define variables for the targets against which projections are measured
+        # and the times at which they happen
+        self.target1_value = np.float64(80)  # currently fixed values
+        self.target1_year = 5
+
+        self.target2_value = np.float64(85)  # currently fixed values
+        self.target2_year = 10
 
         return
 
@@ -175,28 +183,29 @@ class PET_Manufacturer(Agent):
 
     # region -- methods for making projections into the future
     def project_volume(self):
-        """This will calculate the projected (annualised) PET production volume for each month for 10 years,
-        recording it to self.production_projection"""
+        # calculates the projected (annualised) PET production volume for each month,
+        # recording it to self.production_projection
         predicted_annual_growth_rate = 1.02
         monthly_growth_rate = np.power(predicted_annual_growth_rate, 1/12)
         initial_volume = self.production_volume
+        # calculated using a fixed month-on-month growth rate from the most recent production volume
         for i in range(self.projection_time):
             self.production_projection[i] = initial_volume * pow(monthly_growth_rate, i)
 
         return
 
     def project_sale_price(self):
-        # Calculate the projected PET sale price for the next 10 years
+        # Calculate the projected PET sale prices
         self.unit_sale_price_projection.fill(4)  # fixed value (mean of normal dist from self.refresh_unit_sale_price)
         return
 
     def project_feedstock_cost(self):
-        # Calculate the projected PET sale price for the next 10 years
+        # Calculate the projected PET feedstock costs
         self.unit_feedstock_cost_projection.fill(2)  # fixed value (mean of normal dist from self.refresh_...)
         return
 
     def project_process_cost(self):
-        # Calculate the projected PET sale price for the next 10 years
+        # Calculate the projected PET processing costs
         self.unit_process_cost_projection.fill(1)  # fixed value (mean of normal dist from self.refresh_...)
         return
 
@@ -254,20 +263,18 @@ class PET_Manufacturer(Agent):
     def projection_check(self):
         # checks whether the next target will be met on the basis of latest projection
         # monthly profit targets at years 5 and 10
-        target_year_5 = 80
-        target_year_10 = 85
 
-        time_to_yr5 = 60 - self.month
-        time_to_yr_10 = 120 - self.month
+        time_to_yr1 = self.target1_year * 12 - self.month
+        time_to_yr_2 = self.target2_year * 12 - self.month
 
-        if time_to_yr5 > 0:
-            if self.net_profit_projection[time_to_yr5] >= target_year_5:
+        if time_to_yr1 > 0:
+            if self.net_profit_projection[time_to_yr1] >= self.target1_value:
                 self.projection_met = 1
             else:
                 self.projection_met = 0
 
-        elif time_to_yr_10 > 0:
-            if self.net_profit_projection[time_to_yr_10] >= target_year_10:
+        elif time_to_yr_2 > 0:
+            if self.net_profit_projection[time_to_yr_2] >= self.target2_value:
                 self.projection_met = 1
             else:
                 self.projection_met = 0
