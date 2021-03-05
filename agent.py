@@ -70,6 +70,9 @@ class PET_Manufacturer(Agent):
         self.target2_value = np.float64(85)  # currently fixed values
         self.target2_year = 10
 
+        self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
+        # targets are defined
+
         return
 
     # region -- methods to calculate values at the current time for each independent variable
@@ -186,7 +189,7 @@ class PET_Manufacturer(Agent):
         # calculates the projected (annualised) PET production volume for each month,
         # recording it to self.production_projection
         predicted_annual_growth_rate = 1.02
-        monthly_growth_rate = np.power(predicted_annual_growth_rate, 1/12)
+        monthly_growth_rate = np.power(predicted_annual_growth_rate, 1 / 12)
         initial_volume = self.production_volume
         # calculated using a fixed month-on-month growth rate from the most recent production volume
         for i in range(self.projection_time):
@@ -258,6 +261,7 @@ class PET_Manufacturer(Agent):
         self.project_independents()
         self.project_dependents()
         return
+
     # endregion
 
     def projection_check(self):
@@ -265,7 +269,7 @@ class PET_Manufacturer(Agent):
         # monthly profit targets at years 5 and 10
 
         time_to_yr1 = self.target1_year * 12 - self.month
-        time_to_yr_2 = self.target2_year * 12 - self.month
+        time_to_yr2 = self.target2_year * 12 - self.month
 
         if time_to_yr1 > 0:
             if self.net_profit_projection[time_to_yr1] >= self.target1_value:
@@ -273,14 +277,20 @@ class PET_Manufacturer(Agent):
             else:
                 self.projection_met = 0
 
-        elif time_to_yr_2 > 0:
-            if self.net_profit_projection[time_to_yr_2] >= self.target2_value:
+        elif time_to_yr2 > 0:
+            if self.net_profit_projection[time_to_yr2] >= self.target2_value:
                 self.projection_met = 1
             else:
                 self.projection_met = 0
 
         else:
-            pass
+            # if there is no target defined into the future, PROJECTION_MET is set to 0
+            self.projection_met = 0
+
+            if not self.beyond_target_range:
+                print('no target defined current time step, month', self.month,
+                      '\n attribute SELF.PROJECTION_MET of object PET_MANUFACTURER set to 0')
+                self.beyond_target_range = True
 
         return
 
