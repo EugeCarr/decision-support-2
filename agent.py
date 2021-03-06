@@ -15,9 +15,9 @@ def run_check():
         else:
             break
 
-    if proceed.upper() == 'N':
+    if proceed.lower() == 'n':
         raise SystemExit(0)
-    elif proceed.upper() == 'Y':
+    elif proceed.lower() == 'y':
         pass
 
 
