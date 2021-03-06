@@ -2,6 +2,25 @@
 import numpy as np
 
 
+def proceed_check():
+    global proceed
+    while True:
+        try:
+            proceed = str(input('Do you want to proceed? Y/N:'))
+        except ValueError:
+            continue
+
+        if proceed.lower() not in 'yn':
+            continue
+        else:
+            break
+
+    if proceed.upper() == 'N':
+        raise SystemExit(0)
+    elif proceed.upper() == 'Y':
+        pass
+
+
 class Agent(object):
     def __init__(self, name, sim_time):
         assert type(name) == str, ('name must be a string. input value is a', type(name))
@@ -9,7 +28,7 @@ class Agent(object):
         assert sim_time > 0, 'sim_time must be greater than zero'
         self.name = name
 
-        print(' Object', self.name, 'created')
+        print(' Object', self.name, 'created \n ================================')
         return
 
 
@@ -76,7 +95,7 @@ class PET_Manufacturer(Agent):
         # targets are defined
 
         # output initialisation state to console
-        print(' INITIAL STATE'
+        print(' INITIAL STATE \n - - - - - - -'
               '\n Annual production volume:', self.production_volume,
               '\n Unit sale price of product:', self.unit_sale_price,
               '\n Feedstock cost per unit of product:', self.unit_feedstock_cost,
@@ -85,7 +104,10 @@ class PET_Manufacturer(Agent):
               '\n Levy rate:', self.levy_rate,
               '\n Projection horizon (months):', self.projection_time,
               '\n Target at year', self.target1_year, ':', self.target1_value,
-              '\n Target at year', self.target2_year, ':', self.target2_value,)
+              '\n Target at year', self.target2_year, ':', self.target2_value, )
+
+        proceed_check()
+
         return
 
     # region -- methods to calculate values at the current time for each independent variable

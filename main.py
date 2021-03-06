@@ -16,7 +16,9 @@ if __name__ == '__main__':
     simulate(months, table=False, plot=False)
 
     end = datetime.now()
-    elapsed = end - start
-    elapsed = elapsed.total_seconds()
-    print(' Iterations:', months,
-          '\n Simulation time:', elapsed, 'seconds')
+    now = end.strftime("%d/%m/%Y %H:%M:%S")
+    print(' ==================== \n',
+          'SIMULATION COMPLETE \n',
+          now, '\n',
+          '==================== \n',
+          )
