@@ -2,7 +2,7 @@
 import numpy as np
 
 
-def proceed_check():
+def run_check():
     global proceed
     while True:
         try:
@@ -106,7 +106,7 @@ class PET_Manufacturer(Agent):
               '\n Target at year', self.target1_year, ':', self.target1_value,
               '\n Target at year', self.target2_year, ':', self.target2_value, )
 
-        proceed_check()
+        run_check()
 
         return
 
