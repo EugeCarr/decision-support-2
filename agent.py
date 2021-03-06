@@ -8,6 +8,8 @@ class Agent(object):
         assert type(sim_time) == int, ('sim_time must be an integer. input value is a', type(sim_time))
         assert sim_time > 0, 'sim_time must be greater than zero'
         self.name = name
+
+        print(' Object', self.name, 'created')
         return
 
 
@@ -19,13 +21,13 @@ class PET_Manufacturer(Agent):
         self.month = int(0)  # current month which will be incremented at each time step
 
         # define independent variables for current time
-        self.production_volume = np.float64()  # total PET production per annum
-        self.unit_sale_price = np.float64()  # sale price of one unit of PET
-        self.unit_feedstock_cost = np.float64()  # feedstock cost per unit of PET produced
-        self.unit_process_cost = np.float64()  # cost of running process per unit of PET produced
+        self.production_volume = np.float64(1000)  # total PET production per annum, starts at 1000
+        self.unit_sale_price = np.float64(4)  # sale price of one unit of PET, starts at 4
+        self.unit_feedstock_cost = np.float64(2)  # feedstock cost per unit of PET produced, starts at 2
+        self.unit_process_cost = np.float64(1)  # cost of running process per unit of PET produced, starts at 1
 
-        self.tax_rate = np.float64()  # current tax on profits
-        self.levy_rate = np.float64  # current levy on production/emission/consumption/etc.
+        self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
+        self.levy_rate = np.float64(0)  # current levy on production/emission/consumption/etc., starts at zero
 
         # define dependent variables
         self.gross_profit = np.float64()  # profits prior to taxes and levies
@@ -73,6 +75,17 @@ class PET_Manufacturer(Agent):
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
         # targets are defined
 
+        # output initialisation state to console
+        print(' INITIAL STATE'
+              '\n Annual production volume:', self.production_volume,
+              '\n Unit sale price of product:', self.unit_sale_price,
+              '\n Feedstock cost per unit of product:', self.unit_feedstock_cost,
+              '\n Process cost per unit of product:', self.unit_process_cost,
+              '\n Corporation tax rate:', self.tax_rate,
+              '\n Levy rate:', self.levy_rate,
+              '\n Projection horizon (months):', self.projection_time,
+              '\n Target at year', self.target1_year, ':', self.target1_value,
+              '\n Target at year', self.target2_year, ':', self.target2_value,)
         return
 
     # region -- methods to calculate values at the current time for each independent variable
@@ -89,10 +102,7 @@ class PET_Manufacturer(Agent):
         growth_rate_1 = 1.03  # YoY growth rate for the second simulation period, expressed as a ratio
         growth_rate_1_monthly = np.power(growth_rate_1, 1 / 12)  # annual growth rate changed to month-on-month
 
-        if self.month == 0:
-            self.production_volume = 1000  # production volume starts at 1000 units per annum
-
-        elif self.month <= sim_period_0_months:
+        if self.month <= sim_period_0_months:
             self.production_volume = self.production_volume * growth_rate_0_monthly
 
         elif self.month <= sim_period_1_months:

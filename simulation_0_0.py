@@ -12,10 +12,6 @@ def simulate(months, table=bool, plot=bool):
 
     # starting values
     pet_manufacturer.refresh_independents()
-
-    pet_manufacturer.tax_rate = 0.19
-    pet_manufacturer.levy_rate = 0
-
     pet_manufacturer.calculate_dependents()
 
     # make projections from t = 0
