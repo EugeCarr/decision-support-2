@@ -320,8 +320,7 @@ class PET_Manufacturer(Agent):
             self.projection_met = 0
 
             if not self.beyond_target_range:
-                print('no target defined current time step, month', self.month,
-                      '\n attribute SELF.PROJECTION_MET of object PET_MANUFACTURER set to 0')
+                print('No target defined beyond month', self.month)
                 self.beyond_target_range = True
 
         return
