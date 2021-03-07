@@ -18,8 +18,6 @@ def simulate(months, table=bool, plot=bool):
     pet_manufacturer.new_projection()
     pet_manufacturer.projection_check()
 
-    first_prediction = copy.deepcopy(pet_manufacturer.production_projection)
-
     pet_manufacturer.record_timestep()
 
     # Run simulation for defined number of months
@@ -32,23 +30,19 @@ def simulate(months, table=bool, plot=bool):
     if table:
         table = []
         for i in range(0, months):
-            table.append([t[i], pet_manufacturer.production_history[i], first_prediction[i]])
+            table.append([t[i], pet_manufacturer.net_profit_history[i]])
 
-        headers = ["Month", "Production", "Prediction"]
+        headers = ["Month", "Production"]
         print(tabulate(table, headers))
 
     if plot:
-        y = first_prediction
-        y1 = pet_manufacturer.production_history
+        y = pet_manufacturer.net_profit_history
         x = t
         fig, ax1 = plt.subplots()
         ax1.plot(x, y)
-        # ax2 = ax1.twinx()
-        ax1.plot(x, y1, color='red')
 
         ax1.set_xlabel('Month')
-        ax1.set_ylabel('Production')
-        # ax2.set_ylabel('Production Volume')
+        ax1.set_ylabel('Profit')
 
         fig.tight_layout()
         plt.show()

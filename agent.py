@@ -50,8 +50,8 @@ class PET_Manufacturer(Agent):
         self.bio_process_cost = np.float64(1.5)  # cost of process per unit of PET from bio routes, starts at 1.5
 
         self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
-        self.levy_rate = np.float64(0)  # current levy on production/emission/consumption/etc., starts at zero
-        self.emissions_rate = np.float64(0.001)  # units of emissions per unit of PET produced from non-bio route
+        self.levy_rate = np.float64(0.2)  # current levy on production/emission/consumption/etc., starts at zero
+        self.emissions_rate = np.float64(0.1)  # units of emissions per unit of PET produced from non-bio route
 
         # define dependent variables
         self.gross_profit = np.float64()  # profits prior to taxes and levies
@@ -68,14 +68,18 @@ class PET_Manufacturer(Agent):
         self.unit_sale_price_projection = np.zeros(self.projection_time)  # 10 years of sale prices (floats)
         self.unit_feedstock_cost_projection = np.zeros(self.projection_time)  # 10 years of feedstock costs (floats)
         self.unit_process_cost_projection = np.zeros(self.projection_time)  # 10 years of process costs (floats)
+        self.proportion_bio_projection = np.zeros(self.projection_time)
+        self.bio_feedstock_cost_projection = np.zeros(self.projection_time)
+        self.bio_process_cost_projection = np.zeros(self.projection_time)
 
         self.gross_profit_projection = np.zeros(self.projection_time)
+        self.emissions_projection = np.zeros(self.projection_time)
         self.tax_payable_projection = np.zeros(self.projection_time)
         self.levies_payable_projection = np.zeros(self.projection_time)
         self.net_profit_projection = np.zeros(self.projection_time)
 
-        self.tax_rate_projection = np.zeros(self.projection_time)  # tax rate projection for 10 years (floats)
-        self.levy_projection = np.zeros(self.projection_time)  # levy rate projection for 10 years (floats)
+        self.tax_rate_projection = np.ones(self.projection_time) * self.tax_rate
+        self.levy_projection = np.ones(self.projection_time) * self.levy_rate
 
         # define arrays to store records
         history_length = sim_time
@@ -107,9 +111,6 @@ class PET_Manufacturer(Agent):
         # output initialisation state to console
         print(' INITIAL STATE \n - - - - - - -'
               '\n Annual production volume:', self.production_volume,
-              '\n Unit sale price of product:', self.unit_sale_price,
-              '\n Feedstock cost per unit of product:', self.unit_feedstock_cost,
-              '\n Process cost per unit of product:', self.unit_process_cost,
               '\n Corporation tax rate:', self.tax_rate,
               '\n Levy rate:', self.levy_rate,
               '\n Projection horizon (months):', self.projection_time,
@@ -281,14 +282,40 @@ class PET_Manufacturer(Agent):
         self.unit_process_cost_projection.fill(1)  # fixed value (mean of normal dist from self.refresh_...)
         return
 
+    def project_proportion_bio(self):
+        # projection of the proportion from bio routes
+        self.proportion_bio_projection.fill(0)
+        return
+
+    def project_bio_feedstock_cost(self):
+        self.bio_feedstock_cost_projection.fill(3)
+        return
+
+    def project_bio_process_cost(self):
+        self.bio_process_cost_projection.fill(1.5)
+        return
+
+    def project_emissions(self):
+        self.emissions_projection = np.multiply(self.production_projection,
+                                                self.proportion_bio_projection) * self.emissions_rate
+        return
+
     def project_gross_profit(self):
         # calculate revenues and costs at each month
         monthly_production_projection = self.production_projection / 12
 
         revenue_projection = np.multiply(monthly_production_projection, self.unit_sale_price_projection)
-        feed_cost_projection = np.multiply(monthly_production_projection, self.unit_feedstock_cost_projection)
-        process_cost_projection = np.multiply(monthly_production_projection, self.unit_process_cost_projection)
-        total_cost_projection = np.add(feed_cost_projection, process_cost_projection)
+
+        fossil_cost_projection = np.multiply(
+            np.add(np.multiply(monthly_production_projection, self.unit_feedstock_cost_projection),
+                   np.multiply(monthly_production_projection, self.unit_process_cost_projection)),
+            np.subtract(np.ones(self.projection_time), self.proportion_bio_projection))
+        bio_cost_projection = np.multiply(
+            np.add(np.multiply(monthly_production_projection, self.bio_feedstock_cost_projection),
+                   np.multiply(monthly_production_projection, self.bio_process_cost_projection)),
+            self.proportion_bio_projection)
+
+        total_cost_projection = np.add(fossil_cost_projection, bio_cost_projection)
 
         self.gross_profit_projection = np.subtract(revenue_projection, total_cost_projection)
         return
@@ -298,9 +325,7 @@ class PET_Manufacturer(Agent):
         return
 
     def project_levies_payable(self):
-        """This will calculate projected levies payable, once they are defined."""
-        length = len(self.levies_payable_projection)
-        self.levies_payable_projection = np.zeros(length)
+        self.levies_payable_projection = np.multiply(self.emissions_projection, self.levy_projection)
         return
 
     def project_net_profit(self):
@@ -316,11 +341,15 @@ class PET_Manufacturer(Agent):
         self.project_sale_price()
         self.project_feedstock_cost()
         self.project_process_cost()
+        self.project_proportion_bio()
+        self.project_bio_feedstock_cost()
+        self.project_bio_process_cost()
         return
 
     def project_dependents(self):
         # calculate projections for dependent variables (i.e. must run after self.project_independents)
         self.project_gross_profit()
+        self.project_emissions()
         self.project_tax_payable()
         self.project_levies_payable()
         self.project_net_profit()
