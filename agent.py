@@ -45,15 +45,21 @@ class PET_Manufacturer(Agent):
         self.unit_feedstock_cost = np.float64(2)  # feedstock cost per unit of PET produced, starts at 2
         self.unit_process_cost = np.float64(1)  # cost of running process per unit of PET produced, starts at 1
 
+        self.proportion_bio = np.float64(0)  # proportion of production from biological feedstocks
+        self.bio_feedstock_cost = np.float64(3)  # bio feedstock cost per unit of PET produced, starts at 3
+        self.bio_process_cost = np.float64(1.5)  # cost of process per unit of PET from bio routes, starts at 1.5
+
         self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
         self.levy_rate = np.float64(0)  # current levy on production/emission/consumption/etc., starts at zero
+        self.emissions_rate = np.float64(0.001)  # units of emissions per unit of PET produced from non-bio route
 
         # define dependent variables
         self.gross_profit = np.float64()  # profits prior to taxes and levies
         self.tax_payable = np.float64()
         self.levies_payable = np.float64()
         self.net_profit = np.float64()  # monthly profit after tax and levies
-        self.projection_met = 0
+        self.projection_met = 0  # 1 or 0 depending on whether the next target will be met by current projection
+        self.emissions = np.float64()  # emissions from manufacturing PET from fossil fuels
 
         self.projection_time = 120  # how many months into the future will be predicted?
 
@@ -77,7 +83,11 @@ class PET_Manufacturer(Agent):
         self.sale_price_history = np.zeros(history_length)
         self.feedstock_cost_history = np.zeros(history_length)
         self.process_cost_history = np.zeros(history_length)
+        self.bio_history = np.zeros(history_length)
+        self.bio_feedstock_history = np.zeros(history_length)
+        self.bio_process_history = np.zeros(history_length)
         self.gross_profit_history = np.zeros(history_length)
+        self.emissions_history = np.zeros(history_length)
         self.tax_history = np.zeros(history_length)
         self.levy_history = np.zeros(history_length)
         self.net_profit_history = np.zeros(history_length)
@@ -157,12 +167,28 @@ class PET_Manufacturer(Agent):
         self.unit_process_cost = np.random.normal(mean, std_dev, None)
         return
 
+    def refresh_bio_feedstock_cost(self):
+        # unit feedstock cost is given by a normal distribution
+        mean = float(3)
+        std_dev = 0.01
+        self.bio_feedstock_cost = np.random.normal(mean, std_dev, None)
+        return
+
+    def refresh_bio_process_cost(self):
+        # process cost is given by a normal distribution
+        mean = 1.5
+        std_dev = 0.005
+        self.bio_process_cost = np.random.normal(mean, std_dev, None)
+        return
+
     def refresh_independents(self):
         # calculate new values for all variables
         self.refresh_production_volume()
         self.refresh_unit_sale_price()
         self.refresh_unit_feedstock_cost()
         self.refresh_unit_process_cost()
+        self.refresh_bio_feedstock_cost()
+        self.refresh_bio_process_cost()
         return
 
     # endregion
@@ -171,8 +197,14 @@ class PET_Manufacturer(Agent):
     def calculate_gross_profit(self):
         production_in_month = self.production_volume / 12
         revenue = production_in_month * self.unit_sale_price
-        costs = production_in_month * (self.unit_feedstock_cost + self.unit_process_cost)
+        costs = production_in_month * ((1 - self.proportion_bio) * (self.unit_feedstock_cost + self.unit_process_cost) +
+                                       self.proportion_bio * (self.bio_feedstock_cost + self.bio_process_cost))
         self.gross_profit = revenue - costs
+        return
+
+    def calculate_emissions(self):
+        fossil_production = self.production_volume / 12 * (1 - self.proportion_bio)
+        self.emissions = fossil_production * self.emissions_rate
         return
 
     def calculate_tax_payable(self):
@@ -181,7 +213,7 @@ class PET_Manufacturer(Agent):
 
     def calculate_levies_payable(self):
         """This will calculate the levies payable on production/consumption/emission, once they are defined"""
-        self.levies_payable = 0
+        self.levies_payable = self.levy_rate * self.emissions
         return
 
     def calculate_net_profit(self):
@@ -190,6 +222,7 @@ class PET_Manufacturer(Agent):
 
     def calculate_dependents(self):
         self.calculate_gross_profit()
+        self.calculate_emissions()
         self.calculate_tax_payable()
         self.calculate_levies_payable()
         self.calculate_net_profit()
@@ -203,7 +236,11 @@ class PET_Manufacturer(Agent):
         self.sale_price_history[self.month] = self.unit_sale_price
         self.feedstock_cost_history[self.month] = self.unit_feedstock_cost
         self.process_cost_history[self.month] = self.unit_process_cost
+        self.bio_history[self.month] = self.proportion_bio
+        self.bio_feedstock_history[self.month] = self.bio_feedstock_cost
+        self.bio_process_history[self.month] = self.bio_process_cost
         self.gross_profit_history[self.month] = self.gross_profit
+        self.emissions_history[self.month] = self.emissions
         self.tax_history[self.month] = self.tax_payable
         self.levy_history[self.month] = self.levies_payable
         self.net_profit_history[self.month] = self.net_profit
@@ -324,6 +361,9 @@ class PET_Manufacturer(Agent):
                 self.beyond_target_range = True
 
         return
+
+    def investment_decision(self):
+        pass
 
     def time_step(self):
         self.month += 1
