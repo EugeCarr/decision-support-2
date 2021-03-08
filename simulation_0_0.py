@@ -32,10 +32,10 @@ def simulate(months, table=bool, plot=bool):
         for i in range(0, months):
             table.append([t[i],
                           pet_manufacturer.projection_met_history[i],
-                          pet_manufacturer.net_profit_history[i],
+                          pet_manufacturer.profitability_history[i],
                           pet_manufacturer.bio_history[i]])
 
-        headers = ["Month", "Projection met?", "Net Profit", "Bio Proportion"]
+        headers = ["Month", "Projection met?", "Profitability", "Bio Proportion"]
         print(tabulate(table, headers))
 
     if plot:

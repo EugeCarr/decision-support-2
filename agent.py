@@ -60,6 +60,7 @@ class PET_Manufacturer(Agent):
         self.net_profit = np.float64()  # monthly profit after tax and levies
         self.projection_met = 1  # 1 or 0 depending on whether the next target will be met by current projection
         self.emissions = np.float64()  # emissions from manufacturing PET from fossil fuels
+        self.profitability = np.float64()  # profitability (net profit per unit production)
 
         self.projection_time = 120  # how many months into the future will be predicted?
 
@@ -77,6 +78,7 @@ class PET_Manufacturer(Agent):
         self.tax_payable_projection = np.zeros(self.projection_time)
         self.levies_payable_projection = np.zeros(self.projection_time)
         self.net_profit_projection = np.zeros(self.projection_time)
+        self.profitability_projection = np.zeros(self.projection_time)
 
         self.tax_rate_projection = np.ones(self.projection_time) * self.tax_rate
         self.levy_projection = np.ones(self.projection_time) * self.levy_rate
@@ -97,13 +99,14 @@ class PET_Manufacturer(Agent):
         self.net_profit_history = np.zeros(history_length)
         self.projection_met_history = np.zeros(history_length)
         self.bio_target_history = np.zeros(history_length)
+        self.profitability_history = np.zeros(history_length)
 
         # define variables for the targets against which projections are measured
         # and the times at which they happen
-        self.target1_value = np.float64(130)  # currently fixed values
+        self.target1_value = np.float64(1.4)  # currently fixed values
         self.target1_year = 5
 
-        self.target2_value = np.float64(150)  # currently fixed values
+        self.target2_value = np.float64(1.6)  # currently fixed values
         self.target2_year = 10
 
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
@@ -243,12 +246,16 @@ class PET_Manufacturer(Agent):
         self.net_profit = self.gross_profit - (self.tax_payable + self.levies_payable)
         return
 
+    def calculate_profitability(self):
+        self.profitability = self.net_profit / (self.production_volume / 12)
+
     def calculate_dependents(self):
         self.calculate_gross_profit()
         self.calculate_emissions()
         self.calculate_tax_payable()
         self.calculate_levies_payable()
         self.calculate_net_profit()
+        self.calculate_profitability()
         return
 
     # endregion
@@ -269,6 +276,7 @@ class PET_Manufacturer(Agent):
         self.net_profit_history[self.month] = self.net_profit
         self.projection_met_history[self.month] = self.projection_met
         self.bio_target_history[self.month] = self.proportion_bio_target
+        self.profitability_history[self.month] = self.profitability
         return
 
     def update_current_state(self):
@@ -364,6 +372,9 @@ class PET_Manufacturer(Agent):
         self.net_profit_projection = p_2
         return
 
+    def project_profitability(self):
+        self.profitability_projection = np.divide(self.net_profit_projection, self.production_projection / 12)
+
     def project_independents(self):
         # calculate projections for independent variables
         self.project_volume()
@@ -383,6 +394,7 @@ class PET_Manufacturer(Agent):
         self.project_tax_payable()
         self.project_levies_payable()
         self.project_net_profit()
+        self.project_profitability()
         return
 
     def new_projection(self):
@@ -400,13 +412,13 @@ class PET_Manufacturer(Agent):
         time_to_yr2 = self.target2_year * 12 - self.month
 
         if time_to_yr1 > 0:
-            if self.net_profit_projection[time_to_yr1] >= self.target1_value:
+            if self.profitability_projection[time_to_yr1] >= self.target1_value:
                 self.projection_met = 1
             else:
                 self.projection_met = 0
 
         elif time_to_yr2 > 0:
-            if self.net_profit_projection[time_to_yr2] >= self.target2_value:
+            if self.profitability_projection[time_to_yr2] >= self.target2_value:
                 self.projection_met = 1
             else:
                 self.projection_met = 0
