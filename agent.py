@@ -117,13 +117,14 @@ class PET_Manufacturer(Agent):
         self.proportion_change_rate = np.float64(0.1/12)  # greatest possible monthly change in self.proportion_bio
 
         # output initialisation state to console
-        print(' INITIAL STATE \n - - - - - - -'
+        print(' INITIAL STATE \n -------------'
               '\n Annual production volume:', self.production_volume,
               '\n Corporation tax rate:', self.tax_rate,
               '\n Levy rate:', self.levy_rate,
               '\n Projection horizon (months):', self.projection_time,
               '\n Target at year', self.target1_year, ':', self.target1_value,
-              '\n Target at year', self.target2_year, ':', self.target2_value, )
+              '\n Target at year', self.target2_year, ':', self.target2_value,
+              '\n -------------')
 
         # run_check()
 
