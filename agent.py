@@ -50,7 +50,7 @@ class PET_Manufacturer(Agent):
         self.bio_process_cost = np.float64(1.5)  # cost of process per unit of PET from bio routes, starts at 1.5
 
         self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
-        self.levy_rate = np.float64(0.2)  # current levy on production/emission/consumption/etc., starts at zero
+        self.levy_rate = np.float64(0.07)  # current levy on production/emission/consumption/etc., starts at zero
         self.emissions_rate = np.float64(0.1)  # units of emissions per unit of PET produced from non-bio route
 
         # define dependent variables
@@ -99,7 +99,7 @@ class PET_Manufacturer(Agent):
 
         # define variables for the targets against which projections are measured
         # and the times at which they happen
-        self.target1_value = np.float64(80)  # currently fixed values
+        self.target1_value = np.float64(60)  # currently fixed values
         self.target1_year = 5
 
         self.target2_value = np.float64(80)  # currently fixed values
@@ -312,7 +312,7 @@ class PET_Manufacturer(Agent):
         return
 
     def project_bio_feedstock_cost(self):
-        self.bio_feedstock_cost_projection.fill(3)
+        self.bio_feedstock_cost_projection.fill(2)
         return
 
     def project_bio_process_cost(self):
@@ -322,9 +322,8 @@ class PET_Manufacturer(Agent):
     def project_emissions(self):
         self.emissions_projection = np.multiply(
             self.production_projection, np.subtract(
-                np.ones(self.projection_time, self.proportion_bio_projection)
-            )
-        ) * self.emissions_rate
+                np.ones(self.projection_time), self.proportion_bio_projection)
+            ) * self.emissions_rate
         return
 
     def project_gross_profit(self):
