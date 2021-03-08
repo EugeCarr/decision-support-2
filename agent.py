@@ -41,17 +41,17 @@ class PET_Manufacturer(Agent):
 
         # define independent variables for current time
         self.production_volume = np.float64(1000)  # total PET production per annum, starts at 1000
-        self.unit_sale_price = np.float64(4)  # sale price of one unit of PET, starts at 4
+        self.unit_sale_price = np.float64(8)  # sale price of one unit of PET, starts at 4
         self.unit_feedstock_cost = np.float64(2)  # feedstock cost per unit of PET produced, starts at 2
         self.unit_process_cost = np.float64(1)  # cost of running process per unit of PET produced, starts at 1
 
         self.proportion_bio = np.float64(0)  # proportion of production from biological feedstocks
         self.bio_feedstock_cost = np.float64(2)  # bio feedstock cost per unit of PET produced, starts at 2
-        self.bio_process_cost = np.float64(1.5)  # cost of process per unit of PET from bio routes, starts at 1.5
+        self.bio_process_cost = np.float64(1.05)  # cost of process per unit of PET from bio routes, starts at 1.5
 
         self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
-        self.levy_rate = np.float64(0.07)  # current levy on production/emission/consumption/etc., starts at zero
-        self.emissions_rate = np.float64(0.1)  # units of emissions per unit of PET produced from non-bio route
+        self.levy_rate = np.float64(0.2)  # current levy on production/emission/consumption/etc., starts at zero
+        self.emissions_rate = np.float64(5)  # units of emissions per unit of PET produced from non-bio route
 
         # define dependent variables
         self.gross_profit = np.float64()  # profits prior to taxes and levies
@@ -96,13 +96,14 @@ class PET_Manufacturer(Agent):
         self.levy_history = np.zeros(history_length)
         self.net_profit_history = np.zeros(history_length)
         self.projection_met_history = np.zeros(history_length)
+        self.bio_target_history = np.zeros(history_length)
 
         # define variables for the targets against which projections are measured
         # and the times at which they happen
-        self.target1_value = np.float64(60)  # currently fixed values
+        self.target1_value = np.float64(130)  # currently fixed values
         self.target1_year = 5
 
-        self.target2_value = np.float64(80)  # currently fixed values
+        self.target2_value = np.float64(150)  # currently fixed values
         self.target2_year = 10
 
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
@@ -152,7 +153,7 @@ class PET_Manufacturer(Agent):
 
     def refresh_unit_sale_price(self):
         # unit sale price is given by a normal distribution
-        mean = float(4)
+        mean = float(6)
         std_dev = 0.01
         self.unit_sale_price = np.random.normal(mean, std_dev, None)
         return
@@ -197,7 +198,7 @@ class PET_Manufacturer(Agent):
 
     def refresh_bio_process_cost(self):
         # process cost is given by a normal distribution
-        mean = 1.5
+        mean = 1.05
         std_dev = 0.005
         self.bio_process_cost = np.random.normal(mean, std_dev, None)
         return
@@ -267,6 +268,7 @@ class PET_Manufacturer(Agent):
         self.levy_history[self.month] = self.levies_payable
         self.net_profit_history[self.month] = self.net_profit
         self.projection_met_history[self.month] = self.projection_met
+        self.bio_target_history[self.month] = self.proportion_bio_target
         return
 
     def update_current_state(self):
@@ -290,7 +292,7 @@ class PET_Manufacturer(Agent):
 
     def project_sale_price(self):
         # Calculate the projected PET sale prices
-        self.unit_sale_price_projection.fill(4)  # fixed value (mean of normal dist from self.refresh_unit_sale_price)
+        self.unit_sale_price_projection.fill(6)  # fixed value (mean of normal dist from self.refresh_unit_sale_price)
         return
 
     def project_feedstock_cost(self):
@@ -316,12 +318,13 @@ class PET_Manufacturer(Agent):
         return
 
     def project_bio_process_cost(self):
-        self.bio_process_cost_projection.fill(1.5)
+        self.bio_process_cost_projection.fill(1.05)
         return
 
     def project_emissions(self):
+        monthly_production_projection = self.production_projection / 12
         self.emissions_projection = np.multiply(
-            self.production_projection, np.subtract(
+            monthly_production_projection, np.subtract(
                 np.ones(self.projection_time), self.proportion_bio_projection)
             ) * self.emissions_rate
         return
