@@ -110,6 +110,7 @@ class PET_Manufacturer(Agent):
 
         self.invest_in_bio = False  # set to True if (further) investment in bio route is being made
         self.proportion_bio_target = np.float64(0)  # target value for the proportion of production via bio route
+        self.proportion_change_rate = np.float64(0.1/12)  # monthly change in proportion_bio that is possible
 
         # output initialisation state to console
         print(' INITIAL STATE \n - - - - - - -'
