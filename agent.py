@@ -46,7 +46,7 @@ class PET_Manufacturer(Agent):
         self.unit_process_cost = np.float64(1)  # cost of running process per unit of PET produced, starts at 1
 
         self.proportion_bio = np.float64(0)  # proportion of production from biological feedstocks
-        self.bio_feedstock_cost = np.float64(3)  # bio feedstock cost per unit of PET produced, starts at 3
+        self.bio_feedstock_cost = np.float64(2)  # bio feedstock cost per unit of PET produced, starts at 2
         self.bio_process_cost = np.float64(1.5)  # cost of process per unit of PET from bio routes, starts at 1.5
 
         self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
@@ -58,7 +58,7 @@ class PET_Manufacturer(Agent):
         self.tax_payable = np.float64()
         self.levies_payable = np.float64()
         self.net_profit = np.float64()  # monthly profit after tax and levies
-        self.projection_met = 0  # 1 or 0 depending on whether the next target will be met by current projection
+        self.projection_met = 1  # 1 or 0 depending on whether the next target will be met by current projection
         self.emissions = np.float64()  # emissions from manufacturing PET from fossil fuels
 
         self.projection_time = 120  # how many months into the future will be predicted?
@@ -102,7 +102,7 @@ class PET_Manufacturer(Agent):
         self.target1_value = np.float64(80)  # currently fixed values
         self.target1_year = 5
 
-        self.target2_value = np.float64(85)  # currently fixed values
+        self.target2_value = np.float64(80)  # currently fixed values
         self.target2_year = 10
 
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
@@ -110,7 +110,7 @@ class PET_Manufacturer(Agent):
 
         self.invest_in_bio = False  # set to True if (further) investment in bio route is being made
         self.proportion_bio_target = np.float64(0)  # target value for the proportion of production via bio route
-        self.proportion_change_rate = np.float64(0.1/12)  # monthly change in proportion_bio that is possible
+        self.proportion_change_rate = np.float64(0.1/12)  # greatest possible monthly change in self.proportion_bio
 
         # output initialisation state to console
         print(' INITIAL STATE \n - - - - - - -'
@@ -121,7 +121,7 @@ class PET_Manufacturer(Agent):
               '\n Target at year', self.target1_year, ':', self.target1_value,
               '\n Target at year', self.target2_year, ':', self.target2_value, )
 
-        run_check()
+        # run_check()
 
         return
 
@@ -173,11 +173,24 @@ class PET_Manufacturer(Agent):
         return
 
     def refresh_proportion_bio(self):
-        pass
+        # monthly change in bio proportion is either the amount to reach the target value, or else the maximum change
+        if self.invest_in_bio and self.proportion_bio != self.proportion_bio_target:
+            distance_from_target = self.proportion_bio_target - self.proportion_bio
+            if abs(distance_from_target) < self.proportion_change_rate:
+                self.proportion_bio = self.proportion_bio_target
+            elif distance_from_target > 0:
+                self.proportion_bio += self.proportion_change_rate
+            elif distance_from_target < 0:
+                self.proportion_bio -= self.proportion_change_rate
+            else:
+                pass
+        else:
+            pass
+        return
 
     def refresh_bio_feedstock_cost(self):
         # unit feedstock cost is given by a normal distribution
-        mean = float(3)
+        mean = float(2)
         std_dev = 0.01
         self.bio_feedstock_cost = np.random.normal(mean, std_dev, None)
         return
@@ -292,7 +305,10 @@ class PET_Manufacturer(Agent):
 
     def project_proportion_bio(self):
         # projection of the proportion from bio routes
-        self.proportion_bio_projection.fill(0)
+        # assumes target value will be reached after 1 year, with current proportion constant until that time
+        self.proportion_bio_projection.fill(self.proportion_bio_target)
+        for i in range(12):
+            self.proportion_bio_projection[i] = self.proportion_bio
         return
 
     def project_bio_feedstock_cost(self):
@@ -304,8 +320,11 @@ class PET_Manufacturer(Agent):
         return
 
     def project_emissions(self):
-        self.emissions_projection = np.multiply(self.production_projection,
-                                                self.proportion_bio_projection) * self.emissions_rate
+        self.emissions_projection = np.multiply(
+            self.production_projection, np.subtract(
+                np.ones(self.projection_time, self.proportion_bio_projection)
+            )
+        ) * self.emissions_rate
         return
 
     def project_gross_profit(self):
@@ -401,7 +420,16 @@ class PET_Manufacturer(Agent):
         return
 
     def investment_decision(self):
-        pass
+        # decision logic for increasing investment in biological process route
+        if self.projection_met == 0:
+            self.invest_in_bio = True
+            if self.proportion_bio_target <= 0.9:
+                self.proportion_bio_target += 0.1
+            else:
+                pass
+        else:
+            self.invest_in_bio = False
+        return
 
     def time_step(self):
         self.month += 1
