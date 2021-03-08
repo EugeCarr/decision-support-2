@@ -108,6 +108,9 @@ class PET_Manufacturer(Agent):
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
         # targets are defined
 
+        self.invest_in_bio = False  # set to True if (further) investment in bio route is being made
+        self.proportion_bio_target = np.float64(0)  # target value for the proportion of production via bio route
+
         # output initialisation state to console
         print(' INITIAL STATE \n - - - - - - -'
               '\n Annual production volume:', self.production_volume,
@@ -168,6 +171,9 @@ class PET_Manufacturer(Agent):
         self.unit_process_cost = np.random.normal(mean, std_dev, None)
         return
 
+    def refresh_proportion_bio(self):
+        pass
+
     def refresh_bio_feedstock_cost(self):
         # unit feedstock cost is given by a normal distribution
         mean = float(3)
@@ -188,6 +194,7 @@ class PET_Manufacturer(Agent):
         self.refresh_unit_sale_price()
         self.refresh_unit_feedstock_cost()
         self.refresh_unit_process_cost()
+        self.refresh_proportion_bio()
         self.refresh_bio_feedstock_cost()
         self.refresh_bio_process_cost()
         return
@@ -348,6 +355,7 @@ class PET_Manufacturer(Agent):
 
     def project_dependents(self):
         # calculate projections for dependent variables (i.e. must run after self.project_independents)
+        # order of operations for these methods may be important - CHECK
         self.project_gross_profit()
         self.project_emissions()
         self.project_tax_payable()
@@ -400,5 +408,6 @@ class PET_Manufacturer(Agent):
         if self.month % 12 == 0:
             self.new_projection()
             self.projection_check()
+            self.investment_decision()
         self.record_timestep()
         return
