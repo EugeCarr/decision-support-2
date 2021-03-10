@@ -41,13 +41,13 @@ class PET_Manufacturer(Agent):
 
         # define independent variables for current time
         self.production_volume = np.float64(1000)  # total PET production per annum, starts at 1000
-        self.unit_sale_price = np.float64(8)  # sale price of one unit of PET, starts at 4
-        self.unit_feedstock_cost = np.float64(2)  # feedstock cost per unit of PET produced, starts at 2
-        self.unit_process_cost = np.float64(1)  # cost of running process per unit of PET produced, starts at 1
+        self.unit_sale_price = np.float64()  # sale price of one unit of PET
+        self.unit_feedstock_cost = np.float64()  # feedstock cost per unit of PET produced
+        self.unit_process_cost = np.float64()  # cost of running process per unit of PET produced
 
         self.proportion_bio = np.float64(0)  # proportion of production from biological feedstocks
-        self.bio_feedstock_cost = np.float64(2)  # bio feedstock cost per unit of PET produced, starts at 2
-        self.bio_process_cost = np.float64(1.05)  # cost of process per unit of PET from bio routes, starts at 1.5
+        self.bio_feedstock_cost = np.float64()  # bio feedstock cost per unit of PET produced
+        self.bio_process_cost = np.float64()  # cost of process per unit of PET from bio routes, starts at 1.5
 
         self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
         self.levy_rate = np.float64(0.2)  # current levy on production/emission/consumption/etc., starts at zero
