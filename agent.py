@@ -103,7 +103,7 @@ class PET_Manufacturer(Agent):
 
         # define variables for the targets against which projections are measured
         # and the times at which they happen
-        self.target1_value = np.float64(1.4)  # currently fixed values
+        self.target1_value = np.float64(1.6)  # currently fixed values
         self.target1_year = 5
 
         self.target2_value = np.float64(1.6)  # currently fixed values
@@ -114,7 +114,7 @@ class PET_Manufacturer(Agent):
 
         self.invest_in_bio = False  # set to True if investment in bio route starts
         self.proportion_bio_target = np.float64(0)  # target value for the proportion of production via bio route
-        self.proportion_change_rate = np.float64(0.1 / 6)  # greatest possible monthly change in self.proportion_bio
+        self.proportion_change_rate = np.float64(0.1 / 15)  # greatest possible monthly change in self.proportion_bio
         self.implementation_delay = int(3)  # time delay between investment decision and movement of bio_proportion
         self.implementation_countdown = int(0)  # countdown to change of direction
         self.under_construction = False  # is change in bio capacity occurring?
@@ -322,11 +322,22 @@ class PET_Manufacturer(Agent):
         return
 
     def project_proportion_bio(self):
-        # projection of the proportion from bio routes
-        # assumes target value will be reached after 1 year, with current proportion constant until that time
+        # projection of proportion of production from bio routes
+        time_to_target = int(np.ceil((self.proportion_bio_target - self.proportion_bio) / self.proportion_change_rate)
+                             + self.implementation_countdown)
         self.proportion_bio_projection.fill(self.proportion_bio_target)
-        for i in range(12):
-            self.proportion_bio_projection[i] = self.proportion_bio
+
+        if time_to_target > 1:
+
+            for i in range(time_to_target - 1):
+                try:
+                    self.proportion_bio_projection[i] = self.proportion_bio + self.proportion_change_rate * (i + 1)
+                except IndexError:
+                    print('time to reach target bio proportion is longer than', self.projection_time, 'months')
+                    print('behaviour in these conditions is undefined. aborting simulation')
+                    raise SystemExit(0)
+        else:
+            pass
         return
 
     def project_bio_feedstock_cost(self):
@@ -342,7 +353,7 @@ class PET_Manufacturer(Agent):
         self.emissions_projection = np.multiply(
             monthly_production_projection, np.subtract(
                 np.ones(self.projection_time), self.proportion_bio_projection)
-            ) * self.emissions_rate
+        ) * self.emissions_rate
         return
 
     def project_gross_profit(self):
@@ -449,10 +460,15 @@ class PET_Manufacturer(Agent):
             if not self.invest_in_bio:
                 self.invest_in_bio = True
 
-            if self.proportion_bio_target <= 0.9:
+            while self.proportion_bio_target <= 0.9 and self.projection_met == 0:
+                self.implementation_countdown = self.implementation_delay
                 self.proportion_bio_target += 0.1
-                if self.implementation_countdown == 0 and not self.under_construction:
-                    self.implementation_countdown = self.implementation_delay
+                self.new_projection()
+                self.projection_check()
+                if self.proportion_bio_target == 1 and self.projection_met == 0:
+                    print('Month:', self.month, '\n next profitability target could not be met'
+                                                'at any bio proportion target')
+
             else:
                 pass
 
@@ -465,7 +481,6 @@ class PET_Manufacturer(Agent):
         self.month += 1
         if self.implementation_countdown > 0:
             self.implementation_countdown -= 1
-            print(self.implementation_countdown)
 
         self.update_current_state()
         if self.month % 12 == 0:
