@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     months = 120
 
-    simulate(months, table=False, plot=False)
+    simulate(months, table=True, plot=False)
 
     end = datetime.now()
     now = end.strftime("%d/%m/%Y %H:%M:%S")
