@@ -112,9 +112,12 @@ class PET_Manufacturer(Agent):
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
         # targets are defined
 
-        self.invest_in_bio = False  # set to True if (further) investment in bio route is being made
+        self.invest_in_bio = False  # set to True if investment in bio route starts
         self.proportion_bio_target = np.float64(0)  # target value for the proportion of production via bio route
-        self.proportion_change_rate = np.float64(0.1/12)  # greatest possible monthly change in self.proportion_bio
+        self.proportion_change_rate = np.float64(0.1 / 6)  # greatest possible monthly change in self.proportion_bio
+        self.implementation_delay = int(3)  # time delay between investment decision and movement of bio_proportion
+        self.implementation_countdown = int(0)  # countdown to change of direction
+        self.under_construction = False  # is change in bio capacity occurring?
 
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'
@@ -179,18 +182,22 @@ class PET_Manufacturer(Agent):
 
     def refresh_proportion_bio(self):
         # monthly change in bio proportion is either the amount to reach the target value, or else the maximum change
-        if self.invest_in_bio and self.proportion_bio != self.proportion_bio_target:
-            distance_from_target = self.proportion_bio_target - self.proportion_bio
-            if abs(distance_from_target) < self.proportion_change_rate:
-                self.proportion_bio = self.proportion_bio_target
-            elif distance_from_target > 0:
-                self.proportion_bio += self.proportion_change_rate
-            elif distance_from_target < 0:
-                self.proportion_bio -= self.proportion_change_rate
+        if self.invest_in_bio:
+            if self.implementation_countdown == 0 and self.proportion_bio != self.proportion_bio_target:
+                self.under_construction = True
+                distance_from_target = self.proportion_bio_target - self.proportion_bio
+                if abs(distance_from_target) < self.proportion_change_rate:
+                    self.proportion_bio = self.proportion_bio_target
+                elif distance_from_target > 0:
+                    self.proportion_bio += self.proportion_change_rate
+                elif distance_from_target < 0:
+                    self.proportion_bio -= self.proportion_change_rate
+                else:
+                    pass
             else:
                 pass
         else:
-            pass
+            self.under_construction = False
         return
 
     def refresh_bio_feedstock_cost(self):
@@ -436,18 +443,30 @@ class PET_Manufacturer(Agent):
 
     def investment_decision(self):
         # decision logic for increasing investment in biological process route
-        if self.projection_met == 0:
-            self.invest_in_bio = True
+        if self.projection_met == 1:
+            pass
+        elif self.projection_met == 0:
+            if not self.invest_in_bio:
+                self.invest_in_bio = True
+
             if self.proportion_bio_target <= 0.9:
                 self.proportion_bio_target += 0.1
+                if self.implementation_countdown == 0 and not self.under_construction:
+                    self.implementation_countdown = self.implementation_delay
             else:
                 pass
+
         else:
-            self.invest_in_bio = False
+            pass
+
         return
 
     def time_step(self):
         self.month += 1
+        if self.implementation_countdown > 0:
+            self.implementation_countdown -= 1
+            print(self.implementation_countdown)
+
         self.update_current_state()
         if self.month % 12 == 0:
             self.new_projection()
