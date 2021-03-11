@@ -59,6 +59,8 @@ class Regulator(Agent):
         # arbitrary value for now
         self.limit = np.float64(100)
         self.pol_table = pol
+        self.tax_rate = np.float64(0.19)
+        self.levy_rate = np.float64(5)
 
         return
 
@@ -75,12 +77,13 @@ class Regulator(Agent):
 
     def calc_environmental_damage(self):
         e_damage = 5 * self.emissions
+        # the number 5 is arbitrary. Haven't picked a value to multiply emissions by for the damage calc. may end up being 1
         if e_damage > self.limit:
-            self.decentivise()
+            self.punish()
 
         return
 
-    def decentivise(self):
+    def punish(self):
         if not self.changing:
             self.changing = True
             self.level_raise()
@@ -103,13 +106,29 @@ class Regulator(Agent):
     def change_level(self):
         if self.time_to_change == 0:
             self.level += 1
+            self.changing = False
         return
 
-    def get_tax_rate(self):
+    def calc_tax_rate(self):
         tax_rate = self.pol_table.level(self.level)[1]
+        self.tax_rate = tax_rate
+        return
 
-        return tax_rate
-
-    def get_levy_rate(self):
+    def calc_levy_rate(self):
         levy = self.pol_table.level(self.level)[2]
-        return levy
+        self.levy_rate = levy
+        return
+
+    def iterate_Regulator(self, emission_rate):
+        self.set_emissions()
+        self.compute_limit()
+        self.calc_environmental_damage()
+        self.retrieve_level()
+        self.calc_tax_rate()
+        self.calc_levy_rate()
+        return 
+    """To run this regulator
+    make a policy table by adding in levels in the format [threshold, tax rate, levy rate]
+    make the regulator with inputs notice period and the policy table
+    each iteration
+    give the regulator an emmision stat and run. A tax-rate and levy_rate will be given"""
