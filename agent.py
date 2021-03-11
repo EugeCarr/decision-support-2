@@ -103,7 +103,7 @@ class PET_Manufacturer(Agent):
 
         # define variables for the targets against which projections are measured
         # and the times at which they happen
-        self.target1_value = np.float64(1.6)  # currently fixed values
+        self.target1_value = np.float64(1.5)  # currently fixed values
         self.target1_year = 5
 
         self.target2_value = np.float64(1.6)  # currently fixed values
@@ -478,7 +478,6 @@ class PET_Manufacturer(Agent):
         return
 
     def time_step(self):
-        self.month += 1
         if self.implementation_countdown > 0:
             self.implementation_countdown -= 1
 
@@ -488,4 +487,5 @@ class PET_Manufacturer(Agent):
             self.projection_check()
             self.investment_decision()
         self.record_timestep()
+        self.month += 1
         return

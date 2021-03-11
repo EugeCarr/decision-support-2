@@ -10,18 +10,8 @@ def simulate(months, table=bool, plot=bool):
     # Initialise the manufacturer agent with all values for t = 0
     pet_manufacturer = agent.PET_Manufacturer('PET Manufacturer', months)
 
-    # starting values
-    pet_manufacturer.refresh_independents()
-    pet_manufacturer.calculate_dependents()
-
-    # make projections from t = 0
-    pet_manufacturer.new_projection()
-    pet_manufacturer.projection_check()
-
-    pet_manufacturer.record_timestep()
-
     # Run simulation for defined number of months
-    while pet_manufacturer.month < months - 1:
+    while pet_manufacturer.month < months:
         pet_manufacturer.time_step()
 
     # data output & analysis
