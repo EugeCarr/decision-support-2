@@ -1,8 +1,5 @@
 from agent import Agent
 import numpy as np
-import copy
-from tabulate import tabulate
-from matplotlib import pyplot as plt
 from operator import itemgetter
 
 
@@ -56,12 +53,14 @@ class Regulator(Agent):
         self.level = 0
         self.changing = bool(False)
         self.time_to_change = 0
-        self.emissions = np.float64(0)
+        self.emissions = np.float64()
         # arbitrary value for now
-        self.limit = np.float64(100)
+        self.limit = np.float64()
         self.pol_table = pol
-        self.tax_rate = np.float64(0.19)
-        self.levy_rate = np.float64(5)
+        self.tax_rate = np.float64()
+        self.levy_rate = np.float64()
+
+        self.max_level_reached = False
 
         return
 
@@ -71,9 +70,19 @@ class Regulator(Agent):
         return
 
     def compute_limit(self):
-        next_limit = self.pol_table.level(self.level + 1)
+        if self.level < len(self.pol_table.policy) - 1:
+            self.limit = self.pol_table.level(self.level + 1)[0]
+        # if there is another level above, go to that
+        # else if this is the first time reaching the maximum set the limit to infinity
+        elif not self.max_level_reached:
+            self.limit = np.inf
+            print('Highest level of emissions regulation reached:', self.level, self.levy_rate)
+            self.max_level_reached = True
+        else:
+            pass
+
         # gets the list of limit, tax, levy from the policy table
-        self.limit = next_limit[0]
+
         return
 
     def calc_environmental_damage(self):
