@@ -30,6 +30,8 @@ def simulate(months, table=bool, plot=bool):
         pet_manufacturer.time_step()
         regulator.iterate_regulator(pet_manufacturer.emissions)
 
+
+
         month += 1
 
     # data output & analysis

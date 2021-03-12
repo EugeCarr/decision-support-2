@@ -6,44 +6,43 @@ from operator import itemgetter
 class Policy(list):
     def __init__(self):
         super().__init__()
-        self.policy = []
         return
 
     def add_level(self, new_level, print_new_policy=False):
         assert type(new_level) == list, ('level input must be a list not:', type(new_level))
         assert len(new_level) == 3, ('level input must be length 3 not:', len(new_level))
 
-        self.policy.append(new_level)
+        self.append(new_level)
 
-        sorted(self.policy, key=itemgetter(0))
+        sorted(self, key=itemgetter(0))
 
         print(' Policy updated')
         if print_new_policy:
             print('New policy levels are:')
-            for policy_level in self.policy:
-                print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
+            for policy_level in self:
+                print('Level:', self.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
                       '--Levy rate', policy_level[2])
         return
 
     def remove_level(self, ind, print_new_policy=False):
         assert type(ind) == int, ('should be an integer input not:', type(ind))
-        assert ind < len(self.policy), ('deleted level should exist. There are only', len(self.policy), 'levels. Not',
+        assert ind < len(self), ('deleted level should exist. There are only', len(self), 'levels. Not',
                                         ind)
-        del self.policy[ind]
+        del self[ind]
         print('Successfully deleted level', ind)
 
         if print_new_policy:
             print('New policy levels are:')
-            for policy_level in self.policy:
-                print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
+            for policy_level in self:
+                print('Level:', self.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
                       '--Levy rate', policy_level[2])
         return
 
     def level(self, lev):
         assert type(lev) == int, ('should be an integer input not:', type(lev))
-        assert lev < len(self.policy), ('level', lev, 'does not exist')
+        assert lev < len(self), ('level', lev, 'does not exist')
 
-        lev_copy = self.policy[lev][:]
+        lev_copy = self[lev][:]
         # makes a copy of the level requested
         return lev_copy
 
@@ -68,8 +67,8 @@ class Regulator(Agent):
         self.max_level_reached = False
 
         print(' POLICY DEFINITION \n -------------')
-        for policy_level in self.pol_table.policy:
-            print(' Level:', self.pol_table.policy.index(policy_level), '--Limit', policy_level[0],
+        for policy_level in self.pol_table:
+            print(' Level:', self.pol_table.index(policy_level), '--Limit', policy_level[0],
                   '--Tax rate', policy_level[1], '--Levy rate', policy_level[2])
         print(' -------------')
         return
@@ -80,7 +79,7 @@ class Regulator(Agent):
         return
 
     def compute_limit(self):
-        if self.level < len(self.pol_table.policy) - 1:
+        if self.level < len(self.pol_table) - 1:
             self.limit = self.pol_table.level(self.level + 1)[0]
         # if there is another level above, go to that
         # else if this is the first time reaching the maximum set the limit to infinity
