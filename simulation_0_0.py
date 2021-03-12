@@ -1,5 +1,7 @@
 """This file defines simulation parameters for the first build of the model"""
 import agent
+from regulator import Regulator
+from regulator import Policy
 import numpy as np
 import copy
 from tabulate import tabulate
@@ -7,8 +9,13 @@ from matplotlib import pyplot as plt
 
 
 def simulate(months, table=bool, plot=bool):
-    # Initialise the manufacturer agent with all values for t = 0
+    # create agents and specify their parameters
     pet_manufacturer = agent.PET_Manufacturer('PET Manufacturer', months)
+
+    policy = Policy()
+    policy.add_level([])
+
+    regulator = Regulator('Regulator', months, int(12), policy)
 
     # Run simulation for defined number of months
     while pet_manufacturer.month < months:

@@ -6,8 +6,9 @@ from matplotlib import pyplot as plt
 from operator import itemgetter
 
 
-class Policy(List):
+class Policy(list):
     def __init__(self):
+        super().__init__()
         self.policy = []
         return
 
@@ -15,29 +16,29 @@ class Policy(List):
         assert type(new_level) == list, ('level input must be a list not:', type(new_level))
         assert len(new_level) == 3, ('level input must be length 3 not:', len(new_level))
 
-        sel.policy.append(new_level)
+        self.policy.append(new_level)
 
         sorted(self.policy, key=itemgetter(0))
 
         for policy_level in self.policy:
-            print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1], \
+            print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
                   '--Levy rate', policy_level[2])
         return
 
     def remove_level(self, ind):
         assert type(ind) == int, ('should be an integer input not:', type(ind))
-        assert ind < len(self.policy), ('deleted level should exist. There are only', len(self.policy), 'levels. Not', \
+        assert ind < len(self.policy), ('deleted level should exist. There are only', len(self.policy), 'levels. Not',
                                         ind)
         del self.policy[ind]
         print('Successfully deleted level', ind)
 
         for policy_level in self.policy:
-            print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1], \
+            print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
                   '--Levy rate', policy_level[2])
         return
 
     def level(self, lev):
-        assert type(lev) == int, ('should be an integer input not:', type(ind))
+        assert type(lev) == int, ('should be an integer input not:', type(lev))
         assert lev < len(self.policy), ('level', lev, 'does not exist')
 
         lev_copy = self.policy[lev][:]
@@ -77,7 +78,8 @@ class Regulator(Agent):
 
     def calc_environmental_damage(self):
         e_damage = 5 * self.emissions
-        # the number 5 is arbitrary. Haven't picked a value to multiply emissions by for the damage calc. may end up being 1
+        # the number 5 is arbitrary. Haven't picked a value to multiply emissions by for the damage calc. may end up
+        # being 1
         if e_damage > self.limit:
             self.punish()
 
@@ -119,16 +121,17 @@ class Regulator(Agent):
         self.levy_rate = levy
         return
 
-    def iterate_Regulator(self, emission_rate):
-        self.set_emissions()
+    def iterate_regulator(self, emission_rate):
+        self.set_emissions(emission_rate)
         self.compute_limit()
         self.calc_environmental_damage()
         self.retrieve_level()
         self.calc_tax_rate()
         self.calc_levy_rate()
-        return 
+        return
+
     """To run this regulator
     make a policy table by adding in levels in the format [threshold, tax rate, levy rate]
     make the regulator with inputs notice period and the policy table
     each iteration
-    give the regulator an emmision stat and run. A tax-rate and levy_rate will be given"""
+    give the regulator an emission stat and run. A tax-rate and levy_rate will be given"""
