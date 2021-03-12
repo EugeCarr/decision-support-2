@@ -27,6 +27,7 @@ class Agent(object):
         assert type(sim_time) == int, ('sim_time must be an integer. input value is a', type(sim_time))
         assert sim_time > 0, 'sim_time must be greater than zero'
         self.name = name
+        self.month = int(0)
 
         print(' ================================ \n', self.name, 'created \n ================================')
         return
@@ -37,7 +38,6 @@ class PET_Manufacturer(Agent):
     def __init__(self, name, sim_time):
         super().__init__(name, sim_time)
 
-        self.month = int(0)  # current month which will be incremented at each time step
 
         # define independent variables for current time
         self.production_volume = np.float64(1000)  # total PET production per annum, starts at 1000
@@ -503,5 +503,4 @@ class PET_Manufacturer(Agent):
             self.projection_check()
             self.investment_decision()
         self.record_timestep()
-        self.month += 1
         return

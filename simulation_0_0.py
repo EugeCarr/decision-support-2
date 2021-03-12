@@ -9,6 +9,8 @@ from matplotlib import pyplot as plt
 
 def simulate(months, table=bool, plot=bool):
     # create agents and specify their parameters
+    month = int(0)
+
     pet_manufacturer = agent.PET_Manufacturer('PET Manufacturer', months)
 
     policy = Policy()
@@ -21,9 +23,14 @@ def simulate(months, table=bool, plot=bool):
     regulator = Regulator('Regulator', months, notice_period, policy)
 
     # Run simulation for defined number of months
-    while pet_manufacturer.month < months:
+    while month < months:
+        pet_manufacturer.month = month
+        regulator.month = month
+
         pet_manufacturer.time_step()
         regulator.iterate_regulator(pet_manufacturer.emissions)
+
+        month += 1
 
     # data output & analysis
     t = np.arange(0, months, 1)
