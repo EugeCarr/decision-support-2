@@ -9,7 +9,7 @@ class Policy(list):
         self.policy = []
         return
 
-    def add_level(self, new_level):
+    def add_level(self, new_level, print_new_policy=False):
         assert type(new_level) == list, ('level input must be a list not:', type(new_level))
         assert len(new_level) == 3, ('level input must be length 3 not:', len(new_level))
 
@@ -17,21 +17,26 @@ class Policy(list):
 
         sorted(self.policy, key=itemgetter(0))
 
-        for policy_level in self.policy:
-            print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
-                  '--Levy rate', policy_level[2])
+        print(' Policy updated')
+        if print_new_policy:
+            print('New policy levels are:')
+            for policy_level in self.policy:
+                print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
+                      '--Levy rate', policy_level[2])
         return
 
-    def remove_level(self, ind):
+    def remove_level(self, ind, print_new_policy=False):
         assert type(ind) == int, ('should be an integer input not:', type(ind))
         assert ind < len(self.policy), ('deleted level should exist. There are only', len(self.policy), 'levels. Not',
                                         ind)
         del self.policy[ind]
         print('Successfully deleted level', ind)
 
-        for policy_level in self.policy:
-            print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
-                  '--Levy rate', policy_level[2])
+        if print_new_policy:
+            print('New policy levels are:')
+            for policy_level in self.policy:
+                print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
+                      '--Levy rate', policy_level[2])
         return
 
     def level(self, lev):
@@ -62,6 +67,11 @@ class Regulator(Agent):
 
         self.max_level_reached = False
 
+        print(' POLICY DEFINITION \n -------------')
+        for policy_level in self.pol_table.policy:
+            print(' Level:', self.pol_table.policy.index(policy_level), '--Limit', policy_level[0],
+                  '--Tax rate', policy_level[1], '--Levy rate', policy_level[2])
+        print(' -------------')
         return
 
     def set_emissions(self, new_emissions):

@@ -28,7 +28,7 @@ class Agent(object):
         assert sim_time > 0, 'sim_time must be greater than zero'
         self.name = name
 
-        print(' Object', self.name, 'created \n ================================')
+        print(' ================================ \n', self.name, 'created \n ================================')
         return
 
 
@@ -80,8 +80,8 @@ class PET_Manufacturer(Agent):
         self.net_profit_projection = np.zeros(self.projection_time)
         self.profitability_projection = np.zeros(self.projection_time)
 
-        self.tax_rate_projection = np.ones(self.projection_time) * self.tax_rate
-        self.levy_projection = np.ones(self.projection_time) * self.levy_rate
+        self.tax_rate_projection = np.zeros(self.projection_time)
+        self.levy_projection = np.zeros(self.projection_time)
 
         # define arrays to store records
         history_length = sim_time
@@ -122,8 +122,6 @@ class PET_Manufacturer(Agent):
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'
               '\n Annual production volume:', self.production_volume,
-              '\n Corporation tax rate:', self.tax_rate,
-              '\n Levy rate:', self.levy_rate,
               '\n Projection horizon (months):', self.projection_time,
               '\n Target at year', self.target1_year, ':', self.target1_value,
               '\n Target at year', self.target2_year, ':', self.target2_value,
@@ -214,6 +212,12 @@ class PET_Manufacturer(Agent):
         self.bio_process_cost = np.random.normal(mean, std_dev, None)
         return
 
+    def refresh_tax_rate(self):
+        pass
+
+    def refresh_levy_rate(self):
+        pass
+
     def refresh_independents(self):
         # calculate new values for all variables
         self.refresh_production_volume()
@@ -223,6 +227,8 @@ class PET_Manufacturer(Agent):
         self.refresh_proportion_bio()
         self.refresh_bio_feedstock_cost()
         self.refresh_bio_process_cost()
+        self.refresh_tax_rate()
+        self.refresh_levy_rate()
         return
 
     # endregion
@@ -376,6 +382,14 @@ class PET_Manufacturer(Agent):
         self.gross_profit_projection = np.subtract(revenue_projection, total_cost_projection)
         return
 
+    def project_tax_rate(self):
+        self.tax_rate_projection = np.ones(self.projection_time) * self.tax_rate
+        return
+
+    def project_levy_rate(self):
+        self.levy_projection = np.ones(self.projection_time) * self.levy_rate
+        return
+
     def project_tax_payable(self):
         self.tax_payable_projection = np.multiply(self.gross_profit_projection, self.tax_rate_projection)
         return
@@ -403,6 +417,8 @@ class PET_Manufacturer(Agent):
         self.project_proportion_bio()
         self.project_bio_feedstock_cost()
         self.project_bio_process_cost()
+        self.project_levy_rate()
+        self.project_tax_rate()
         return
 
     def project_dependents(self):

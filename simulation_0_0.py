@@ -3,7 +3,6 @@ import agent
 from regulator import Regulator
 from regulator import Policy
 import numpy as np
-import copy
 from tabulate import tabulate
 from matplotlib import pyplot as plt
 
@@ -15,18 +14,16 @@ def simulate(months, table=bool, plot=bool):
     policy = Policy()
     policy.add_level([1900, 0.19, 0.2])
     policy.add_level([2000, 0.19, 0.225])
-    # policy.add_level([2500, 0.19, 0.25])
+    policy.add_level([2100, 0.19, 0.25])
 
-    regulator = Regulator('Regulator', months, int(12), policy)
+    notice_period = int(12)
 
-    emissions = np.float64()  # monthly emissions from pet manufacturer for handling by regulator
+    regulator = Regulator('Regulator', months, notice_period, policy)
 
     # Run simulation for defined number of months
     while pet_manufacturer.month < months:
         pet_manufacturer.time_step()
-        emissions = pet_manufacturer.emissions
-        regulator.iterate_regulator(emissions)
-        print(pet_manufacturer.month, regulator.level, regulator.levy_rate)
+        regulator.iterate_regulator(pet_manufacturer.emissions)
 
     # data output & analysis
     t = np.arange(0, months, 1)
