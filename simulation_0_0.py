@@ -16,7 +16,7 @@ def simulate(months, table=bool, plot=bool):
     policy = Policy()
     policy.add_level([1900, 0.19, 0.2])
     policy.add_level([2000, 0.19, 0.225])
-    policy.add_level([2100, 0.19, 0.25])
+    policy.add_level([2050, 0.19, 0.25])
 
     notice_period = int(12)
 
@@ -24,11 +24,27 @@ def simulate(months, table=bool, plot=bool):
 
     # Run simulation for defined number of months
     while month < months:
+        # advance time counter in each agent
         pet_manufacturer.month = month
         regulator.month = month
 
+        # execute standard monthly routines
         pet_manufacturer.time_step()
         regulator.iterate_regulator(pet_manufacturer.emissions)
+
+        # if the regulator rate has just changed (resulting in mismatch between agents) then update it
+        if pet_manufacturer.levy_rate != regulator.levy_rate:
+            pet_manufacturer.levy_rate = regulator.levy_rate
+            pet_manufacturer.time_to_levy_change = regulator.time_to_change
+            pet_manufacturer.levy_rate_changing = False
+
+        # if a change in the levy rate is approaching, tell the pet_manufacturer
+        if regulator.changing:
+            pet_manufacturer.levy_rate_changing = True
+            pet_manufacturer.time_to_levy_change = regulator.time_to_change
+            pet_manufacturer.future_levy_rate = regulator.pol_table[regulator.level + 1][2]
+        else:
+            pass
 
         month += 1
 
@@ -51,7 +67,7 @@ def simulate(months, table=bool, plot=bool):
         ax1.plot(x, y)
 
         ax1.set_xlabel('Month')
-        ax1.set_ylabel('bio proportion')
+        ax1.set_ylabel('Emissions')
 
         fig.tight_layout()
         plt.show()

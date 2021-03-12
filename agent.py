@@ -48,12 +48,12 @@ class PET_Manufacturer(Agent):
         self.bio_feedstock_cost = np.float64()  # bio feedstock cost per unit of PET produced
         self.bio_process_cost = np.float64()  # cost of process per unit of PET from bio routes, starts at 1.5
 
-        self.tax_rate = np.float64()  # current tax on profits, starts at 19%
-        self.levy_rate = np.float64()  # current levy on production/emission/consumption/etc., starts at zero
+        self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
+        self.levy_rate = np.float64(0.2)  # current levy on production/emission/consumption/etc.
         self.emissions_rate = np.float64(5)  # units of emissions per unit of PET produced from non-bio route
 
         self.levy_rate_changing = False
-        self.time_to_rate_change = int()
+        self.time_to_levy_change = int()
         self.future_levy_rate = np.float64()
 
         # define dependent variables
@@ -109,7 +109,7 @@ class PET_Manufacturer(Agent):
         self.target1_value = np.float64(1.5)  # currently fixed values
         self.target1_year = 5
 
-        self.target2_value = np.float64(1.6)  # currently fixed values
+        self.target2_value = np.float64(1.5)  # currently fixed values
         self.target2_year = 10
 
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
@@ -394,7 +394,7 @@ class PET_Manufacturer(Agent):
             self.levy_projection.fill(self.levy_rate)
         else:
             self.levy_projection.fill(self.future_levy_rate)
-            for i in range(self.time_to_rate_change):
+            for i in range(self.time_to_levy_change):
                 self.levy_projection[i] = self.levy_rate
         return
 
