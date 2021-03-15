@@ -22,11 +22,13 @@ def run_check():
 
 
 class Parameter(object):
-    def __init__(self, history_time=120, projection_time=120, init=0):
+    def __init__(self, fun, history_time=120, projection_time=120, init=0):
         assert type(history_time) == int
         assert history_time > 0
         assert type(projection_time) == int
         assert projection_time > 0
+
+        self.fun = fun
 
         self.value = np.float64(init)
 
@@ -35,20 +37,13 @@ class Parameter(object):
 
         return
 
-    def record(self, time):
-        self.history[time] = self.value
-        return
-
-
-class Parameter_Func(Parameter):
-    def __init__(self, fun, history_time=120, projection_time=120, init=0):
-        super().__init__(history_time, projection_time, init)
-        self.fun = fun
-        return
-
     def update(self, agent):
         assert isinstance(agent, Agent)
         self.value = self.fun(agent)
+        return
+
+    def record(self, time):
+        self.history[time] = self.value
         return
 
 
@@ -141,6 +136,45 @@ def proportion_bio(agent):
     return val
 
 
+def emissions(agent):
+    fossil_production = agent.production_volume.value / 12 * (1 - agent.proportion_bio.value)
+    val = fossil_production * agent.emissions_rate
+    return val
+
+
+def levies_payable(agent):
+    """This will calculate the levies payable on production/consumption/emission, once they are defined"""
+    val = agent.levy_rate * agent.emissions.value
+    return val
+
+
+def gross_profit(agent):
+    production_in_month = agent.production_volume.value / 12
+    revenue = production_in_month * agent.unit_sale_price.value
+    costs = (production_in_month * ((1 - agent.proportion_bio.value) *
+                                    (agent.unit_feedstock_cost.value + agent.unit_process_cost.value) +
+                                    agent.proportion_bio.value *
+                                    (agent.bio_feedstock_cost.value + agent.bio_process_cost.value))
+             + agent.levies_payable.value)
+    val = revenue - costs
+    return val
+
+
+def tax_payable(agent):
+    val = agent.gross_profit.value * agent.tax_rate
+    return val
+
+
+def net_profit(agent):
+    val = agent.gross_profit.value - agent.tax_payable.value
+    return val
+
+
+def profitability(agent):
+    val = agent.net_profit.value / (agent.production_volume.value / 12)
+    return val
+
+
 class Agent(object):
     def __init__(self, name, sim_time):
         assert type(name) == str, ('name must be a string. input value is a', type(name))
@@ -159,16 +193,18 @@ class PET_Manufacturer(Agent):
         super().__init__(name, sim_time)
 
         # define independent variables for current time
-        self.production_volume = Parameter_Func(production_volume, init=1000)
+        self.production_volume = Parameter(production_volume, init=1000)
         # total PET production per annum, starts at 1000
-        self.unit_sale_price = Parameter_Func(unit_sale_price)  # sale price of one unit of PET
-        self.unit_feedstock_cost = Parameter_Func(unit_feedstock_cost)  # feedstock cost per unit of PET produced
-        self.unit_process_cost = Parameter_Func(unit_process_cost)  # cost of running process per unit of PET produced
+        self.unit_sale_price = Parameter(unit_sale_price)  # sale price of one unit of PET
+        self.unit_feedstock_cost = Parameter(unit_feedstock_cost)  # feedstock cost per unit of PET produced
+        self.unit_process_cost = Parameter(unit_process_cost)  # cost of running process per unit of PET produced
 
-        self.bio_feedstock_cost = Parameter_Func(bio_feedstock_cost)  # bio feedstock cost per unit of PET produced
-        self.bio_process_cost = Parameter_Func(bio_process_cost)  # cost of process per unit of PET from bio routes, starts at 1.5
-        self.proportion_bio = Parameter_Func(proportion_bio)  # proportion of production from biological feedstocks
+        self.bio_feedstock_cost = Parameter(bio_feedstock_cost)  # bio feedstock cost per unit of PET produced
+        self.bio_process_cost = Parameter(
+            bio_process_cost)  # cost of process per unit of PET from bio routes, starts at 1.5
+        self.proportion_bio = Parameter(proportion_bio)  # proportion of production from biological feedstocks
 
+        # list of all independent variables, listed in the order in which they must be computed (if it matters at all)
         self.independent_variables = [
             self.production_volume,
             self.unit_sale_price,
@@ -180,18 +216,19 @@ class PET_Manufacturer(Agent):
         ]
 
         # define dependent variables
-        self.gross_profit = Parameter()  # profits prior to taxes and levies
-        self.emissions = Parameter()  # emissions from manufacturing PET from fossil fuels
-        self.tax_payable = Parameter()
-        self.levies_payable = Parameter()
-        self.net_profit = Parameter()  # monthly profit after tax and levies
-        self.profitability = Parameter()  # profitability (net profit per unit production)
+        self.gross_profit = Parameter(gross_profit)  # profits prior to taxes and levies
+        self.emissions = Parameter(emissions)  # emissions from manufacturing PET from fossil fuels
+        self.tax_payable = Parameter(tax_payable)
+        self.levies_payable = Parameter(levies_payable)
+        self.net_profit = Parameter(net_profit)  # monthly profit after tax and levies
+        self.profitability = Parameter(profitability)  # profitability (net profit per unit production)
 
+        # list of all parametrised dependent variables, listed in the order in which they must be computed
         self.dependent_variables = [
-            self.gross_profit,
             self.emissions,
-            self.tax_payable,
             self.levies_payable,
+            self.gross_profit,
+            self.tax_payable,
             self.net_profit,
             self.profitability
         ]
@@ -243,66 +280,17 @@ class PET_Manufacturer(Agent):
 
         return
 
-    # region -- methods to calculate values at the current time for each independent variable
     def update_independent_variables(self):
-        # calculate new values for all variables
+        # calculate new values for all independent variables
         for parameter in self.independent_variables:
             parameter.update(self)
 
-        # self.production_volume.update(self)
-        # self.unit_sale_price.update(self)
-        # self.unit_feedstock_cost.update(self)
-        # self.unit_process_cost.update(self)
-        # self.bio_feedstock_cost.update(self)
-        # self.bio_process_cost.update(self)
-        # self.proportion_bio.update(self)
         return
 
-    # endregion
-
-    # region -- methods for dependent variables
-    def calculate_emissions(self):
-        fossil_production = self.production_volume.value / 12 * (1 - self.proportion_bio.value)
-        self.emissions.value = fossil_production * self.emissions_rate
+    def update_dependent_variables(self):
+        for parameter in self.dependent_variables:
+            parameter.update(self)
         return
-
-    def calculate_levies_payable(self):
-        """This will calculate the levies payable on production/consumption/emission, once they are defined"""
-        self.levies_payable.value = self.levy_rate * self.emissions.value
-        return
-
-    def calculate_gross_profit(self):
-        production_in_month = self.production_volume.value / 12
-        revenue = production_in_month * self.unit_sale_price.value
-        costs = (production_in_month * ((1 - self.proportion_bio.value) *
-                                        (self.unit_feedstock_cost.value + self.unit_process_cost.value) +
-                                        self.proportion_bio.value *
-                                        (self.bio_feedstock_cost.value + self.bio_process_cost.value))
-                 + self.levies_payable.value)
-        self.gross_profit.value = revenue - costs
-        return
-
-    def calculate_tax_payable(self):
-        self.tax_payable.value = self.gross_profit.value * self.tax_rate
-        return
-
-    def calculate_net_profit(self):
-        self.net_profit.value = self.gross_profit.value - self.tax_payable.value
-        return
-
-    def calculate_profitability(self):
-        self.profitability.value = self.net_profit.value / (self.production_volume.value / 12)
-
-    def calculate_dependents(self):
-        self.calculate_emissions()
-        self.calculate_levies_payable()
-        self.calculate_gross_profit()
-        self.calculate_tax_payable()
-        self.calculate_net_profit()
-        self.calculate_profitability()
-        return
-
-    # endregion
 
     def record_timestep(self):
         # method to write current variables (independent and dependent) to records
@@ -316,7 +304,7 @@ class PET_Manufacturer(Agent):
     def update_current_state(self):
         # methods to be called every time the month is advanced
         self.update_independent_variables()
-        self.calculate_dependents()
+        self.update_dependent_variables()
         return
 
     # region -- methods for making projections into the future
