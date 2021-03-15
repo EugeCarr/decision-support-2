@@ -40,71 +40,6 @@ class Parameter(object):
         return
 
 
-class Parameter_Func(Parameter):
-    def __init__(self, name, fun, history_time=120, projection_time=120, init=0):
-        super().__init__(history_time, projection_time, init)
-        assert type(name) == str
-
-        self.name = name
-        self.fun = fun
-        return
-
-    def calc(self, **kwargs):
-        self.value = self.fun(**kwargs)
-        return
-
-
-def production_volume(**kwargs):
-    # production volume is defined by growth rates in 2 periods
-    month = kwargs['month']
-    volume = kwargs['production_volume']
-
-    sim_period_0 = 5  # end year for first simulation period
-    sim_period_0_months = sim_period_0 * 12  # end month for first simulation period
-    growth_rate_0 = 1.02  # YoY growth rate for the first simulation period, expressed as a ratio
-    growth_rate_0_monthly = np.power(growth_rate_0, 1 / 12)  # annual growth rate changed to month-on-month
-
-    sim_period_1 = 10  # end year for second simulation period
-    sim_period_1_months = sim_period_1 * 12  # end month for second simulation period
-    growth_rate_1 = 1.03  # YoY growth rate for the second simulation period, expressed as a ratio
-    growth_rate_1_monthly = np.power(growth_rate_1, 1 / 12)  # annual growth rate changed to month-on-month
-
-    if month <= sim_period_0_months:
-        volume = volume * growth_rate_0_monthly
-
-    elif month <= sim_period_1_months:
-        volume = volume * growth_rate_1_monthly
-
-    else:
-        raise ValueError('production growth not defined for month', month)
-
-    return volume
-
-
-def unit_process_cost(**kwargs):
-    volume = kwargs['production_volume']
-    mean = 2.8576 / np.power(volume, 0.152)
-    std_dev = 0.005
-    cost = np.random.normal(mean, std_dev, None)
-    return cost
-
-
-def unit_sale_price(**kwargs):
-    # unit sale price is given by a normal distribution
-    mean = float(6)
-    std_dev = 0.01
-    price = np.random.normal(mean, std_dev, None)
-    return price
-
-
-def unit_feedstock_cost(**kwargs):
-    # unit feedstock cost is given by a normal distribution
-    mean = float(2)
-    std_dev = 0.01
-    cost = np.random.normal(mean, std_dev, None)
-    return cost
-
-
 class Agent(object):
     def __init__(self, name, sim_time):
         assert type(name) == str, ('name must be a string. input value is a', type(name))
@@ -123,13 +58,10 @@ class PET_Manufacturer(Agent):
         super().__init__(name, sim_time)
 
         # define independent variables for current time
-        self.production_volume = Parameter_Func('production_volume', production_volume, init=1000)
-        # total PET production per annum, starts at 1000
-        self.unit_sale_price = Parameter_Func('unit_sale_price', unit_sale_price)  # sale price of one unit of PET
-        self.unit_feedstock_cost = Parameter_Func('unit_feedstock_cost', unit_feedstock_cost)
-        # feedstock cost per unit of PET produced
-        self.unit_process_cost = Parameter_Func('unit_process_cost', unit_process_cost)
-        # cost of running process per unit of PET produced
+        self.production_volume = Parameter(init=1000)  # total PET production per annum, starts at 1000
+        self.unit_sale_price = Parameter()  # sale price of one unit of PET
+        self.unit_feedstock_cost = Parameter()  # feedstock cost per unit of PET produced
+        self.unit_process_cost = Parameter()  # cost of running process per unit of PET produced
 
         self.proportion_bio = Parameter()  # proportion of production from biological feedstocks
         self.bio_feedstock_cost = Parameter()  # bio feedstock cost per unit of PET produced
@@ -162,8 +94,6 @@ class PET_Manufacturer(Agent):
             self.profitability
         ]
 
-        self.dict = {}
-
         # now define other parameters which will not be recorded or projected
         self.projection_time = 120  # how many months into the future will be predicted?
 
@@ -194,12 +124,11 @@ class PET_Manufacturer(Agent):
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
         # targets are defined
 
+        self.invest_in_bio = False  # set to True if investment in bio route starts
         self.proportion_change_rate = np.float64(0.1 / 15)  # greatest possible monthly change in self.proportion_bio
         self.implementation_delay = int(3)  # time delay between investment decision and movement of bio_proportion
         self.implementation_countdown = int(0)  # countdown to change of direction
         self.under_construction = False  # is change in bio capacity occurring?
-
-        self.build_dictionary()
 
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'
@@ -213,27 +142,58 @@ class PET_Manufacturer(Agent):
 
         return
 
-    def build_dictionary(self):
-        self.dict['month'] = self.month
-        self.dict[self.production_volume.name] = self.production_volume.value
-        self.dict[self.unit_process_cost.name] = self.unit_process_cost.value
-        self.dict[self.unit_sale_price.name] = self.unit_sale_price.value
-        self.dict[self.unit_feedstock_cost.name] = self.unit_feedstock_cost.value
-        return
-
-    def update_dict(self, parameter):
-        assert isinstance(parameter, Parameter_Func)
-        key = parameter.name
-        value = parameter.value
-        if self.dict[key] != value:
-            self.dict[key] = value
-        return
-
     # region -- methods to calculate values at the current time for each independent variable
+    def refresh_production_volume(self):
+        # production volume is defined by growth rates in 2 periods
+
+        sim_period_0 = 5  # end year for first simulation period
+        sim_period_0_months = sim_period_0 * 12  # end month for first simulation period
+        growth_rate_0 = 1.02  # YoY growth rate for the first simulation period, expressed as a ratio
+        growth_rate_0_monthly = np.power(growth_rate_0, 1 / 12)  # annual growth rate changed to month-on-month
+
+        sim_period_1 = 10  # end year for second simulation period
+        sim_period_1_months = sim_period_1 * 12  # end month for second simulation period
+        growth_rate_1 = 1.03  # YoY growth rate for the second simulation period, expressed as a ratio
+        growth_rate_1_monthly = np.power(growth_rate_1, 1 / 12)  # annual growth rate changed to month-on-month
+
+        if self.month <= sim_period_0_months:
+            self.production_volume.value = self.production_volume.value * growth_rate_0_monthly
+
+        elif self.month <= sim_period_1_months:
+            self.production_volume.value = self.production_volume.value * growth_rate_1_monthly
+
+        else:
+            raise ValueError('production growth not defined for month', self.month)
+
+        return
+
+    def refresh_unit_sale_price(self):
+        # unit sale price is given by a normal distribution
+        mean = float(6)
+        std_dev = 0.01
+        self.unit_sale_price.value = np.random.normal(mean, std_dev, None)
+        return
+
+    def refresh_unit_feedstock_cost(self):
+        # unit feedstock cost is given by a normal distribution
+        mean = float(2)
+        std_dev = 0.01
+        self.unit_feedstock_cost.value = np.random.normal(mean, std_dev, None)
+        return
+
+    def refresh_unit_process_cost(self):
+        # process cost is given by a normal distribution around a mean which is a weakly decreasing function of
+        # production volume, such that a doubling in production reduces processing unit cost by 10%, starting from 1
+        mean = 2.8576 / np.power(self.production_volume.value, 0.152)
+        std_dev = 0.005
+        self.unit_process_cost.value = np.random.normal(mean, std_dev, None)
+        return
+
     def refresh_proportion_bio(self):
         # monthly change in bio proportion is either the amount to reach the target value, or else the maximum change
-        if self.under_construction:
+        if self.invest_in_bio:
             if self.implementation_countdown == 0 and self.proportion_bio.value != self.proportion_bio_target:
+                self.under_construction = True
                 distance_from_target = self.proportion_bio_target - self.proportion_bio.value
                 if abs(distance_from_target) < self.proportion_change_rate:
                     self.proportion_bio.value = self.proportion_bio_target
@@ -246,7 +206,7 @@ class PET_Manufacturer(Agent):
             else:
                 pass
         else:
-            pass
+            self.under_construction = False
         return
 
     def refresh_bio_feedstock_cost(self):
@@ -271,18 +231,10 @@ class PET_Manufacturer(Agent):
 
     def refresh_independents(self):
         # calculate new values for all variables
-        self.production_volume.calc(**self.dict)
-        self.update_dict(self.production_volume)
-
-        self.unit_sale_price.calc(**self.dict)
-        self.update_dict(self.unit_sale_price)
-
-        self.unit_feedstock_cost.calc(**self.dict)
-        self.update_dict(self.unit_feedstock_cost)
-
-        self.unit_process_cost.calc(**self.dict)
-        self.update_dict(self.unit_process_cost)
-
+        self.refresh_production_volume()
+        self.refresh_unit_sale_price()
+        self.refresh_unit_feedstock_cost()
+        self.refresh_unit_process_cost()
         self.refresh_proportion_bio()
         self.refresh_bio_feedstock_cost()
         self.refresh_bio_process_cost()
@@ -532,8 +484,8 @@ class PET_Manufacturer(Agent):
         if self.projection_met == 1:
             pass
         elif self.projection_met == 0:
-            if not self.under_construction:
-                self.under_construction = True
+            if not self.invest_in_bio:
+                self.invest_in_bio = True
 
             while self.proportion_bio_target <= 0.9 and self.projection_met == 0:
                 self.implementation_countdown = self.implementation_delay
