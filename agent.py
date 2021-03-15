@@ -88,6 +88,23 @@ def unit_sale_price(agent) -> np.float64:
     return val
 
 
+def unit_feedstock_cost(agent):
+    # unit feedstock cost is given by a normal distribution
+    mean = float(2)
+    std_dev = 0.01
+    val = np.random.normal(mean, std_dev, None)
+    return val
+
+
+def unit_process_cost(agent):
+    # process cost is given by a normal distribution around a mean which is a weakly decreasing function of
+    # production volume, such that a doubling in production reduces processing unit cost by 10%, starting from 1
+    mean = 2.8576 / np.power(agent.production_volume.value, 0.152)
+    std_dev = 0.005
+    val = np.random.normal(mean, std_dev, None)
+    return val
+
+
 class Agent(object):
     def __init__(self, name, sim_time):
         assert type(name) == str, ('name must be a string. input value is a', type(name))
@@ -109,8 +126,8 @@ class PET_Manufacturer(Agent):
         self.production_volume = Parameter_Func(production_volume, init=1000)
         # total PET production per annum, starts at 1000
         self.unit_sale_price = Parameter_Func(unit_sale_price)  # sale price of one unit of PET
-        self.unit_feedstock_cost = Parameter()  # feedstock cost per unit of PET produced
-        self.unit_process_cost = Parameter()  # cost of running process per unit of PET produced
+        self.unit_feedstock_cost = Parameter_Func(unit_feedstock_cost)  # feedstock cost per unit of PET produced
+        self.unit_process_cost = Parameter_Func(unit_process_cost)  # cost of running process per unit of PET produced
 
         self.proportion_bio = Parameter()  # proportion of production from biological feedstocks
         self.bio_feedstock_cost = Parameter()  # bio feedstock cost per unit of PET produced
@@ -192,21 +209,6 @@ class PET_Manufacturer(Agent):
         return
 
     # region -- methods to calculate values at the current time for each independent variable
-    def refresh_unit_feedstock_cost(self):
-        # unit feedstock cost is given by a normal distribution
-        mean = float(2)
-        std_dev = 0.01
-        self.unit_feedstock_cost.value = np.random.normal(mean, std_dev, None)
-        return
-
-    def refresh_unit_process_cost(self):
-        # process cost is given by a normal distribution around a mean which is a weakly decreasing function of
-        # production volume, such that a doubling in production reduces processing unit cost by 10%, starting from 1
-        mean = 2.8576 / np.power(self.production_volume.value, 0.152)
-        std_dev = 0.005
-        self.unit_process_cost.value = np.random.normal(mean, std_dev, None)
-        return
-
     def refresh_proportion_bio(self):
         # monthly change in bio proportion is either the amount to reach the target value, or else the maximum change
         if self.invest_in_bio:
@@ -251,8 +253,9 @@ class PET_Manufacturer(Agent):
         # calculate new values for all variables
         self.production_volume.update(self)
         self.unit_sale_price.update(self)
-        self.refresh_unit_feedstock_cost()
-        self.refresh_unit_process_cost()
+        self.unit_feedstock_cost.update(self)
+        self.unit_process_cost.update(self)
+
         self.refresh_proportion_bio()
         self.refresh_bio_feedstock_cost()
         self.refresh_bio_process_cost()
