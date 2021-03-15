@@ -245,23 +245,9 @@ class PET_Manufacturer(Agent):
     # endregion
 
     # region -- methods for dependent variables
-    def calculate_gross_profit(self):
-        production_in_month = self.production_volume.value / 12
-        revenue = production_in_month * self.unit_sale_price.value
-        costs = production_in_month * ((1 - self.proportion_bio.value) *
-                                       (self.unit_feedstock_cost.value + self.unit_process_cost.value) +
-                                       self.proportion_bio.value *
-                                       (self.bio_feedstock_cost.value + self.bio_process_cost.value))
-        self.gross_profit.value = revenue - costs
-        return
-
     def calculate_emissions(self):
         fossil_production = self.production_volume.value / 12 * (1 - self.proportion_bio.value)
         self.emissions.value = fossil_production * self.emissions_rate
-        return
-
-    def calculate_tax_payable(self):
-        self.tax_payable.value = self.gross_profit.value * self.tax_rate
         return
 
     def calculate_levies_payable(self):
@@ -269,18 +255,33 @@ class PET_Manufacturer(Agent):
         self.levies_payable.value = self.levy_rate * self.emissions.value
         return
 
+    def calculate_gross_profit(self):
+        production_in_month = self.production_volume.value / 12
+        revenue = production_in_month * self.unit_sale_price.value
+        costs = (production_in_month * ((1 - self.proportion_bio.value) *
+                                        (self.unit_feedstock_cost.value + self.unit_process_cost.value) +
+                                        self.proportion_bio.value *
+                                        (self.bio_feedstock_cost.value + self.bio_process_cost.value))
+                 + self.levies_payable.value)
+        self.gross_profit.value = revenue - costs
+        return
+
+    def calculate_tax_payable(self):
+        self.tax_payable.value = self.gross_profit.value * self.tax_rate
+        return
+
     def calculate_net_profit(self):
-        self.net_profit.value = self.gross_profit.value - (self.tax_payable.value + self.levies_payable.value)
+        self.net_profit.value = self.gross_profit.value - self.tax_payable.value
         return
 
     def calculate_profitability(self):
         self.profitability.value = self.net_profit.value / (self.production_volume.value / 12)
 
     def calculate_dependents(self):
-        self.calculate_gross_profit()
         self.calculate_emissions()
-        self.calculate_tax_payable()
         self.calculate_levies_payable()
+        self.calculate_gross_profit()
+        self.calculate_tax_payable()
         self.calculate_net_profit()
         self.calculate_profitability()
         return
