@@ -3,7 +3,7 @@ import numpy as np
 
 
 def run_check():
-    global proceed
+    proceed = str()
     while True:
         try:
             proceed = str(input('Do you want to proceed? Y/N:'))
@@ -121,6 +121,28 @@ def bio_process_cost(agent):
     return val
 
 
+def proportion_bio(agent):
+    # monthly change in bio proportion is either the amount to reach the target value, or else the maximum change
+    val = np.float64(agent.proportion_bio.value)
+    if agent.invest_in_bio:
+        if agent.implementation_countdown == 0 and agent.proportion_bio.value != agent.proportion_bio_target:
+            agent.under_construction = True
+            distance_from_target = agent.proportion_bio_target - agent.proportion_bio.value
+            if abs(distance_from_target) < agent.proportion_change_rate:
+                val = agent.proportion_bio_target
+            elif distance_from_target > 0:
+                val += agent.proportion_change_rate
+            elif distance_from_target < 0:
+                val -= agent.proportion_change_rate
+            else:
+                pass
+        else:
+            pass
+    else:
+        agent.under_construction = False
+    return val
+
+
 class Agent(object):
     def __init__(self, name, sim_time):
         assert type(name) == str, ('name must be a string. input value is a', type(name))
@@ -147,7 +169,7 @@ class PET_Manufacturer(Agent):
 
         self.bio_feedstock_cost = Parameter_Func(bio_feedstock_cost)  # bio feedstock cost per unit of PET produced
         self.bio_process_cost = Parameter_Func(bio_process_cost)  # cost of process per unit of PET from bio routes, starts at 1.5
-        self.proportion_bio = Parameter()  # proportion of production from biological feedstocks
+        self.proportion_bio = Parameter_Func(proportion_bio)  # proportion of production from biological feedstocks
 
         self.independent_variables = [
             self.production_volume,
@@ -225,26 +247,6 @@ class PET_Manufacturer(Agent):
         return
 
     # region -- methods to calculate values at the current time for each independent variable
-    def refresh_proportion_bio(self):
-        # monthly change in bio proportion is either the amount to reach the target value, or else the maximum change
-        if self.invest_in_bio:
-            if self.implementation_countdown == 0 and self.proportion_bio.value != self.proportion_bio_target:
-                self.under_construction = True
-                distance_from_target = self.proportion_bio_target - self.proportion_bio.value
-                if abs(distance_from_target) < self.proportion_change_rate:
-                    self.proportion_bio.value = self.proportion_bio_target
-                elif distance_from_target > 0:
-                    self.proportion_bio.value += self.proportion_change_rate
-                elif distance_from_target < 0:
-                    self.proportion_bio.value -= self.proportion_change_rate
-                else:
-                    pass
-            else:
-                pass
-        else:
-            self.under_construction = False
-        return
-
     def refresh_tax_rate(self):
         pass
 
@@ -259,7 +261,7 @@ class PET_Manufacturer(Agent):
         self.unit_process_cost.update(self)
         self.bio_feedstock_cost.update(self)
         self.bio_process_cost.update(self)
-        self.refresh_proportion_bio()
+        self.proportion_bio.update(self)
         self.refresh_tax_rate()
         self.refresh_levy_rate()
         return
