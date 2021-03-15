@@ -21,6 +21,26 @@ def run_check():
         pass
 
 
+class Parameter(object):
+    def __init__(self, history_time=120, projection_time=120, init=0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        assert type(history_time) == int
+        assert history_time > 0
+        assert type(projection_time) == int
+        assert projection_time > 0
+
+        self.value = np.float64(init)
+
+        self.projection = np.zeros(projection_time)
+        self.history = np.zeros(history_time)
+
+        return
+
+    def record(self, time):
+        self.history[time] = self.value
+        return
+
+
 class Agent(object):
     def __init__(self, name, sim_time):
         assert type(name) == str, ('name must be a string. input value is a', type(name))
@@ -39,7 +59,7 @@ class PET_Manufacturer(Agent):
         super().__init__(name, sim_time)
 
         # define independent variables for current time
-        self.production_volume = np.float64(1000)  # total PET production per annum, starts at 1000
+        self.production_volume = Parameter(init=1000)  # total PET production per annum, starts at 1000
         self.unit_sale_price = np.float64()  # sale price of one unit of PET
         self.unit_feedstock_cost = np.float64()  # feedstock cost per unit of PET produced
         self.unit_process_cost = np.float64()  # cost of running process per unit of PET produced
@@ -88,7 +108,7 @@ class PET_Manufacturer(Agent):
 
         # define arrays to store records
         history_length = sim_time
-        self.production_history = np.zeros(history_length)
+        # self.production_history = np.zeros(history_length)
         self.sale_price_history = np.zeros(history_length)
         self.feedstock_cost_history = np.zeros(history_length)
         self.process_cost_history = np.zeros(history_length)
@@ -149,10 +169,10 @@ class PET_Manufacturer(Agent):
         growth_rate_1_monthly = np.power(growth_rate_1, 1 / 12)  # annual growth rate changed to month-on-month
 
         if self.month <= sim_period_0_months:
-            self.production_volume = self.production_volume * growth_rate_0_monthly
+            self.production_volume.value = self.production_volume.value * growth_rate_0_monthly
 
         elif self.month <= sim_period_1_months:
-            self.production_volume = self.production_volume * growth_rate_1_monthly
+            self.production_volume.value = self.production_volume.value * growth_rate_1_monthly
 
         else:
             raise ValueError('production growth not defined for month', self.month)
@@ -176,7 +196,7 @@ class PET_Manufacturer(Agent):
     def refresh_unit_process_cost(self):
         # process cost is given by a normal distribution around a mean which is a weakly decreasing function of
         # production volume, such that a doubling in production reduces processing unit cost by 10%, starting from 1
-        mean = 2.8576 / np.power(self.production_volume, 0.152)
+        mean = 2.8576 / np.power(self.production_volume.value, 0.152)
         std_dev = 0.005
         self.unit_process_cost = np.random.normal(mean, std_dev, None)
         return
@@ -238,7 +258,7 @@ class PET_Manufacturer(Agent):
 
     # region -- methods for dependent variables
     def calculate_gross_profit(self):
-        production_in_month = self.production_volume / 12
+        production_in_month = self.production_volume.value / 12
         revenue = production_in_month * self.unit_sale_price
         costs = production_in_month * ((1 - self.proportion_bio) * (self.unit_feedstock_cost + self.unit_process_cost) +
                                        self.proportion_bio * (self.bio_feedstock_cost + self.bio_process_cost))
@@ -246,7 +266,7 @@ class PET_Manufacturer(Agent):
         return
 
     def calculate_emissions(self):
-        fossil_production = self.production_volume / 12 * (1 - self.proportion_bio)
+        fossil_production = self.production_volume.value / 12 * (1 - self.proportion_bio)
         self.emissions = fossil_production * self.emissions_rate
         return
 
@@ -264,7 +284,7 @@ class PET_Manufacturer(Agent):
         return
 
     def calculate_profitability(self):
-        self.profitability = self.net_profit / (self.production_volume / 12)
+        self.profitability = self.net_profit / (self.production_volume.value / 12)
 
     def calculate_dependents(self):
         self.calculate_gross_profit()
@@ -279,7 +299,8 @@ class PET_Manufacturer(Agent):
 
     def record_timestep(self):
         # method to write current variables (independent and dependent) to records
-        self.production_history[self.month] = self.production_volume
+        # self.production_history[self.month] = self.production_volume
+        self.production_volume.record(self.month)
         self.sale_price_history[self.month] = self.unit_sale_price
         self.feedstock_cost_history[self.month] = self.unit_feedstock_cost
         self.process_cost_history[self.month] = self.unit_process_cost
@@ -308,7 +329,7 @@ class PET_Manufacturer(Agent):
         # recording it to self.production_projection
         predicted_annual_growth_rate = 1.02
         monthly_growth_rate = np.power(predicted_annual_growth_rate, 1 / 12)
-        initial_volume = self.production_volume
+        initial_volume = self.production_volume.value
         # calculated using a fixed month-on-month growth rate from the most recent production volume
         for i in range(self.projection_time):
             self.production_projection[i] = initial_volume * pow(monthly_growth_rate, i)
