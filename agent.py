@@ -80,6 +80,14 @@ def production_volume(agent) -> np.float64:
     return val
 
 
+def unit_sale_price(agent) -> np.float64:
+    # unit sale price is given by a normal distribution
+    mean = np.float64(6)
+    std_dev = 0.01
+    val = np.float64(np.random.normal(mean, std_dev, None))
+    return val
+
+
 class Agent(object):
     def __init__(self, name, sim_time):
         assert type(name) == str, ('name must be a string. input value is a', type(name))
@@ -99,8 +107,8 @@ class PET_Manufacturer(Agent):
 
         # define independent variables for current time
         self.production_volume = Parameter_Func(production_volume, init=1000)
-        # self.production_volume = Parameter(init=1000)  # total PET production per annum, starts at 1000
-        self.unit_sale_price = Parameter()  # sale price of one unit of PET
+        # total PET production per annum, starts at 1000
+        self.unit_sale_price = Parameter_Func(unit_sale_price)  # sale price of one unit of PET
         self.unit_feedstock_cost = Parameter()  # feedstock cost per unit of PET produced
         self.unit_process_cost = Parameter()  # cost of running process per unit of PET produced
 
@@ -184,13 +192,6 @@ class PET_Manufacturer(Agent):
         return
 
     # region -- methods to calculate values at the current time for each independent variable
-    def refresh_unit_sale_price(self):
-        # unit sale price is given by a normal distribution
-        mean = float(6)
-        std_dev = 0.01
-        self.unit_sale_price.value = np.random.normal(mean, std_dev, None)
-        return
-
     def refresh_unit_feedstock_cost(self):
         # unit feedstock cost is given by a normal distribution
         mean = float(2)
@@ -249,7 +250,7 @@ class PET_Manufacturer(Agent):
     def refresh_independents(self):
         # calculate new values for all variables
         self.production_volume.update(self)
-        self.refresh_unit_sale_price()
+        self.unit_sale_price.update(self)
         self.refresh_unit_feedstock_cost()
         self.refresh_unit_process_cost()
         self.refresh_proportion_bio()
