@@ -40,6 +40,46 @@ class Parameter(object):
         return
 
 
+class Parameter_Func(Parameter):
+    def __init__(self, fun, history_time=120, projection_time=120, init=0):
+        super().__init__(history_time, projection_time, init)
+        self.fun = fun
+        return
+
+    def update(self, agent):
+        assert isinstance(agent, Agent)
+        self.value = self.fun(agent)
+        return
+
+
+def production_volume(agent) -> np.float64:
+    volume = agent.production_volume.value
+    month = agent.month
+
+    # production volume is defined by growth rates in 2 periods
+
+    sim_period_0 = 5  # end year for first simulation period
+    sim_period_0_months = sim_period_0 * 12  # end month for first simulation period
+    growth_rate_0 = 1.02  # YoY growth rate for the first simulation period, expressed as a ratio
+    growth_rate_0_monthly = np.power(growth_rate_0, 1 / 12)  # annual growth rate changed to month-on-month
+
+    sim_period_1 = 10  # end year for second simulation period
+    sim_period_1_months = sim_period_1 * 12  # end month for second simulation period
+    growth_rate_1 = 1.03  # YoY growth rate for the second simulation period, expressed as a ratio
+    growth_rate_1_monthly = np.power(growth_rate_1, 1 / 12)  # annual growth rate changed to month-on-month
+
+    if month <= sim_period_0_months:
+        val = volume * growth_rate_0_monthly
+
+    elif month <= sim_period_1_months:
+        val = volume * growth_rate_1_monthly
+
+    else:
+        raise ValueError('production growth not defined for month', month)
+
+    return val
+
+
 class Agent(object):
     def __init__(self, name, sim_time):
         assert type(name) == str, ('name must be a string. input value is a', type(name))
@@ -58,7 +98,8 @@ class PET_Manufacturer(Agent):
         super().__init__(name, sim_time)
 
         # define independent variables for current time
-        self.production_volume = Parameter(init=1000)  # total PET production per annum, starts at 1000
+        self.production_volume = Parameter_Func(production_volume, init=1000)
+        # self.production_volume = Parameter(init=1000)  # total PET production per annum, starts at 1000
         self.unit_sale_price = Parameter()  # sale price of one unit of PET
         self.unit_feedstock_cost = Parameter()  # feedstock cost per unit of PET produced
         self.unit_process_cost = Parameter()  # cost of running process per unit of PET produced
@@ -143,30 +184,6 @@ class PET_Manufacturer(Agent):
         return
 
     # region -- methods to calculate values at the current time for each independent variable
-    def refresh_production_volume(self):
-        # production volume is defined by growth rates in 2 periods
-
-        sim_period_0 = 5  # end year for first simulation period
-        sim_period_0_months = sim_period_0 * 12  # end month for first simulation period
-        growth_rate_0 = 1.02  # YoY growth rate for the first simulation period, expressed as a ratio
-        growth_rate_0_monthly = np.power(growth_rate_0, 1 / 12)  # annual growth rate changed to month-on-month
-
-        sim_period_1 = 10  # end year for second simulation period
-        sim_period_1_months = sim_period_1 * 12  # end month for second simulation period
-        growth_rate_1 = 1.03  # YoY growth rate for the second simulation period, expressed as a ratio
-        growth_rate_1_monthly = np.power(growth_rate_1, 1 / 12)  # annual growth rate changed to month-on-month
-
-        if self.month <= sim_period_0_months:
-            self.production_volume.value = self.production_volume.value * growth_rate_0_monthly
-
-        elif self.month <= sim_period_1_months:
-            self.production_volume.value = self.production_volume.value * growth_rate_1_monthly
-
-        else:
-            raise ValueError('production growth not defined for month', self.month)
-
-        return
-
     def refresh_unit_sale_price(self):
         # unit sale price is given by a normal distribution
         mean = float(6)
@@ -231,7 +248,7 @@ class PET_Manufacturer(Agent):
 
     def refresh_independents(self):
         # calculate new values for all variables
-        self.refresh_production_volume()
+        self.production_volume.update(self)
         self.refresh_unit_sale_price()
         self.refresh_unit_feedstock_cost()
         self.refresh_unit_process_cost()
