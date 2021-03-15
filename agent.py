@@ -124,22 +124,20 @@ def bio_process_cost(agent):
 def proportion_bio(agent):
     # monthly change in bio proportion is either the amount to reach the target value, or else the maximum change
     val = np.float64(agent.proportion_bio.value)
-    if agent.invest_in_bio:
-        if agent.implementation_countdown == 0 and agent.proportion_bio.value != agent.proportion_bio_target:
-            agent.under_construction = True
-            distance_from_target = agent.proportion_bio_target - agent.proportion_bio.value
-            if abs(distance_from_target) < agent.proportion_change_rate:
-                val = agent.proportion_bio_target
-            elif distance_from_target > 0:
-                val += agent.proportion_change_rate
-            elif distance_from_target < 0:
-                val -= agent.proportion_change_rate
-            else:
-                pass
+    if agent.implementation_countdown == 0 and agent.proportion_bio.value != agent.proportion_bio_target:
+        agent.under_construction = True
+        distance_from_target = agent.proportion_bio_target - agent.proportion_bio.value
+        if abs(distance_from_target) < agent.proportion_change_rate:
+            val = agent.proportion_bio_target
+        elif distance_from_target > 0:
+            val += agent.proportion_change_rate
+        elif distance_from_target < 0:
+            val -= agent.proportion_change_rate
         else:
             pass
     else:
         agent.under_construction = False
+
     return val
 
 
@@ -228,7 +226,6 @@ class PET_Manufacturer(Agent):
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
         # targets are defined
 
-        self.invest_in_bio = False  # set to True if investment in bio route starts
         self.proportion_change_rate = np.float64(0.1 / 15)  # greatest possible monthly change in self.proportion_bio
         self.implementation_delay = int(3)  # time delay between investment decision and movement of bio_proportion
         self.implementation_countdown = int(0)  # countdown to change of direction
@@ -247,23 +244,18 @@ class PET_Manufacturer(Agent):
         return
 
     # region -- methods to calculate values at the current time for each independent variable
-    def refresh_tax_rate(self):
-        pass
-
-    def refresh_levy_rate(self):
-        pass
-
-    def refresh_independents(self):
+    def update_independent_variables(self):
         # calculate new values for all variables
-        self.production_volume.update(self)
-        self.unit_sale_price.update(self)
-        self.unit_feedstock_cost.update(self)
-        self.unit_process_cost.update(self)
-        self.bio_feedstock_cost.update(self)
-        self.bio_process_cost.update(self)
-        self.proportion_bio.update(self)
-        self.refresh_tax_rate()
-        self.refresh_levy_rate()
+        for parameter in self.independent_variables:
+            parameter.update(self)
+
+        # self.production_volume.update(self)
+        # self.unit_sale_price.update(self)
+        # self.unit_feedstock_cost.update(self)
+        # self.unit_process_cost.update(self)
+        # self.bio_feedstock_cost.update(self)
+        # self.bio_process_cost.update(self)
+        # self.proportion_bio.update(self)
         return
 
     # endregion
@@ -323,7 +315,7 @@ class PET_Manufacturer(Agent):
 
     def update_current_state(self):
         # methods to be called every time the month is advanced
-        self.refresh_independents()
+        self.update_independent_variables()
         self.calculate_dependents()
         return
 
@@ -508,9 +500,6 @@ class PET_Manufacturer(Agent):
         if self.projection_met == 1:
             pass
         elif self.projection_met == 0:
-            if not self.invest_in_bio:
-                self.invest_in_bio = True
-
             while self.proportion_bio_target <= 0.9 and self.projection_met == 0:
                 self.implementation_countdown = self.implementation_delay
                 self.proportion_bio_target += 0.1
