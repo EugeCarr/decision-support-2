@@ -40,6 +40,25 @@ class Parameter(object):
         return
 
 
+class Parameter_Func(Parameter):
+    def __init__(self, fun):
+        super().__init__()
+        self.fun = fun
+        return
+
+    def calc(self, **kwargs):
+        self.value = self.fun(**kwargs)
+        return
+
+
+def unit_process_cost(**kwargs):
+    volume = kwargs['production_volume']
+    mean = 2.8576 / np.power(volume, 0.152)
+    std_dev = 0.005
+    cost = np.random.normal(mean, std_dev, None)
+    return cost
+
+
 class Agent(object):
     def __init__(self, name, sim_time):
         assert type(name) == str, ('name must be a string. input value is a', type(name))
@@ -61,7 +80,7 @@ class PET_Manufacturer(Agent):
         self.production_volume = Parameter(init=1000)  # total PET production per annum, starts at 1000
         self.unit_sale_price = Parameter()  # sale price of one unit of PET
         self.unit_feedstock_cost = Parameter()  # feedstock cost per unit of PET produced
-        self.unit_process_cost = Parameter()  # cost of running process per unit of PET produced
+        self.unit_process_cost = Parameter_Func(unit_process_cost)  # cost of running process per unit of PET produced
 
         self.proportion_bio = Parameter()  # proportion of production from biological feedstocks
         self.bio_feedstock_cost = Parameter()  # bio feedstock cost per unit of PET produced
@@ -93,6 +112,8 @@ class PET_Manufacturer(Agent):
             self.net_profit,
             self.profitability
         ]
+
+        self.dict = {}
 
         # now define other parameters which will not be recorded or projected
         self.projection_time = 120  # how many months into the future will be predicted?
@@ -142,6 +163,9 @@ class PET_Manufacturer(Agent):
 
         return
 
+    def build_dictionary(self):
+        self.dict['production_volume'] = self.production_volume.value
+
     # region -- methods to calculate values at the current time for each independent variable
     def refresh_production_volume(self):
         # production volume is defined by growth rates in 2 periods
@@ -179,14 +203,6 @@ class PET_Manufacturer(Agent):
         mean = float(2)
         std_dev = 0.01
         self.unit_feedstock_cost.value = np.random.normal(mean, std_dev, None)
-        return
-
-    def refresh_unit_process_cost(self):
-        # process cost is given by a normal distribution around a mean which is a weakly decreasing function of
-        # production volume, such that a doubling in production reduces processing unit cost by 10%, starting from 1
-        mean = 2.8576 / np.power(self.production_volume.value, 0.152)
-        std_dev = 0.005
-        self.unit_process_cost.value = np.random.normal(mean, std_dev, None)
         return
 
     def refresh_proportion_bio(self):
@@ -234,7 +250,7 @@ class PET_Manufacturer(Agent):
         self.refresh_production_volume()
         self.refresh_unit_sale_price()
         self.refresh_unit_feedstock_cost()
-        self.refresh_unit_process_cost()
+        self.unit_process_cost.calc(**self.dict)
         self.refresh_proportion_bio()
         self.refresh_bio_feedstock_cost()
         self.refresh_bio_process_cost()
@@ -299,6 +315,7 @@ class PET_Manufacturer(Agent):
 
     def update_current_state(self):
         # methods to be called every time the month is advanced
+        self.build_dictionary()
         self.refresh_independents()
         self.calculate_dependents()
         return

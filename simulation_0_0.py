@@ -55,9 +55,9 @@ def simulate(months, table=bool, plot=bool):
         table = []
         for i in range(0, months):
             table.append([t[i],
-                          pet_manufacturer.emissions.history[i]])
+                          pet_manufacturer.unit_process_cost.history[i]])
 
-        headers = ["Month", "Emissions"]
+        headers = ["Month", "Unit Process Cost"]
         print(tabulate(table, headers))
 
     if plot:
