@@ -409,7 +409,7 @@ class PET_Manufacturer(Agent):
         self.projection_time = 120  # how many months into the future will be predicted?
 
         self.proportion_bio_target = np.float64()  # target value for the proportion of production via bio route
-        self.projection_met = int(0)  # 1 or 0 depending on whether the next target will be met by current
+        self.projection_met = False  # 1 or 0 depending on whether the next target will be met by current
         # projection
 
         self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
@@ -626,19 +626,19 @@ class PET_Manufacturer(Agent):
 
         if time_to_yr1 > 0:
             if self.profitability.projection[time_to_yr1] >= self.target1_value:
-                self.projection_met = 1
+                self.projection_met = True
             else:
-                self.projection_met = 0
+                self.projection_met = False
 
         elif time_to_yr2 > 0:
             if self.profitability.projection[time_to_yr2] >= self.target2_value:
-                self.projection_met = 1
+                self.projection_met = True
             else:
-                self.projection_met = 0
+                self.projection_met = False
 
         else:
-            # if there is no target defined into the future, PROJECTION_MET is set to 0
-            self.projection_met = 0
+            # if there is no target defined into the future, PROJECTION_MET is set to false
+            self.projection_met = False
 
             if not self.beyond_target_range:
                 print('No target defined beyond month', self.month)
@@ -648,15 +648,15 @@ class PET_Manufacturer(Agent):
 
     def investment_decision(self):
         # decision logic for increasing investment in biological process route
-        if self.projection_met == 1:
+        if self.projection_met:
             pass
-        elif self.projection_met == 0:
-            while self.proportion_bio_target <= 0.9 and self.projection_met == 0:
+        elif not self.projection_met:
+            while self.proportion_bio_target <= 0.9 and not self.projection_met:
                 self.implementation_countdown = self.implementation_delay
                 self.proportion_bio_target += 0.1
                 self.new_projection()
                 self.projection_check()
-                if self.proportion_bio_target == 1 and self.projection_met == 0:
+                if self.proportion_bio_target == 1 and not self.projection_met:
                     print('Month:', self.month, '\n next profitability target could not be met'
                                                 'at any bio proportion target')
 
