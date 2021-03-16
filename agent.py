@@ -355,7 +355,13 @@ class PET_Manufacturer(Agent):
     # object initialisation
     def __init__(self, name, sim_time):
         super().__init__(name, sim_time)
-
+        """To add a new parameter, define it as an attribute of object type Parameter. 
+        The argument fun is the function which, given an argument of object type Agent, returns a single float which
+        is the next value of the parameter. 
+        The argument project is a function which, given an argument of object type Agent, returns an array of size n
+        which is the projected value of the parameter for the next n months.
+        Optional argument init is the initial value of the parameter. This is usually unnecessary.
+        history_time and projection_time should only be changed from their default values with great care."""
         # define independent variables for current time
         self.production_volume = Parameter(production_volume, production_volume_projection, init=np.float64(1000))
         # total PET production per annum, starts at 1000
@@ -452,6 +458,7 @@ class PET_Manufacturer(Agent):
 
         return
 
+    # region -- methods for updating values and projections
     def update_independent_variables(self):
         # calculate new values for all independent variables
         for parameter in self.independent_variables:
@@ -478,123 +485,6 @@ class PET_Manufacturer(Agent):
         self.update_independent_variables()
         self.update_dependent_variables()
         return
-
-    # region -- methods for making projections into the future
-    def project_volume(self):
-        # calculates the projected (annualised) PET production volume for each month,
-        # recording it to self.production_projection
-        predicted_annual_growth_rate = 1.02
-        monthly_growth_rate = np.power(predicted_annual_growth_rate, 1 / 12)
-        initial_volume = self.production_volume.value
-        # calculated using a fixed month-on-month growth rate from the most recent production volume
-        for i in range(self.projection_time):
-            self.production_volume.projection[i] = initial_volume * pow(monthly_growth_rate, i)
-
-        return
-
-    def project_sale_price(self):
-        # Calculate the projected PET sale prices
-        self.unit_sale_price.projection.fill(6)  # fixed value (mean of normal dist from self.refresh_unit_sale_price)
-        return
-
-    def project_feedstock_cost(self):
-        # Calculate the projected PET feedstock costs
-        self.unit_feedstock_cost.projection.fill(2)  # fixed value (mean of normal dist from self.refresh_...)
-        return
-
-    def project_process_cost(self):
-        # Calculate the projected PET processing costs
-        self.unit_process_cost.projection.fill(1)  # fixed value (mean of normal dist from self.refresh_...)
-        return
-
-    def project_proportion_bio(self):
-        # projection of proportion of production from bio routes
-        time_to_target = int(np.ceil((self.proportion_bio_target - self.proportion_bio.value) /
-                                     self.proportion_change_rate)
-                             + self.implementation_countdown)
-        self.proportion_bio.projection.fill(self.proportion_bio_target)
-
-        if time_to_target > 1:
-
-            for i in range(time_to_target - 1):
-                try:
-                    self.proportion_bio.projection[i] = self.proportion_bio.value + self.proportion_change_rate * \
-                                                        (i + 1)
-                except IndexError:
-                    print('time to reach target bio proportion is longer than', self.projection_time, 'months')
-                    print('behaviour in these conditions is undefined. aborting simulation')
-                    raise SystemExit(0)
-        else:
-            pass
-        return
-
-    def project_bio_feedstock_cost(self):
-        self.bio_feedstock_cost.projection.fill(2)
-        return
-
-    def project_bio_process_cost(self):
-        self.bio_process_cost.projection.fill(1.05)
-        return
-
-    def project_emissions(self):
-        monthly_production_projection = self.production_volume.projection / 12
-        self.emissions.projection = np.multiply(
-            monthly_production_projection, np.subtract(
-                np.ones(self.projection_time), self.proportion_bio.projection)
-        ) * self.emissions_rate
-        return
-
-    def project_gross_profit(self):
-        # calculate revenues and costs at each month
-        monthly_production_projection = self.production_volume.projection / 12
-
-        revenue_projection = np.multiply(monthly_production_projection, self.unit_sale_price.projection)
-
-        fossil_cost_projection = np.multiply(
-            np.add(np.multiply(monthly_production_projection, self.unit_feedstock_cost.projection),
-                   np.multiply(monthly_production_projection, self.unit_process_cost.projection)),
-            np.subtract(np.ones(self.projection_time), self.proportion_bio.projection))
-        bio_cost_projection = np.multiply(
-            np.add(np.multiply(monthly_production_projection, self.bio_feedstock_cost.projection),
-                   np.multiply(monthly_production_projection, self.bio_process_cost.projection)),
-            self.proportion_bio.projection)
-
-        total_cost_projection = np.add(
-            np.add(fossil_cost_projection, bio_cost_projection),
-            self.levies_payable.projection)
-
-        self.gross_profit.projection = np.subtract(revenue_projection, total_cost_projection)
-        return
-
-    def project_tax_rate(self):
-        self.tax_rate_projection = np.ones(self.projection_time) * self.tax_rate
-        return
-
-    def project_levy_rate(self):
-        if not self.levy_rate_changing:
-            self.levy_rate.projection.fill(self.levy)
-        else:
-            self.levy_rate.projection.fill(self.future_levy_rate)
-            for i in range(self.time_to_levy_change):
-                self.levy_rate.projection[i] = self.levy_rate.value
-        return
-
-    def project_tax_payable(self):
-        self.tax_payable.projection = np.multiply(self.gross_profit.projection, self.tax_rate_projection)
-        return
-
-    def project_levies_payable(self):
-        self.levies_payable.projection = np.multiply(self.emissions.projection, self.levy_rate.projection)
-        return
-
-    def project_net_profit(self):
-        p_0 = self.gross_profit.projection
-        p_1 = np.subtract(p_0, self.tax_payable.projection)
-        self.net_profit.projection = p_1
-        return
-
-    def project_profitability(self):
-        self.profitability.projection = np.divide(self.net_profit.projection, self.production_volume.projection / 12)
 
     def project_independents(self):
         # calculate projections for independent variables
