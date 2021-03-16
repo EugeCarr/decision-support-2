@@ -53,7 +53,6 @@ def simulate(months, table=bool, plot=bool):
 
         month += 1
 
-
     # data output & analysis
     t = np.arange(0, months, 1)
 
