@@ -2,6 +2,7 @@
 import agent
 from regulator import Regulator
 from regulator import Policy
+from agent import PET_Manufacturer
 import numpy as np
 from tabulate import tabulate
 from matplotlib import pyplot as plt
@@ -11,30 +12,35 @@ def simulate(months, table=bool, plot=bool):
     # create agents and specify their parameters
     month = int(0)
 
-    pet_manufacturer = agent.PET_Manufacturer('PET Manufacturer', months)
+    pet_manufacturer = PET_Manufacturer('PET Manufacturer', months)
 
     policy = Policy()
     policy.add_level([1900, 0.19, 0.2])
-    policy.add_level([2000, 0.19, 0.225])
-    policy.add_level([2050, 0.19, 0.25])
+    policy.add_level([2000, 0.19, 0.25])
+    policy.add_level([2050, 0.19, 0.3])
 
     notice_period = int(12)
 
     regulator = Regulator('Regulator', months, notice_period, policy)
 
+    agents = [
+        pet_manufacturer,
+        regulator
+    ]
+
     # Run simulation for defined number of months
     while month < months:
         # advance time counter in each agent
-        pet_manufacturer.month = month
-        regulator.month = month
+        for entity in agents:
+            entity.month = month
 
         # execute standard monthly routines
         pet_manufacturer.time_step()
         regulator.iterate_regulator(pet_manufacturer.emissions.value)
 
         # if the regulator rate has just changed (resulting in mismatch between agents) then update it
-        if pet_manufacturer.levy_rate != regulator.levy_rate:
-            pet_manufacturer.levy_rate = regulator.levy_rate
+        if pet_manufacturer.levy != regulator.levy_rate:
+            pet_manufacturer.levy = regulator.levy_rate
             pet_manufacturer.time_to_levy_change = regulator.time_to_change
             pet_manufacturer.levy_rate_changing = False
 
