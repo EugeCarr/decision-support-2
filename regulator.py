@@ -85,6 +85,7 @@ class Regulator(Agent):
         # else if this is the first time reaching the maximum set the limit to infinity
         elif not self.max_level_reached:
             self.limit = np.inf
+            print('Month:', self.month)
             print('Highest level of emissions regulation reached:', self.level, self.levy_rate)
             self.max_level_reached = True
         else:

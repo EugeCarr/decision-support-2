@@ -25,13 +25,14 @@ class Parameter(object):
     # an object class with a current value, a record of all past values, and a variable to hold a projection
     # only compatible with data types which can be parsed as a float
     # argument FUN is a function taking a single AGENT object as an argument and returns the next value of the variable
-    def __init__(self, fun, history_time=120, projection_time=120, init=np.float64(0)):
+    def __init__(self, fun, project, history_time=120, projection_time=120, init=np.float64(0)):
         assert type(history_time) == int
         assert history_time > 0
         assert type(projection_time) == int
         assert projection_time > 0
 
         self.fun = fun
+        self.project = project
 
         self.value = np.float64(init)
 
@@ -49,6 +50,11 @@ class Parameter(object):
     def record(self, time):
         # writes the current value of the parameter to a chosen element of the record array
         self.history[time] = self.value
+        return
+
+    def forecast(self, agent):
+        assert isinstance(agent, Agent)
+        self.projection = self.project(agent)
         return
 
 
@@ -199,9 +205,9 @@ def production_volume_projection(agent) -> np.ndarray:
     initial_volume = agent.production_volume.value
     # calculated using a fixed month-on-month growth rate from the most recent production volume
 
-    proj = np.zeros(agent.projection_time)
+    proj = np.empty(agent.projection_time)
     for i in range(agent.projection_time):
-        proj = initial_volume * pow(monthly_growth_rate, i)
+        proj[i] = initial_volume * pow(monthly_growth_rate, i)
 
     return proj
 
@@ -220,14 +226,14 @@ def unit_feedstock_cost_projection(agent) -> np.ndarray:
     return proj
 
 
-def project_process_cost(agent) -> np.ndarray:
+def unit_process_cost_projection(agent) -> np.ndarray:
     # Calculate the projected PET processing costs
     proj = np.zeros(agent.projection_time)
     proj.fill(1)  # fixed value
     return proj
 
 
-def project_proportion_bio(agent) -> np.ndarray:
+def proportion_bio_projection(agent) -> np.ndarray:
     # projection of proportion of production from bio routes
     proj = np.zeros(agent.projection_time)
     time_to_target = int(np.ceil((agent.proportion_bio_target - agent.proportion_bio.value) /
@@ -272,7 +278,7 @@ def emissions_projection(agent) -> np.ndarray:
 
 
 def levies_payable_projection(agent) -> np.ndarray:
-    proj = np.multiply(agent.emissions.projection, agent.levies_payable.projection)
+    proj = np.multiply(agent.emissions.projection, agent.levy_rate.projection)
     return proj
 
 
@@ -320,13 +326,13 @@ def tax_payable_projection(agent) -> np.ndarray:
     return proj
 
 
-def project_net_profit(agent) -> np.ndarray:
-    gross_profit = agent.gross_profit.projection
-    proj = np.subtract(gross_profit, agent.tax_payable.projection)
+def net_profit_projection(agent) -> np.ndarray:
+    profit_g = agent.gross_profit.projection
+    proj = np.subtract(profit_g, agent.tax_payable.projection)
     return proj
 
 
-def project_profitability(agent) -> np.ndarray:
+def profitability_projection(agent) -> np.ndarray:
     proj = np.divide(agent.net_profit.projection, agent.production_volume.projection / 12)
     return proj
 
@@ -351,16 +357,21 @@ class PET_Manufacturer(Agent):
         super().__init__(name, sim_time)
 
         # define independent variables for current time
-        self.production_volume = Parameter(production_volume, init=np.float64(1000))
+        self.production_volume = Parameter(production_volume, production_volume_projection, init=np.float64(1000))
         # total PET production per annum, starts at 1000
-        self.unit_sale_price = Parameter(unit_sale_price)  # sale price of one unit of PET
-        self.unit_feedstock_cost = Parameter(unit_feedstock_cost)  # feedstock cost per unit of PET produced
-        self.unit_process_cost = Parameter(unit_process_cost)  # cost of running process per unit of PET produced
+        self.unit_sale_price = Parameter(unit_sale_price, unit_sale_price_projection)  # sale price of one unit of PET
+        self.unit_feedstock_cost = Parameter(unit_feedstock_cost, unit_feedstock_cost_projection)
+        # feedstock cost per unit of PET produced
+        self.unit_process_cost = Parameter(unit_process_cost, unit_process_cost_projection)
+        # cost of running process per unit of PET produced
 
-        self.bio_feedstock_cost = Parameter(bio_feedstock_cost)  # bio feedstock cost per unit of PET produced
-        self.bio_process_cost = Parameter(bio_process_cost)  # cost of process per unit of PET from bio routes
-        self.proportion_bio = Parameter(proportion_bio)  # proportion of production from biological feedstocks
-        self.levy_rate = Parameter(levy_rate, init=np.float64(0.2))
+        self.bio_feedstock_cost = Parameter(bio_feedstock_cost, bio_feedstock_cost_projection)
+        # bio feedstock cost per unit of PET produced
+        self.bio_process_cost = Parameter(bio_process_cost, bio_process_cost_projection)
+        # cost of process per unit of PET from bio routes
+        self.proportion_bio = Parameter(proportion_bio, proportion_bio_projection)
+        # proportion of production from biological feedstocks
+        self.levy_rate = Parameter(levy_rate, levy_rate_projection, init=np.float64(0.2))
 
         # list of all independent variables, listed in the order in which they must be computed (if it matters at all)
         self.independent_variables = [
@@ -375,12 +386,14 @@ class PET_Manufacturer(Agent):
         ]
 
         # define dependent variables
-        self.gross_profit = Parameter(gross_profit)  # profits prior to taxes and levies
-        self.emissions = Parameter(emissions)  # emissions from manufacturing PET from fossil fuels
-        self.tax_payable = Parameter(tax_payable)
-        self.levies_payable = Parameter(levies_payable)
-        self.net_profit = Parameter(net_profit)  # monthly profit after tax and levies
-        self.profitability = Parameter(profitability)  # profitability (net profit per unit production)
+        self.gross_profit = Parameter(gross_profit, gross_profit_projection)  # profits prior to taxes and levies
+        self.emissions = Parameter(emissions, emissions_projection)
+        # emissions from manufacturing PET from fossil fuels
+        self.tax_payable = Parameter(tax_payable, tax_payable_projection)
+        self.levies_payable = Parameter(levies_payable, levies_payable_projection)
+        self.net_profit = Parameter(net_profit, net_profit_projection)  # monthly profit after tax and levies
+        self.profitability = Parameter(profitability, profitability_projection)
+        # profitability (net profit per unit production)
 
         # list of all parametrised dependent variables, listed in the order in which they must be computed
         self.dependent_variables = [
@@ -422,7 +435,7 @@ class PET_Manufacturer(Agent):
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
         # targets are defined
 
-        self.proportion_change_rate = np.float64(0.1 / 6)  # greatest possible monthly change in self.proportion_bio
+        self.proportion_change_rate = np.float64(0.1 / 9)  # greatest possible monthly change in self.proportion_bio
         self.implementation_delay = int(3)  # time delay between investment decision and movement of bio_proportion
         self.implementation_countdown = int(0)  # countdown to change of direction
         self.under_construction = False  # is change in bio capacity occurring?
@@ -585,26 +598,16 @@ class PET_Manufacturer(Agent):
 
     def project_independents(self):
         # calculate projections for independent variables
-        self.project_volume()
-        self.project_sale_price()
-        self.project_feedstock_cost()
-        self.project_process_cost()
-        self.project_proportion_bio()
-        self.project_bio_feedstock_cost()
-        self.project_bio_process_cost()
-        self.project_levy_rate()
-        self.project_tax_rate()
+        for parameter in self.independent_variables:
+            parameter.forecast(self)
         return
 
     def project_dependents(self):
         # calculate projections for dependent variables (i.e. must run after self.project_independents)
         # order of operations for these methods may be important - CHECK
-        self.project_emissions()
-        self.project_levies_payable()
-        self.project_gross_profit()
-        self.project_tax_payable()
-        self.project_net_profit()
-        self.project_profitability()
+        for parameter in self.dependent_variables:
+            parameter.forecast(self)
+
         return
 
     def new_projection(self):

@@ -2,7 +2,6 @@
 import agent
 from regulator import Regulator
 from regulator import Policy
-from agent import PET_Manufacturer
 import numpy as np
 from tabulate import tabulate
 from matplotlib import pyplot as plt
@@ -12,14 +11,14 @@ def simulate(months, table=bool, plot=bool):
     # create agents and specify their parameters
     month = int(0)
 
-    pet_manufacturer = PET_Manufacturer('PET Manufacturer', months)
+    pet_manufacturer = agent.PET_Manufacturer('PET Manufacturer', months)
 
     policy = Policy()
     policy.add_level([1900, 0.19, 0.2])
     policy.add_level([2000, 0.19, 0.25])
-    policy.add_level([2050, 0.19, 0.3])
+    policy.add_level([2100, 0.19, 0.3])
 
-    notice_period = int(12)
+    notice_period = int(18)
 
     regulator = Regulator('Regulator', months, notice_period, policy)
 
@@ -53,6 +52,7 @@ def simulate(months, table=bool, plot=bool):
             pass
 
         month += 1
+
 
     # data output & analysis
     t = np.arange(0, months, 1)
