@@ -60,13 +60,15 @@ def simulate(months, table=bool, plot=bool):
         table = []
         for i in range(0, months):
             table.append([t[i],
-                          pet_manufacturer.profitability.history[i]])
+                          pet_manufacturer.expansion_cost.history[i],
+                          pet_manufacturer.production_volume.history[i],
+                          pet_manufacturer.fossil_capacity.history[i]])
 
-        headers = ["Month", "Profitability"]
+        headers = ["Month", "Expenditure", "Production Volume", "Fossil capacity"]
         print(tabulate(table, headers))
 
     if plot:
-        y = pet_manufacturer.bio_capacity.history
+        y = pet_manufacturer.expansion_cost.history
         x = t
         fig, ax1 = plt.subplots()
         ax1.plot(x, y)

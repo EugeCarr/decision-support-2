@@ -76,7 +76,10 @@ def production_volume(agent) -> np.float64:
     growth_rate_1 = 1.03  # YoY growth rate for the second simulation period, expressed as a ratio
     growth_rate_1_monthly = np.power(growth_rate_1, 1 / 12)  # annual growth rate changed to month-on-month
 
-    if month <= sim_period_0_months:
+    if month == 0:
+        val = volume
+
+    elif month <= sim_period_0_months:
         val = volume * growth_rate_0_monthly
 
     elif month <= sim_period_1_months:
@@ -194,7 +197,18 @@ def profitability(agent) -> np.float64:
 
 
 def expansion_cost(agent) -> np.float64:
-    pass
+    val = np.float64()
+    if agent.month > 0:
+        bio_increase = agent.bio_capacity.value - agent.bio_capacity.history[agent.month - 1]
+        bio_cost = agent.bio_capacity_cost * bio_increase
+
+        fossil_increase = agent.fossil_capacity.value - agent.fossil_capacity.history[agent.month - 1]
+        fossil_cost = agent.fossil_capacity_cost * fossil_increase
+        val = np.float64(bio_cost + fossil_cost)
+    elif agent.month == 0:
+        val = 0
+
+    return val
 
 
 def bio_capacity(agent) -> np.float64:
@@ -222,6 +236,7 @@ def fossil_capacity(agent) -> np.float64:
     else:
         pass
     return val
+
 
 # endregion
 
@@ -368,7 +383,27 @@ def profitability_projection(agent) -> np.ndarray:
 
 
 def expansion_cost_projection(agent) -> np.ndarray:
-    pass
+    bio_expansion = np.zeros(agent.projection_time)
+    fossil_expansion = np.zeros(agent.projection_time)
+    if agent.month > 0:
+        bio_expansion[0] = agent.bio_capacity.value - agent.bio_capacity.history[agent.month - 1]
+        fossil_expansion[0] = agent.fossil_capacity.value - agent.fossil_capacity.history[agent.month - 1]
+    elif agent.month == 0:
+        bio_expansion[0] = 0
+        fossil_expansion[0] = 0
+    else:
+        pass
+
+    for i in range(1, agent.projection_time):
+        bio_expansion[i] = agent.bio_capacity.projection[i] - agent.bio_capacity.projection[i - 1]
+        fossil_expansion[i] = agent.fossil_capacity.projection[i] - agent.fossil_capacity.projection[i - 1]
+
+    bio_expansion_cost = bio_expansion * agent.bio_capacity_cost
+    fossil_expansion_cost = fossil_expansion * agent.fossil_expansion_cost
+
+    proj = np.add(bio_expansion_cost, fossil_expansion_cost)
+
+    return proj
 
 
 def bio_capacity_projection(agent) -> np.ndarray:
@@ -376,7 +411,7 @@ def bio_capacity_projection(agent) -> np.ndarray:
     proj = np.zeros(agent.projection_time)
     proj[0] = max(agent.bio_capacity.value, bio_production[0])
     for i in range(1, agent.projection_time):
-        proj[i] = max(bio_production[i], proj[i-1])
+        proj[i] = max(bio_production[i], proj[i - 1])
     return proj
 
 
