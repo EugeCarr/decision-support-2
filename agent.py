@@ -104,32 +104,32 @@ def unit_feedstock_cost(agent) -> np.float64:
     return val
 
 
-def unit_process_cost(agent):
+def unit_process_cost(agent) -> np.float64:
     # process cost is given by a normal distribution around a mean which is a weakly decreasing function of
     # production volume, such that a doubling in production reduces processing unit cost by 10%, starting from 1
     mean = 2.8576 / np.power(agent.production_volume.value, 0.152)
     std_dev = 0.005
-    val = np.random.normal(mean, std_dev, None)
+    val = np.float64(np.random.normal(mean, std_dev, None))
     return val
 
 
-def bio_feedstock_cost(agent):
+def bio_feedstock_cost(agent) -> np.float64:
     # unit feedstock cost is given by a normal distribution
     mean = np.float64(2)
     std_dev = 0.01
-    val = np.random.normal(mean, std_dev, None)
+    val = np.float64(np.random.normal(mean, std_dev, None))
     return val
 
 
-def bio_process_cost(agent):
+def bio_process_cost(agent) -> np.float64:
     # process cost is given by a normal distribution
     mean = 1.05
     std_dev = 0.005
-    val = np.random.normal(mean, std_dev, None)
+    val = np.float64(np.random.normal(mean, std_dev, None))
     return val
 
 
-def proportion_bio(agent):
+def proportion_bio(agent) -> np.float64:
     # monthly change in bio proportion is either the amount to reach the target value, or else the maximum change
     val = np.float64(agent.proportion_bio.value)
     if agent.implementation_countdown == 0 and agent.proportion_bio.value != agent.proportion_bio_target:
@@ -149,24 +149,24 @@ def proportion_bio(agent):
     return val
 
 
-def levy_rate(agent):
+def levy_rate(agent) -> np.float64:
     val = agent.levy
     return val
 
 
-def emissions(agent):
+def emissions(agent) -> np.float64:
     fossil_production = agent.production_volume.value / 12 * (1 - agent.proportion_bio.value)
     val = fossil_production * agent.emissions_rate
     return val
 
 
-def levies_payable(agent):
+def levies_payable(agent) -> np.float64:
     """This will calculate the levies payable on production/consumption/emission, once they are defined"""
     val = agent.levy * agent.emissions.value
     return val
 
 
-def gross_profit(agent):
+def gross_profit(agent) -> np.float64:
     production_in_month = agent.production_volume.value / 12
     revenue = production_in_month * agent.unit_sale_price.value
     costs = (production_in_month * ((1 - agent.proportion_bio.value) *
@@ -178,20 +178,50 @@ def gross_profit(agent):
     return val
 
 
-def tax_payable(agent):
+def tax_payable(agent) -> np.float64:
     val = agent.gross_profit.value * agent.tax_rate
     return val
 
 
-def net_profit(agent):
+def net_profit(agent) -> np.float64:
     val = agent.gross_profit.value - agent.tax_payable.value
     return val
 
 
-def profitability(agent):
+def profitability(agent) -> np.float64:
     val = agent.net_profit.value / (agent.production_volume.value / 12)
     return val
 
+
+def expansion_cost(agent) -> np.float64:
+    pass
+
+
+def bio_capacity(agent) -> np.float64:
+    # only ever increases.
+    val = np.float64()
+    if agent.month > 0:
+        prev = agent.bio_capacity.history[agent.month - 1]
+        now = agent.production_volume.value * agent.proportion_bio.value
+        val = max(now, prev)
+    elif agent.month == 0:
+        val = 0
+    else:
+        pass
+    return val
+
+
+def fossil_capacity(agent) -> np.float64:
+    val = np.float64()
+    if agent.month > 0:
+        prev = agent.fossil_capacity.history[agent.month - 1]
+        now = agent.production_volume.value * (1 - agent.proportion_bio.value)
+        val = max(now, prev)
+    elif agent.month == 0:
+        val = 1000
+    else:
+        pass
+    return val
 
 # endregion
 
@@ -337,6 +367,29 @@ def profitability_projection(agent) -> np.ndarray:
     return proj
 
 
+def expansion_cost_projection(agent) -> np.ndarray:
+    pass
+
+
+def bio_capacity_projection(agent) -> np.ndarray:
+    bio_production = np.multiply(agent.production_volume.projection, agent.proportion_bio.projection)
+    proj = np.zeros(agent.projection_time)
+    proj[0] = max(agent.bio_capacity.value, bio_production[0])
+    for i in range(1, agent.projection_time):
+        proj[i] = max(bio_production[i], proj[i-1])
+    return proj
+
+
+def fossil_capacity_projection(agent) -> np.ndarray:
+    fossil_production = np.multiply(agent.production_volume.projection,
+                                    np.subtract(np.ones(agent.projection_time), agent.proportion_bio.projection))
+    proj = np.zeros(agent.projection_time)
+    proj[0] = max(agent.fossil_capacity.value, fossil_production[0])
+    for i in range(1, agent.projection_time):
+        proj[i] = max(fossil_production[i], proj[i - 1])
+    return proj
+
+
 # endregion
 
 class Agent(object):
@@ -355,7 +408,8 @@ class PET_Manufacturer(Agent):
     # object initialisation
     def __init__(self, name, sim_time):
         super().__init__(name, sim_time)
-        """To add a new parameter, define it as an attribute of object type Parameter. 
+        """To add a new parameter, define it as an attribute of object type Parameter. Then add it to the correct list
+        of variables (dependent or independent) in the correct place so parameters are computed in the right order. 
         The argument fun is the function which, given an argument of object type Agent, returns a single float which
         is the next value of the parameter. 
         The argument project is a function which, given an argument of object type Agent, returns an array of size n
@@ -379,6 +433,9 @@ class PET_Manufacturer(Agent):
         # proportion of production from biological feedstocks
         self.levy_rate = Parameter(levy_rate, levy_rate_projection, init=np.float64(0.2))
 
+        self.bio_capacity = Parameter(bio_capacity, bio_capacity_projection)
+        self.fossil_capacity = Parameter(fossil_capacity, fossil_capacity_projection, init=np.float64(1000))
+
         # list of all independent variables, listed in the order in which they must be computed (if it matters at all)
         self.independent_variables = [
             self.production_volume,
@@ -388,11 +445,15 @@ class PET_Manufacturer(Agent):
             self.bio_feedstock_cost,
             self.bio_process_cost,
             self.proportion_bio,
-            self.levy_rate
+            self.levy_rate,
+            self.bio_capacity,
+            self.fossil_capacity
         ]
 
         # define dependent variables
-        self.gross_profit = Parameter(gross_profit, gross_profit_projection)  # profits prior to taxes and levies
+        self.expansion_cost = Parameter(expansion_cost, expansion_cost_projection)
+        # cost of increasing production capacity
+        self.gross_profit = Parameter(gross_profit, gross_profit_projection)  # profits after levies and before taxes
         self.emissions = Parameter(emissions, emissions_projection)
         # emissions from manufacturing PET from fossil fuels
         self.tax_payable = Parameter(tax_payable, tax_payable_projection)
@@ -403,6 +464,7 @@ class PET_Manufacturer(Agent):
 
         # list of all parametrised dependent variables, listed in the order in which they must be computed
         self.dependent_variables = [
+            self.expansion_cost,
             self.emissions,
             self.levies_payable,
             self.gross_profit,
@@ -445,6 +507,9 @@ class PET_Manufacturer(Agent):
         self.implementation_delay = int(3)  # time delay between investment decision and movement of bio_proportion
         self.implementation_countdown = int(0)  # countdown to change of direction
         self.under_construction = False  # is change in bio capacity occurring?
+
+        self.fossil_capacity_cost = np.float64(1)  # one-time cost of increasing production capacity for fossil route
+        self.bio_capacity_cost = np.float64(2)  # one-time cost of increasing production capacity for bio route
 
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'
