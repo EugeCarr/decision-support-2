@@ -53,6 +53,11 @@ def simulate(months, table=bool, plot=bool):
 
         month += 1
 
+    print(' ============ \n FINAL STATE \n ============',
+          '\n Regulation level:', regulator.level,
+          '\n Levy rate:', regulator.levy_rate,
+          '\n Bio proportion', pet_manufacturer.proportion_bio.value)
+
     # data output & analysis
     t = np.arange(0, months, 1)
 
@@ -60,21 +65,19 @@ def simulate(months, table=bool, plot=bool):
         table = []
         for i in range(0, months):
             table.append([t[i],
-                          pet_manufacturer.expansion_cost.history[i],
-                          pet_manufacturer.production_volume.history[i],
-                          pet_manufacturer.fossil_capacity.history[i]])
+                          pet_manufacturer.profitability.history[i]])
 
-        headers = ["Month", "Expenditure", "Production Volume", "Fossil capacity"]
+        headers = ['Month', 'Profitability']
         print(tabulate(table, headers))
 
     if plot:
-        y = pet_manufacturer.expansion_cost.history
+        y = pet_manufacturer.emissions.history
         x = t
         fig, ax1 = plt.subplots()
         ax1.plot(x, y)
 
         ax1.set_xlabel('Month')
-        ax1.set_ylabel('Production capacity')
+        ax1.set_ylabel('Emissions')
 
         fig.tight_layout()
         plt.show()

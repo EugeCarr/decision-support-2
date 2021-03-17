@@ -73,7 +73,7 @@ def production_volume(agent) -> np.float64:
 
     sim_period_1 = 10  # end year for second simulation period
     sim_period_1_months = sim_period_1 * 12  # end month for second simulation period
-    growth_rate_1 = 1.03  # YoY growth rate for the second simulation period, expressed as a ratio
+    growth_rate_1 = 1.02  # YoY growth rate for the second simulation period, expressed as a ratio
     growth_rate_1_monthly = np.power(growth_rate_1, 1 / 12)  # annual growth rate changed to month-on-month
 
     if month == 0:
@@ -176,7 +176,7 @@ def gross_profit(agent) -> np.float64:
                                     (agent.unit_feedstock_cost.value + agent.unit_process_cost.value) +
                                     agent.proportion_bio.value *
                                     (agent.bio_feedstock_cost.value + agent.bio_process_cost.value))
-             + agent.levies_payable.value)
+             + agent.levies_payable.value + agent.expansion_cost.value)
     val = revenue - costs
     return val
 
@@ -344,7 +344,7 @@ def gross_profit_projection(agent) -> np.ndarray:
 
     total_cost_projection = np.add(
         np.add(fossil_cost_projection, bio_cost_projection),
-        agent.levies_payable.projection)
+        np.add(agent.levies_payable.projection, agent.expansion_cost.projection))
 
     proj = np.subtract(revenue_projection, total_cost_projection)
     return proj
@@ -399,7 +399,7 @@ def expansion_cost_projection(agent) -> np.ndarray:
         fossil_expansion[i] = agent.fossil_capacity.projection[i] - agent.fossil_capacity.projection[i - 1]
 
     bio_expansion_cost = bio_expansion * agent.bio_capacity_cost
-    fossil_expansion_cost = fossil_expansion * agent.fossil_expansion_cost
+    fossil_expansion_cost = fossil_expansion * agent.fossil_capacity_cost
 
     proj = np.add(bio_expansion_cost, fossil_expansion_cost)
 
