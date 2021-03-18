@@ -5,6 +5,7 @@ from regulator import Policy
 import numpy as np
 from tabulate import tabulate
 from matplotlib import pyplot as plt
+import copy
 
 
 def simulate(months, table=bool, plot=bool):
@@ -40,13 +41,13 @@ def simulate(months, table=bool, plot=bool):
         # if the regulator rate has just changed (resulting in mismatch between agents) then update it
         if pet_manufacturer.levy != regulator.levy_rate:
             pet_manufacturer.levy = regulator.levy_rate
-            pet_manufacturer.time_to_levy_change = regulator.time_to_change
+            pet_manufacturer.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
             pet_manufacturer.levy_rate_changing = False
 
         # if a change in the levy rate is approaching, tell the pet_manufacturer
         if regulator.changing:
             pet_manufacturer.levy_rate_changing = True
-            pet_manufacturer.time_to_levy_change = regulator.time_to_change
+            pet_manufacturer.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
             pet_manufacturer.future_levy_rate = regulator.pol_table[regulator.level + 1][2]
         else:
             pass
@@ -71,13 +72,13 @@ def simulate(months, table=bool, plot=bool):
         print(tabulate(table, headers))
 
     if plot:
-        y = pet_manufacturer.emissions.history
+        y = pet_manufacturer.profitability.history
         x = t
         fig, ax1 = plt.subplots()
         ax1.plot(x, y)
 
         ax1.set_xlabel('Month')
-        ax1.set_ylabel('Emissions')
+        ax1.set_ylabel('Profitability')
 
         fig.tight_layout()
         plt.show()

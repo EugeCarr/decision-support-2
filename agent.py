@@ -90,7 +90,7 @@ def production_volume(agent) -> np.float64:
 
 def unit_sale_price(agent) -> np.float64:
     # unit sale price is given by a normal distribution
-    mean = np.float64(5)
+    mean = np.float64(4.5)
     std_dev = 0.01
     val = np.float64(np.random.normal(mean, std_dev, None))
     return val
@@ -240,6 +240,12 @@ def liquidity(agent) -> np.float64:
     return val
 
 
+def profit_margin(agent) -> np.float64:
+    production_in_month = agent.production_volume.value / 12
+    val = agent.net_profit.value / (production_in_month * agent.unit_sale_price.value)
+    return val
+
+
 # endregion
 
 # region -- projection functions
@@ -262,7 +268,7 @@ def production_volume_projection(agent) -> np.ndarray:
 def unit_sale_price_projection(agent) -> np.ndarray:
     # Calculate the projected PET sale prices
     proj = np.zeros(agent.projection_time)
-    proj.fill(5)  # fixed value
+    proj.fill(4.5)  # fixed value
     return proj
 
 
@@ -374,8 +380,7 @@ def tax_payable_projection(agent) -> np.ndarray:
 
 
 def net_profit_projection(agent) -> np.ndarray:
-    profit_g = agent.gross_profit.projection
-    proj = np.subtract(profit_g, agent.tax_payable.projection)
+    proj = np.subtract(agent.gross_profit.projection, agent.tax_payable.projection)
     return proj
 
 
@@ -435,6 +440,12 @@ def liquidity_projection(agent) -> np.ndarray:
     costs = np.cumsum(agent.expansion_cost.projection, dtype=np.float64)
     profits = np.subtract(revenues, costs)
     proj = np.add(liq, profits)
+    return proj
+
+
+def profit_margin_projection(agent) -> np.ndarray:
+    monthly_production_projection = agent.production_volume.projection / 12
+    proj = np.divide(agent.net_profit.projection, monthly_production_projection)
     return proj
 
 
@@ -509,7 +520,8 @@ class PET_Manufacturer(Agent):
         self.net_profit = Parameter(net_profit, net_profit_projection)  # monthly profit after tax and levies
         self.profitability = Parameter(profitability, profitability_projection)
         # profitability (net profit per unit production)
-        self.liquidity = Parameter(liquidity, liquidity_projection, init=np.float64(1000))  # accumulated cash
+        self.liquidity = Parameter(liquidity, liquidity_projection, init=np.float64(5000))  # accumulated cash
+        self.profit_margin = Parameter(profit_margin, profit_margin_projection)
 
         # list of all parametrised dependent variables, listed in the order in which they must be computed
         self.dependent_variables = [
@@ -520,7 +532,8 @@ class PET_Manufacturer(Agent):
             self.tax_payable,
             self.net_profit,
             self.profitability,
-            self.liquidity
+            self.liquidity,
+            self.profit_margin
         ]
 
         # now define other parameters which will not be recorded or projected
@@ -544,10 +557,10 @@ class PET_Manufacturer(Agent):
 
         # define variables for the targets against which projections are measured
         # and the times at which they happen
-        self.target1_value = np.float64(0.8)  # currently fixed values
+        self.target1_value = np.float64(0.5)  # currently fixed values
         self.target1_year = 5
 
-        self.target2_value = np.float64(1.0)  # currently fixed values
+        self.target2_value = np.float64(0.5)  # currently fixed values
         self.target2_year = 10
 
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
@@ -657,7 +670,8 @@ class PET_Manufacturer(Agent):
             pass
         elif not self.projection_met:
             while self.proportion_bio_target <= 0.9 and not self.projection_met:
-                self.implementation_countdown = self.implementation_delay
+                if not self.under_construction:
+                    self.implementation_countdown = self.implementation_delay
                 self.proportion_bio_target += 0.1
                 self.new_projection()
                 self.projection_check()
