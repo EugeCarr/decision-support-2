@@ -71,13 +71,13 @@ def simulate(months, table=bool, plot=bool):
         print(tabulate(table, headers))
 
     if plot:
-        y = pet_manufacturer.emissions.history
+        y = pet_manufacturer.profitability.history
         x = t
         fig, ax1 = plt.subplots()
         ax1.plot(x, y)
 
         ax1.set_xlabel('Month')
-        ax1.set_ylabel('Emissions')
+        ax1.set_ylabel('Profitability')
 
         fig.tight_layout()
         plt.show()

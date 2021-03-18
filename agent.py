@@ -82,11 +82,8 @@ def production_volume(agent) -> np.float64:
     elif month <= sim_period_0_months:
         val = volume * growth_rate_0_monthly
 
-    elif month <= sim_period_1_months:
-        val = volume * growth_rate_1_monthly
-
     else:
-        raise ValueError('production growth not defined for month', month)
+        val = volume * growth_rate_1_monthly
 
     return val
 
@@ -235,6 +232,11 @@ def fossil_capacity(agent) -> np.float64:
         val = 1000
     else:
         pass
+    return val
+
+
+def liquidity(agent) -> np.float64:
+    val = agent.liquidity.value + agent.net_profit.value
     return val
 
 
@@ -425,6 +427,14 @@ def fossil_capacity_projection(agent) -> np.ndarray:
     return proj
 
 
+def liquidity_projection(agent) -> np.ndarray:
+    liq = np.zeros(agent.projection_time)
+    liq.fill(agent.liquidity.value)
+    profits = np.cumsum(agent.net_profit.projection, dtype=np.float64)
+    proj = np.add(liq, profits)
+    return proj
+
+
 # endregion
 
 class Agent(object):
@@ -496,6 +506,7 @@ class PET_Manufacturer(Agent):
         self.net_profit = Parameter(net_profit, net_profit_projection)  # monthly profit after tax and levies
         self.profitability = Parameter(profitability, profitability_projection)
         # profitability (net profit per unit production)
+        self.liquidity = Parameter(liquidity, liquidity_projection)  # accumulated cash
 
         # list of all parametrised dependent variables, listed in the order in which they must be computed
         self.dependent_variables = [
@@ -505,7 +516,8 @@ class PET_Manufacturer(Agent):
             self.gross_profit,
             self.tax_payable,
             self.net_profit,
-            self.profitability
+            self.profitability,
+            self.liquidity
         ]
 
         # now define other parameters which will not be recorded or projected
