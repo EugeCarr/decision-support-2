@@ -506,7 +506,7 @@ class PET_Manufacturer(Agent):
         self.net_profit = Parameter(net_profit, net_profit_projection)  # monthly profit after tax and levies
         self.profitability = Parameter(profitability, profitability_projection)
         # profitability (net profit per unit production)
-        self.liquidity = Parameter(liquidity, liquidity_projection)  # accumulated cash
+        self.liquidity = Parameter(liquidity, liquidity_projection, init=np.float64(1000))  # accumulated cash
 
         # list of all parametrised dependent variables, listed in the order in which they must be computed
         self.dependent_variables = [
