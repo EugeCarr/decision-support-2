@@ -90,7 +90,7 @@ def production_volume(agent) -> np.float64:
 
 def unit_sale_price(agent) -> np.float64:
     # unit sale price is given by a normal distribution
-    mean = np.float64(6)
+    mean = np.float64(5)
     std_dev = 0.01
     val = np.float64(np.random.normal(mean, std_dev, None))
     return val
@@ -262,7 +262,7 @@ def production_volume_projection(agent) -> np.ndarray:
 def unit_sale_price_projection(agent) -> np.ndarray:
     # Calculate the projected PET sale prices
     proj = np.zeros(agent.projection_time)
-    proj.fill(6)  # fixed value
+    proj.fill(5)  # fixed value
     return proj
 
 
@@ -544,10 +544,10 @@ class PET_Manufacturer(Agent):
 
         # define variables for the targets against which projections are measured
         # and the times at which they happen
-        self.target1_value = np.float64(1.5)  # currently fixed values
+        self.target1_value = np.float64(0.8)  # currently fixed values
         self.target1_year = 5
 
-        self.target2_value = np.float64(1.5)  # currently fixed values
+        self.target2_value = np.float64(1.0)  # currently fixed values
         self.target2_year = 10
 
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
@@ -559,7 +559,7 @@ class PET_Manufacturer(Agent):
         self.under_construction = False  # is change in bio capacity occurring?
 
         self.fossil_capacity_cost = np.float64(10)  # one-time cost of increasing production capacity for fossil route
-        self.bio_capacity_cost = np.float64(30)  # one-time cost of increasing production capacity for bio route
+        self.bio_capacity_cost = np.float64(12)  # one-time cost of increasing production capacity for bio route
 
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'

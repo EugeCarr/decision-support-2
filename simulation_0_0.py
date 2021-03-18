@@ -18,7 +18,7 @@ def simulate(months, table=bool, plot=bool):
     policy.add_level([2000, 0.19, 0.25])
     policy.add_level([2100, 0.19, 0.3])
 
-    notice_period = int(18)
+    notice_period = int(24)
 
     regulator = Regulator('Regulator', months, notice_period, policy)
 
@@ -71,13 +71,13 @@ def simulate(months, table=bool, plot=bool):
         print(tabulate(table, headers))
 
     if plot:
-        y = pet_manufacturer.profitability.history
+        y = pet_manufacturer.emissions.history
         x = t
         fig, ax1 = plt.subplots()
         ax1.plot(x, y)
 
         ax1.set_xlabel('Month')
-        ax1.set_ylabel('Profitability')
+        ax1.set_ylabel('Emissions')
 
         fig.tight_layout()
         plt.show()
