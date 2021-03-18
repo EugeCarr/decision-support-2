@@ -173,7 +173,7 @@ def gross_profit(agent) -> np.float64:
                                     (agent.unit_feedstock_cost.value + agent.unit_process_cost.value) +
                                     agent.proportion_bio.value *
                                     (agent.bio_feedstock_cost.value + agent.bio_process_cost.value))
-             + agent.levies_payable.value + agent.expansion_cost.value)
+             + agent.levies_payable.value)
     val = revenue - costs
     return val
 
@@ -236,7 +236,7 @@ def fossil_capacity(agent) -> np.float64:
 
 
 def liquidity(agent) -> np.float64:
-    val = agent.liquidity.value + agent.net_profit.value
+    val = agent.liquidity.value + agent.net_profit.value - agent.expansion_cost.value
     return val
 
 
@@ -346,7 +346,7 @@ def gross_profit_projection(agent) -> np.ndarray:
 
     total_cost_projection = np.add(
         np.add(fossil_cost_projection, bio_cost_projection),
-        np.add(agent.levies_payable.projection, agent.expansion_cost.projection))
+        agent.levies_payable.projection)
 
     proj = np.subtract(revenue_projection, total_cost_projection)
     return proj
@@ -430,7 +430,10 @@ def fossil_capacity_projection(agent) -> np.ndarray:
 def liquidity_projection(agent) -> np.ndarray:
     liq = np.zeros(agent.projection_time)
     liq.fill(agent.liquidity.value)
-    profits = np.cumsum(agent.net_profit.projection, dtype=np.float64)
+
+    revenues = np.cumsum(agent.net_profit.projection, dtype=np.float64)
+    costs = np.cumsum(agent.expansion_cost.projection, dtype=np.float64)
+    profits = np.subtract(revenues, costs)
     proj = np.add(liq, profits)
     return proj
 
@@ -555,8 +558,8 @@ class PET_Manufacturer(Agent):
         self.implementation_countdown = int(0)  # countdown to change of direction
         self.under_construction = False  # is change in bio capacity occurring?
 
-        self.fossil_capacity_cost = np.float64(1)  # one-time cost of increasing production capacity for fossil route
-        self.bio_capacity_cost = np.float64(2)  # one-time cost of increasing production capacity for bio route
+        self.fossil_capacity_cost = np.float64(10)  # one-time cost of increasing production capacity for fossil route
+        self.bio_capacity_cost = np.float64(30)  # one-time cost of increasing production capacity for bio route
 
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'
