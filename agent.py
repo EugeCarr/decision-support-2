@@ -557,10 +557,10 @@ class PET_Manufacturer(Agent):
 
         # define variables for the targets against which projections are measured
         # and the times at which they happen
-        self.target1_value = np.float64(0.5)  # currently fixed values
+        self.target1_value = np.float64(0.35)  # currently fixed values
         self.target1_year = 5
 
-        self.target2_value = np.float64(0.5)  # currently fixed values
+        self.target2_value = np.float64(0.35)  # currently fixed values
         self.target2_year = 10
 
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
@@ -692,7 +692,7 @@ class PET_Manufacturer(Agent):
             self.implementation_countdown -= 1
 
         self.update_current_state()
-        if self.month % 12 == 0:
+        if self.month % 12 == 1:
             self.new_projection()
             self.projection_check()
             self.investment_decision()
