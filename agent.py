@@ -37,7 +37,7 @@ class Agent(object):
 
 class Manufacturer(Agent):
     # object initialisation
-    def __init__(self, name, sim_time, initial_production_volume=np.float64(1000)):
+    def __init__(self, name, dictionary, sim_time):
         super().__init__(name, sim_time)
         """To add a new parameter, define it as an attribute of object type Parameter. Then add it to the correct list
         of variables (dependent or independent) in the correct place so parameters are computed in the right order. 
@@ -50,67 +50,8 @@ class Manufacturer(Agent):
 
         self.projection_time = 120  # how many months into the future will be predicted?
 
-        # define independent variables for current time
-        self.production_volume = Parameter(par.production_volume, par.production_volume_projection, sim_time,
-                                           init=initial_production_volume)
-        # total PET production per annum, starts at 1000
-        self.unit_sale_price = Parameter(par.unit_sale_price, par.unit_sale_price_projection, sim_time)
-        # sale price of one unit of PET
-        self.unit_feedstock_cost = Parameter(par.unit_feedstock_cost, par.unit_feedstock_cost_projection, sim_time)
-        # feedstock cost per unit of PET produced
-        self.unit_process_cost = Parameter(par.unit_process_cost, par.unit_process_cost_projection, sim_time)
-        # cost of running process per unit of PET produced
-
-        self.bio_feedstock_cost = Parameter(par.bio_feedstock_cost, par.bio_feedstock_cost_projection, sim_time)
-        # bio feedstock cost per unit of PET produced
-        self.bio_process_cost = Parameter(par.bio_process_cost, par.bio_process_cost_projection, sim_time)
-        # cost of process per unit of PET from bio routes
-        self.proportion_bio = Parameter(par.proportion_bio, par.proportion_bio_projection, sim_time)
-        # proportion of production from biological feedstocks
-        self.levy_rate = Parameter(par.levy_rate, par.levy_rate_projection, sim_time, init=np.float64(0.2))
-
-        self.bio_capacity = Parameter(par.bio_capacity, par.bio_capacity_projection, sim_time)
-        self.fossil_capacity = Parameter(par.fossil_capacity, par.fossil_capacity_projection, sim_time,
-                                         init=initial_production_volume)
-
-        self.expansion_cost = Parameter(par.expansion_cost, par.expansion_cost_projection, sim_time)
-        # cost of increasing production capacity
-        self.gross_profit = Parameter(par.gross_profit, par.gross_profit_projection, sim_time)
-        # profits after levies and before taxes
-        self.emissions = Parameter(par.emissions, par.emissions_projection, sim_time)
-        # emissions from manufacturing PET from fossil fuels
-        self.tax_payable = Parameter(par.tax_payable, par.tax_payable_projection, sim_time)
-        self.levies_payable = Parameter(par.levies_payable, par.levies_payable_projection, sim_time)
-        self.net_profit = Parameter(par.net_profit, par.net_profit_projection, sim_time)
-        # monthly profit after tax and levies
-        self.profitability = Parameter(par.profitability, par.profitability_projection, sim_time)
-        # profitability (net profit per unit production)
-        self.liquidity = Parameter(par.liquidity, par.liquidity_projection, sim_time, init=np.float64(5000))
-        # accumulated cash
-        self.profit_margin = Parameter(par.profit_margin, par.profit_margin_projection, sim_time)
-
         # dictionary of all variables in the order in which they should be computed
-        self.parameter = {
-            'production_volume': self.production_volume,
-            'unit_sale_price': self.unit_sale_price,
-            'unit_feedstock_cost': self.unit_feedstock_cost,
-            'unit_process_cost': self.unit_process_cost,
-            'bio_feedstock_cost': self.bio_feedstock_cost,
-            'bio_process_cost': self.bio_process_cost,
-            'proportion_bio': self.proportion_bio,
-            'levy_rate': self.levy_rate,
-            'bio_capacity': self.bio_capacity,
-            'fossil_capacity': self.fossil_capacity,
-            'expansion_cost': self.expansion_cost,
-            'emissions': self.emissions,
-            'levies_payable': self.levies_payable,
-            'gross_profit': self.gross_profit,
-            'tax_payable': self.tax_payable,
-            'net_profit': self.net_profit,
-            'profitability': self.profitability,
-            'liquidity': self.liquidity,
-            'profit_margin': self.profit_margin
-        }
+        self.parameter = dictionary
 
         # list of keys in the dictionary in the order passed to the object on initialisation
         # ensures computation order is preserved
@@ -150,7 +91,7 @@ class Manufacturer(Agent):
 
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'
-              '\n Annual production volume:', self.production_volume.value,
+              '\n Annual production volume:', self.parameter['production_volume'].value,
               '\n Projection horizon (months):', self.projection_time,
               '\n Target profitability:', self.target_value,
               '\n -------------')
@@ -188,13 +129,13 @@ class Manufacturer(Agent):
         time_to_target2 = time_to_target1 + 60
 
         if time_to_target1 > 12:
-            if self.profitability.projection[time_to_target1] >= self.target_value:
+            if self.parameter['profitability'].projection[time_to_target1] >= self.target_value:
                 self.projection_met = True
             else:
                 self.projection_met = False
 
         else:
-            if self.profitability.projection[time_to_target2] >= self.target_value:
+            if self.parameter['profitability'].projection[time_to_target2] >= self.target_value:
                 self.projection_met = True
             else:
                 self.projection_met = False

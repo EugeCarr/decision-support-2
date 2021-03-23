@@ -6,74 +6,41 @@ import numpy as np
 from tabulate import tabulate
 from matplotlib import pyplot as plt
 import copy
+from parameter import Parameter
+import parameter as par
 
 
 def simulate(months, table=bool, plot=bool):
     # create agents and specify their parameters
     month = int(0)
+    initial_production_volume = np.float64(1000)
 
-    # self.production_volume = Parameter(production_volume, production_volume_projection, sim_time,
-    #                                    init=initial_production_volume)
-    # # total PET production per annum, starts at 1000
-    # self.unit_sale_price = Parameter(unit_sale_price, unit_sale_price_projection, sim_time)
-    # # sale price of one unit of PET
-    # self.unit_feedstock_cost = Parameter(unit_feedstock_cost, unit_feedstock_cost_projection, sim_time)
-    # # feedstock cost per unit of PET produced
-    # self.unit_process_cost = Parameter(unit_process_cost, unit_process_cost_projection, sim_time)
-    # # cost of running process per unit of PET produced
-    #
-    # self.bio_feedstock_cost = Parameter(bio_feedstock_cost, bio_feedstock_cost_projection, sim_time)
-    # # bio feedstock cost per unit of PET produced
-    # self.bio_process_cost = Parameter(bio_process_cost, bio_process_cost_projection, sim_time)
-    # # cost of process per unit of PET from bio routes
-    # self.proportion_bio = Parameter(proportion_bio, proportion_bio_projection, sim_time)
-    # # proportion of production from biological feedstocks
-    # self.levy_rate = Parameter(levy_rate, levy_rate_projection, sim_time, init=np.float64(0.2))
-    #
-    # self.bio_capacity = Parameter(bio_capacity, bio_capacity_projection, sim_time)
-    # self.fossil_capacity = Parameter(fossil_capacity, fossil_capacity_projection, sim_time,
-    #                                  init=initial_production_volume)
-    #
-    # self.expansion_cost = Parameter(expansion_cost, expansion_cost_projection, sim_time)
-    # # cost of increasing production capacity
-    # self.gross_profit = Parameter(gross_profit, gross_profit_projection, sim_time)
-    # # profits after levies and before taxes
-    # self.emissions = Parameter(emissions, emissions_projection, sim_time)
-    # # emissions from manufacturing PET from fossil fuels
-    # self.tax_payable = Parameter(tax_payable, tax_payable_projection, sim_time)
-    # self.levies_payable = Parameter(levies_payable, levies_payable_projection, sim_time)
-    # self.net_profit = Parameter(net_profit, net_profit_projection, sim_time)
-    # # monthly profit after tax and levies
-    # self.profitability = Parameter(profitability, profitability_projection, sim_time)
-    # # profitability (net profit per unit production)
-    # self.liquidity = Parameter(liquidity, liquidity_projection, sim_time, init=np.float64(5000))
-    # # accumulated cash
-    # self.profit_margin = Parameter(profit_margin, profit_margin_projection, sim_time)
-    #
-    # # dictionary of all variables in the order in which they should be computed
-    # self.parameter = {
-    #     'production_volume': self.production_volume,
-    #     'unit_sale_price': self.unit_sale_price,
-    #     'unit_feedstock_cost': self.unit_feedstock_cost,
-    #     'unit_process_cost': self.unit_process_cost,
-    #     'bio_feedstock_cost': self.bio_feedstock_cost,
-    #     'bio_process_cost': self.bio_process_cost,
-    #     'proportion_bio': self.proportion_bio,
-    #     'levy_rate': self.levy_rate,
-    #     'bio_capacity': self.bio_capacity,
-    #     'fossil_capacity': self.fossil_capacity,
-    #     'expansion_cost': self.expansion_cost,
-    #     'emissions': self.emissions,
-    #     'levies_payable': self.levies_payable,
-    #     'gross_profit': self.gross_profit,
-    #     'tax_payable': self.tax_payable,
-    #     'net_profit': self.net_profit,
-    #     'profitability': self.profitability,
-    #     'liquidity': self.liquidity,
-    #     'profit_margin': self.profit_margin
-    # }
+    # dictionary of all variables in the order in which they should be computed
+    dictionary = {
+        'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
+                                       init=initial_production_volume),
+        'unit_sale_price': Parameter(par.unit_sale_price, par.unit_sale_price_projection, months),
+        'unit_feedstock_cost': Parameter(par.unit_feedstock_cost, par.unit_feedstock_cost_projection, months),
+        'unit_process_cost': Parameter(par.unit_process_cost, par.unit_process_cost_projection, months),
+        'bio_feedstock_cost': Parameter(par.bio_feedstock_cost, par.bio_feedstock_cost_projection, months),
+        'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months),
+        'proportion_bio': Parameter(par.proportion_bio, par.proportion_bio_projection, months),
+        'levy_rate': Parameter(par.levy_rate, par.levy_rate_projection, months, init=np.float64(0.2)),
+        'bio_capacity': Parameter(par.bio_capacity, par.bio_capacity_projection, months),
+        'fossil_capacity': Parameter(par.fossil_capacity, par.fossil_capacity_projection, months,
+                                     init=initial_production_volume),
+        'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
+        'emissions': Parameter(par.emissions, par.emissions_projection, months),
+        'levies_payable': Parameter(par.levies_payable, par.levies_payable_projection, months),
+        'gross_profit': Parameter(par.gross_profit, par.gross_profit_projection, months),
+        'tax_payable': Parameter(par.tax_payable, par.tax_payable_projection, months),
+        'net_profit': Parameter(par.net_profit, par.net_profit_projection, months),
+        'profitability': Parameter(par.profitability, par.profitability_projection, months),
+        'liquidity': Parameter(par.liquidity, par.liquidity_projection, months, init=np.float64(5000)),
+        'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
+    }
 
-    pet_manufacturer = agent.Manufacturer('PET Manufacturer', months)
+    pet_manufacturer = agent.Manufacturer('PET Manufacturer', dictionary, months)
 
     policy = Policy()
     policy.add_level([1900, 0.19, 0.2])
@@ -98,7 +65,7 @@ def simulate(months, table=bool, plot=bool):
 
         # execute standard monthly routines
         pet_manufacturer.time_step()
-        regulator.iterate_regulator(pet_manufacturer.emissions.value)
+        regulator.iterate_regulator(pet_manufacturer.parameter['emissions'].value)
 
         # if the regulator rate has just changed (resulting in mismatch between agents) then update it
         if pet_manufacturer.parameter['levy_rate'].value != regulator.levy_rate:
@@ -119,7 +86,7 @@ def simulate(months, table=bool, plot=bool):
     print(' ============ \n FINAL STATE \n ============',
           '\n Regulation level:', regulator.level,
           '\n Levy rate:', regulator.levy_rate,
-          '\n Bio proportion', pet_manufacturer.proportion_bio.value)
+          '\n Bio proportion', pet_manufacturer.parameter['proportion_bio'].value)
 
     # data output & analysis
     t = np.arange(0, months, 1)
@@ -128,7 +95,7 @@ def simulate(months, table=bool, plot=bool):
         table = []
         for i in range(0, months):
             table.append([t[i],
-                          pet_manufacturer.profitability.history[i]])
+                          pet_manufacturer.parameter['profitability'].history[i]])
 
         headers = ['Month', 'Profitability']
         print(tabulate(table, headers))

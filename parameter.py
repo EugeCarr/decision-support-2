@@ -1,5 +1,5 @@
 import numpy as np
-import agent
+import agent as ag
 
 
 class Parameter(object):
@@ -24,7 +24,7 @@ class Parameter(object):
 
     def update(self, actor):
         # calls the defined update function to calculate the next value of the variable
-        assert isinstance(actor, agent.Agent)
+        assert isinstance(actor, ag.Agent)
         self.value = self.fun(actor)
         return
 
@@ -34,7 +34,7 @@ class Parameter(object):
         return
 
     def forecast(self, actor):
-        assert isinstance(actor, agent.Agent)
+        assert isinstance(actor, ag.Agent)
         self.projection = self.project(actor)
         return
 
@@ -145,7 +145,7 @@ def gross_profit(agent) -> np.float64:
                 agent.parameter['proportion_bio'].value *
                 (agent.parameter['bio_feedstock_cost'].value + agent.parameter['bio_process_cost'].value)
             )
-            + agent.levies_payable.value)
+            + agent.parameter['levies_payable'].value)
     val = revenue - costs
     return val
 
@@ -156,7 +156,7 @@ def tax_payable(agent) -> np.float64:
 
 
 def net_profit(agent) -> np.float64:
-    val = agent.parameter['gross_profit'].value - agent.tax_payable.value
+    val = agent.parameter['gross_profit'].value - agent.parameter['tax_payable'].value
     return val
 
 
