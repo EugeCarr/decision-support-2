@@ -12,7 +12,7 @@ def simulate(months, table=bool, plot=bool):
     # create agents and specify their parameters
     month = int(0)
 
-    pet_manufacturer = agent.PET_Manufacturer('PET Manufacturer', months)
+    pet_manufacturer = agent.Manufacturer('PET Manufacturer', months)
 
     policy = Policy()
     policy.add_level([1900, 0.19, 0.2])

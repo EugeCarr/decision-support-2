@@ -463,7 +463,7 @@ class Agent(object):
         return
 
 
-class PET_Manufacturer(Agent):
+class Manufacturer(Agent):
     # object initialisation
     def __init__(self, name, sim_time):
         super().__init__(name, sim_time)
