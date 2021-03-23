@@ -1,7 +1,5 @@
 """This file defines the Agent class, and subclasses thereof, for the agent-based simulation"""
 import numpy as np
-from parameter import Parameter
-import parameter as par
 
 
 def run_check():

@@ -19,22 +19,32 @@ def simulate(months, table=bool, plot=bool):
     dictionary = {
         'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
                                        init=initial_production_volume),
-        'unit_sale_price': Parameter(par.unit_sale_price, par.unit_sale_price_projection, months),
-        'unit_feedstock_cost': Parameter(par.unit_feedstock_cost, par.unit_feedstock_cost_projection, months),
-        'unit_process_cost': Parameter(par.unit_process_cost, par.unit_process_cost_projection, months),
-        'bio_feedstock_cost': Parameter(par.bio_feedstock_cost, par.bio_feedstock_cost_projection, months),
-        'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months),
+        'unit_sale_price': Parameter(par.unit_sale_price, par.unit_sale_price_projection, months,
+                                     init=np.float64(4.5)),
+        'unit_feedstock_cost': Parameter(par.unit_feedstock_cost, par.unit_feedstock_cost_projection, months,
+                                         init=np.float64(2)),
+        'unit_process_cost': Parameter(par.unit_process_cost, par.unit_process_cost_projection, months,
+                                       init=np.float64(1)),
+        'bio_feedstock_cost': Parameter(par.bio_feedstock_cost, par.bio_feedstock_cost_projection, months,
+                                        init=np.float64(2)),
+        'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
+                                      init=np.float64(1.05)),
+
         'proportion_bio': Parameter(par.proportion_bio, par.proportion_bio_projection, months),
-        'levy_rate': Parameter(par.levy_rate, par.levy_rate_projection, months, init=np.float64(0.2)),
+
         'bio_capacity': Parameter(par.bio_capacity, par.bio_capacity_projection, months),
         'fossil_capacity': Parameter(par.fossil_capacity, par.fossil_capacity_projection, months,
                                      init=initial_production_volume),
         'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
+
         'emissions': Parameter(par.emissions, par.emissions_projection, months),
+        'levy_rate': Parameter(par.levy_rate, par.levy_rate_projection, months, init=np.float64(0.2)),
         'levies_payable': Parameter(par.levies_payable, par.levies_payable_projection, months),
+
         'gross_profit': Parameter(par.gross_profit, par.gross_profit_projection, months),
         'tax_payable': Parameter(par.tax_payable, par.tax_payable_projection, months),
         'net_profit': Parameter(par.net_profit, par.net_profit_projection, months),
+
         'profitability': Parameter(par.profitability, par.profitability_projection, months),
         'liquidity': Parameter(par.liquidity, par.liquidity_projection, months, init=np.float64(5000)),
         'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
