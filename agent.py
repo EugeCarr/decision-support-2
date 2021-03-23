@@ -619,12 +619,18 @@ class Manufacturer(Agent):
         if self.projection_met:
             pass
         elif not self.projection_met:
-            while self.proportion_bio_target <= 0.9 and not self.projection_met:
+            while self.proportion_bio_target < 1 and not self.projection_met:
+
                 if not self.under_construction:
                     self.implementation_countdown = self.implementation_delay
-                self.proportion_bio_target += 0.1
+
+                self.proportion_bio_target += 0.05
+                if self.proportion_bio_target > 1:
+                    self.proportion_bio_target = 1
+
                 self.project_variables()
                 self.projection_check()
+
                 if self.proportion_bio_target == 1 and not self.projection_met:
                     print('Month:', self.month, '\n next profitability target could not be met'
                                                 'at any bio proportion target')

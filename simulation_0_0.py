@@ -18,6 +18,7 @@ def simulate(months, table=bool, plot=bool):
     policy.add_level([1900, 0.19, 0.2])
     policy.add_level([2000, 0.19, 0.225])
     policy.add_level([2100, 0.19, 0.25])
+    policy.add_level([2200, 0.19, 0.275])
 
     notice_period = int(18)
 
