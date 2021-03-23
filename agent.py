@@ -556,17 +556,15 @@ class Manufacturer(Agent):
 
         # define variables for the targets against which projections are measured
         # and the times at which they happen
-        self.target1_value = np.float64(0.35)  # currently fixed values
+        self.target_value = np.float64(0.35)  # currently fixed values
         self.target1_year = 5
-
-        self.target2_value = np.float64(0.35)  # currently fixed values
         self.target2_year = 10
 
         self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
         # targets are defined
 
         self.proportion_change_rate = np.float64(0.1 / 9)  # greatest possible monthly change in self.proportion_bio
-        self.implementation_delay = int(3)  # time delay between investment decision and movement of bio_proportion
+        self.implementation_delay = int(15)  # time delay between investment decision and movement of bio_proportion
         self.implementation_countdown = int(0)  # countdown to change of direction
         self.under_construction = False  # is change in bio capacity occurring?
 
@@ -577,8 +575,7 @@ class Manufacturer(Agent):
         print(' INITIAL STATE \n -------------'
               '\n Annual production volume:', self.production_volume.value,
               '\n Projection horizon (months):', self.projection_time,
-              '\n Target at year', self.target1_year, ':', self.target1_value,
-              '\n Target at year', self.target2_year, ':', self.target2_value,
+              '\n Target profitability:', self.target_value,
               '\n -------------')
 
         # run_check()
@@ -606,31 +603,24 @@ class Manufacturer(Agent):
     # endregion
 
     def projection_check(self):
-        # checks whether the next target will be met on the basis of latest projection
-        # monthly profit targets at years 5 and 10
+        # checks whether the profitability target will be met on the basis of latest projection
+        # at the next 5-year interval
+        # when the next 5-year interval is less than 1 year away the logic is based on the following interval
 
-        time_to_yr1 = self.target1_year * 12 - self.month
-        time_to_yr2 = self.target2_year * 12 - self.month
+        time_to_target1 = 60 - self.month % 60
+        time_to_target2 = time_to_target1 + 60
 
-        if time_to_yr1 > 0:
-            if self.profitability.projection[time_to_yr1] >= self.target1_value:
-                self.projection_met = True
-            else:
-                self.projection_met = False
-
-        elif time_to_yr2 > 0:
-            if self.profitability.projection[time_to_yr2] >= self.target2_value:
+        if time_to_target1 > 12:
+            if self.profitability.projection[time_to_target1] >= self.target_value:
                 self.projection_met = True
             else:
                 self.projection_met = False
 
         else:
-            # if there is no target defined into the future, PROJECTION_MET is set to false
-            self.projection_met = False
-
-            if not self.beyond_target_range:
-                print('No target defined beyond month', self.month)
-                self.beyond_target_range = True
+            if self.profitability.projection[time_to_target2] >= self.target_value:
+                self.projection_met = True
+            else:
+                self.projection_met = False
 
         return
 
