@@ -39,8 +39,8 @@ def simulate(months, table=bool, plot=bool):
         regulator.iterate_regulator(pet_manufacturer.emissions.value)
 
         # if the regulator rate has just changed (resulting in mismatch between agents) then update it
-        if pet_manufacturer.levy != regulator.levy_rate:
-            pet_manufacturer.levy = regulator.levy_rate
+        if pet_manufacturer.levy_rate.value != regulator.levy_rate:
+            pet_manufacturer.levy_rate.value = regulator.levy_rate
             pet_manufacturer.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
             pet_manufacturer.levy_rate_changing = False
 

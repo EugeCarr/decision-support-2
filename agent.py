@@ -150,8 +150,7 @@ def proportion_bio(agent) -> np.float64:
 
 
 def levy_rate(agent) -> np.float64:
-    val = agent.levy
-    return val
+    return agent.levy_rate.value
 
 
 def emissions(agent) -> np.float64:
@@ -162,7 +161,7 @@ def emissions(agent) -> np.float64:
 
 def levies_payable(agent) -> np.float64:
     """This will calculate the levies payable on production/consumption/emission, once they are defined"""
-    val = agent.levy * agent.emissions.value
+    val = agent.levy_rate.value * agent.emissions.value
     return val
 
 
@@ -366,11 +365,11 @@ def tax_rate_projection(agent) -> np.ndarray:
 def levy_rate_projection(agent) -> np.ndarray:
     proj = np.zeros(agent.projection_time)
     if not agent.levy_rate_changing:
-        proj.fill(agent.levy)
+        proj.fill(agent.levy_rate.value)
     else:
         proj.fill(agent.future_levy_rate)
         for i in range(agent.time_to_levy_change):
-            proj[i] = agent.levy
+            proj[i] = agent.levy_rate.value
     return proj
 
 
@@ -513,7 +512,8 @@ class Manufacturer(Agent):
         # monthly profit after tax and levies
         self.profitability = Parameter(profitability, profitability_projection, sim_time)
         # profitability (net profit per unit production)
-        self.liquidity = Parameter(liquidity, liquidity_projection, sim_time, init=np.float64(5000))  # accumulated cash
+        self.liquidity = Parameter(liquidity, liquidity_projection, sim_time, init=np.float64(5000))
+        # accumulated cash
         self.profit_margin = Parameter(profit_margin, profit_margin_projection, sim_time)
 
         # list of all variables in the order in which they should be computed
@@ -540,13 +540,11 @@ class Manufacturer(Agent):
         ]
 
         # now define other parameters which will not be recorded or projected
-
         self.proportion_bio_target = np.float64()  # target value for the proportion of production via bio route
         self.projection_met = False  # 1 or 0 depending on whether the next target will be met by current
         # projection
 
         self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
-        self.levy = np.float(0.2)
         self.emissions_rate = np.float64(5)  # units of emissions per unit of PET produced from non-bio route
 
         self.levy_rate_changing = False
@@ -555,7 +553,6 @@ class Manufacturer(Agent):
 
         # additional projection variables
         self.tax_rate_projection = np.ones(self.projection_time) * self.tax_rate
-        self.levy_projection = np.zeros(self.projection_time)
 
         # define variables for the targets against which projections are measured
         # and the times at which they happen
