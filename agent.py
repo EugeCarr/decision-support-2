@@ -61,7 +61,7 @@ class Parameter(object):
 # region -- parameter calculation functions
 
 def production_volume(agent) -> np.float64:
-    volume = agent.production_volume.value
+    volume = agent.parameter['production_volume'].value
     month = agent.month
 
     # production volume is defined by growth rates
@@ -95,9 +95,8 @@ def unit_feedstock_cost(agent) -> np.float64:
 
 
 def unit_process_cost(agent) -> np.float64:
-    # process cost is given by a normal distribution around a mean which is a weakly decreasing function of
-    # production volume, such that a doubling in production reduces processing unit cost by 10%, starting from 1
-    mean = 2.8576 / np.power(agent.production_volume.value, 0.152)
+    # process cost is given by a normal distribution around a mean
+    mean = np.float64(1)
     std_dev = 0.005
     val = np.float64(np.random.normal(mean, std_dev, None))
     return val
@@ -121,10 +120,10 @@ def bio_process_cost(agent) -> np.float64:
 
 def proportion_bio(agent) -> np.float64:
     # monthly change in bio proportion is either the amount to reach the target value, or else the maximum change
-    val = np.float64(agent.proportion_bio.value)
-    if agent.implementation_countdown == 0 and agent.proportion_bio.value != agent.proportion_bio_target:
+    val = np.float64(agent.parameter['proportion_bio'].value)
+    if agent.implementation_countdown == 0 and agent.parameter['proportion_bio'].value != agent.proportion_bio_target:
         agent.under_construction = True
-        distance_from_target = agent.proportion_bio_target - agent.proportion_bio.value
+        distance_from_target = agent.proportion_bio_target - agent.parameter['proportion_bio'].value
         if abs(distance_from_target) < agent.proportion_change_rate:
             val = agent.proportion_bio_target
         elif distance_from_target > 0:
@@ -140,29 +139,34 @@ def proportion_bio(agent) -> np.float64:
 
 
 def levy_rate(agent) -> np.float64:
-    return agent.levy_rate.value
+    return agent.parameter['levy_rate'].value
 
 
 def emissions(agent) -> np.float64:
-    fossil_production = agent.production_volume.value / 12 * (1 - agent.proportion_bio.value)
+    fossil_production = agent.parameter['production_volume'].value / 12 * (1 - agent.parameter['proportion_bio'].value)
     val = fossil_production * agent.emissions_rate
     return val
 
 
 def levies_payable(agent) -> np.float64:
     """This will calculate the levies payable on production/consumption/emission, once they are defined"""
-    val = agent.levy_rate.value * agent.emissions.value
+    val = agent.parameter['levy_rate'].value * agent.parameter['emissions'].value
     return val
 
 
 def gross_profit(agent) -> np.float64:
-    production_in_month = agent.production_volume.value / 12
-    revenue = production_in_month * agent.unit_sale_price.value
-    costs = (production_in_month * ((1 - agent.proportion_bio.value) *
-                                    (agent.unit_feedstock_cost.value + agent.unit_process_cost.value) +
-                                    agent.proportion_bio.value *
-                                    (agent.bio_feedstock_cost.value + agent.bio_process_cost.value))
-             + agent.levies_payable.value)
+    production_in_month = agent.parameter['production_volume'].value / 12
+    revenue = production_in_month * agent.parameter['unit_sale_price'].value
+    costs = (
+            production_in_month *
+            (
+                (1 - agent.parameter['proportion_bio'].value) *
+                (agent.parameter['unit_feedstock_cost'].value + agent.parameter['unit_process_cost'].value) +
+
+                agent.parameter['proportion_bio'].value *
+                (agent.parameter['bio_feedstock_cost'].value + agent.parameter['bio_process_cost'].value)
+            )
+            + agent.levies_payable.value)
     val = revenue - costs
     return val
 
@@ -529,6 +533,30 @@ class Manufacturer(Agent):
             self.profit_margin
         ]
 
+        self.parameter = {
+            'production_volume': self.production_volume,
+            'unit_sale_price': self.unit_sale_price,
+            'unit_feedstock_cost': self.unit_feedstock_cost,
+            'unit_process_cost': self.unit_process_cost,
+            'bio_feedstock_cost': self.bio_feedstock_cost,
+            'bio_process_cost': self.bio_process_cost,
+            'proportion_bio': self.proportion_bio,
+            'levy_rate': self.levy_rate,
+            'bio_capacity': self.bio_capacity,
+            'fossil_capacity': self.fossil_capacity,
+            'expansion_cost': self.expansion_cost,
+            'emissions': self.emissions,
+            'levies_payable': self.levies_payable,
+            'gross_profit': self.gross_profit,
+            'tax_payable': self.tax_payable,
+            'net_profit': self.net_profit,
+            'profitability': self.profitability,
+            'liquidity': self.liquidity,
+            'profit_margin': self.profit_margin
+        }
+
+        self.keys = list(self.parameter.keys())
+
         # now define other parameters which will not be recorded or projected
         self.proportion_bio_target = np.float64()  # target value for the proportion of production via bio route
         self.projection_met = False  # 1 or 0 depending on whether the next target will be met by current
@@ -574,20 +602,21 @@ class Manufacturer(Agent):
 
     # region -- methods for updating values and projections
     def update_variables(self):
-        for parameter in self.variables:
-            parameter.update(self)
+        for key in self.keys:
+            self.parameter[key].update(self)
+
         return
 
     def record_timestep(self):
         # method to write current variables (independent and dependent) to records
-        for variable in self.variables:
-            variable.record(self.month)
+        for key in self.keys:
+            self.parameter[key].record(self.month)
         return
 
     def project_variables(self):
         # calculate projections for all variables
-        for parameter in self.variables:
-            parameter.forecast(self)
+        for key in self.keys:
+            self.parameter[key].forecast(self)
         return
 
     # endregion
