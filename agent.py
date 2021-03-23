@@ -64,26 +64,16 @@ def production_volume(agent) -> np.float64:
     volume = agent.production_volume.value
     month = agent.month
 
-    # production volume is defined by growth rates in 2 periods
+    # production volume is defined by growth rates
 
-    sim_period_0 = 5  # end year for first simulation period
-    sim_period_0_months = sim_period_0 * 12  # end month for first simulation period
-    growth_rate_0 = 1.02  # YoY growth rate for the first simulation period, expressed as a ratio
-    growth_rate_0_monthly = np.power(growth_rate_0, 1 / 12)  # annual growth rate changed to month-on-month
-
-    sim_period_1 = 10  # end year for second simulation period
-    sim_period_1_months = sim_period_1 * 12  # end month for second simulation period
-    growth_rate_1 = 1.02  # YoY growth rate for the second simulation period, expressed as a ratio
-    growth_rate_1_monthly = np.power(growth_rate_1, 1 / 12)  # annual growth rate changed to month-on-month
+    growth_rate = 1.02  # YoY growth rate for the second simulation period, expressed as a ratio
+    growth_rate_monthly = np.power(growth_rate, 1 / 12)  # annual growth rate changed to month-on-month
 
     if month == 0:
         val = volume
 
-    elif month <= sim_period_0_months:
-        val = volume * growth_rate_0_monthly
-
     else:
-        val = volume * growth_rate_1_monthly
+        val = volume * growth_rate_monthly
 
     return val
 
