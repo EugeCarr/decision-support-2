@@ -111,7 +111,7 @@ def simulate(months, table=bool, plot=bool):
         print(tabulate(table, headers))
 
     if plot:
-        y = pet_manufacturer.parameter['proportion_bio'].history
+        y = pet_manufacturer.parameter['liquidity'].history
         x = t
         fig, ax1 = plt.subplots()
         ax1.plot(x, y)

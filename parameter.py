@@ -220,6 +220,15 @@ def liquidity(agent) -> np.float64:
     val = (agent.parameter['liquidity'].value +
            agent.parameter['net_profit'].value -
            agent.parameter['expansion_cost'].value)
+
+    if val < 0 and not agent.negative_liquidity:
+        agent.negative_liquidity = True
+        print('Liquidity went negative in month', agent.month)
+
+    if agent.negative_liquidity and val > 0:
+        agent.negative_liquidity = False
+        print('Liquidity went positive in month', agent.month)
+
     return val
 
 

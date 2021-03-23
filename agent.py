@@ -70,14 +70,8 @@ class Manufacturer(Agent):
         # additional projection variables
         self.tax_rate_projection = np.ones(self.projection_time) * self.tax_rate
 
-        # define variables for the targets against which projections are measured
-        # and the times at which they happen
+        # define variable for the target against which projections are measured
         self.target_value = np.float64(0.35)  # currently fixed values
-        self.target1_year = 5
-        self.target2_year = 10
-
-        self.beyond_target_range = False  # a boolean set to true if the simulation runs beyond the point for which
-        # targets are defined
 
         self.proportion_change_rate = np.float64(0.1 / 9)  # greatest possible monthly change in self.proportion_bio
         self.implementation_delay = int(15)  # time delay between investment decision and movement of bio_proportion
@@ -86,6 +80,8 @@ class Manufacturer(Agent):
 
         self.fossil_capacity_cost = np.float64(10)  # one-time cost of increasing production capacity for fossil route
         self.bio_capacity_cost = np.float64(12)  # one-time cost of increasing production capacity for bio route
+
+        self.negative_liquidity = False
 
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'
