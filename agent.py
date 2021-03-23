@@ -58,6 +58,42 @@ class Parameter(object):
         return
 
 
+class Parameter2(object):
+    # an object class with a current value, a record of all past values, and a variable to hold a projection
+    # only compatible with data types which can be parsed as a float
+    # argument FUN is a function taking a single AGENT object as an argument and returns the next value of the variable
+    def __init__(self, fun, history_time=120, projection_time=120, init=np.float64(0)):
+        assert type(history_time) == int
+        assert history_time > 0
+        assert type(projection_time) == int
+        assert projection_time > 0
+
+        self.fun = fun
+
+        self.value = np.float64(init)
+
+        self.projection = np.zeros(projection_time)
+        self.history = np.zeros(history_time)
+
+        return
+
+    def update(self, agent):
+        # calls the defined update function to calculate the next value of the variable
+        assert isinstance(agent, Agent)
+        self.value = self.fun(agent, False)
+        return
+
+    def record(self, time):
+        # writes the current value of the parameter to a chosen element of the record array
+        self.history[time] = self.value
+        return
+
+    def forecast(self, agent):
+        assert isinstance(agent, Agent)
+        self.projection = self.fun(agent, True)
+        return
+
+
 # region -- parameter calculation functions
 
 def production_volume(agent) -> np.float64:
