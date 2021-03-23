@@ -25,9 +25,9 @@ class Parameter(object):
     # an object class with a current value, a record of all past values, and a variable to hold a projection
     # only compatible with data types which can be parsed as a float
     # argument FUN is a function taking a single AGENT object as an argument and returns the next value of the variable
-    def __init__(self, fun, project, history_time=120, projection_time=120, init=np.float64(0)):
-        assert type(history_time) == int
-        assert history_time > 0
+    def __init__(self, fun, project, sim_length, projection_time=120, init=np.float64(0)):
+        assert type(sim_length) == int
+        assert sim_length > 0
         assert type(projection_time) == int
         assert projection_time > 0
 
@@ -37,7 +37,7 @@ class Parameter(object):
         self.value = np.float64(init)
 
         self.projection = np.zeros(projection_time)
-        self.history = np.zeros(history_time)
+        self.history = np.zeros(sim_length)
 
         return
 
@@ -55,42 +55,6 @@ class Parameter(object):
     def forecast(self, agent):
         assert isinstance(agent, Agent)
         self.projection = self.project(agent)
-        return
-
-
-class Parameter2(object):
-    # an object class with a current value, a record of all past values, and a variable to hold a projection
-    # only compatible with data types which can be parsed as a float
-    # argument FUN is a function taking a single AGENT object as an argument and returns the next value of the variable
-    def __init__(self, fun, history_time=120, projection_time=120, init=np.float64(0)):
-        assert type(history_time) == int
-        assert history_time > 0
-        assert type(projection_time) == int
-        assert projection_time > 0
-
-        self.fun = fun
-
-        self.value = np.float64(init)
-
-        self.projection = np.zeros(projection_time)
-        self.history = np.zeros(history_time)
-
-        return
-
-    def update(self, agent):
-        # calls the defined update function to calculate the next value of the variable
-        assert isinstance(agent, Agent)
-        self.value = self.fun(agent, False)
-        return
-
-    def record(self, time):
-        # writes the current value of the parameter to a chosen element of the record array
-        self.history[time] = self.value
-        return
-
-    def forecast(self, agent):
-        assert isinstance(agent, Agent)
-        self.projection = self.fun(agent, True)
         return
 
 
@@ -501,7 +465,7 @@ class Agent(object):
 
 class Manufacturer(Agent):
     # object initialisation
-    def __init__(self, name, sim_time):
+    def __init__(self, name, sim_time, initial_production_volume=np.float64(1000)):
         super().__init__(name, sim_time)
         """To add a new parameter, define it as an attribute of object type Parameter. Then add it to the correct list
         of variables (dependent or independent) in the correct place so parameters are computed in the right order. 
@@ -511,28 +475,49 @@ class Manufacturer(Agent):
         which is the projected value of the parameter for the next n months.
         Optional argument init is the initial value of the parameter. This is usually unnecessary.
         history_time and projection_time should only be changed from their default values with great care."""
+
+        self.projection_time = 120  # how many months into the future will be predicted?
+
         # define independent variables for current time
-        self.production_volume = Parameter(production_volume, production_volume_projection, init=np.float64(1000))
+        self.production_volume = Parameter(production_volume, production_volume_projection, sim_time,
+                                           init=initial_production_volume)
         # total PET production per annum, starts at 1000
-        self.unit_sale_price = Parameter(unit_sale_price, unit_sale_price_projection)  # sale price of one unit of PET
-        self.unit_feedstock_cost = Parameter(unit_feedstock_cost, unit_feedstock_cost_projection)
+        self.unit_sale_price = Parameter(unit_sale_price, unit_sale_price_projection, sim_time)
+        # sale price of one unit of PET
+        self.unit_feedstock_cost = Parameter(unit_feedstock_cost, unit_feedstock_cost_projection, sim_time)
         # feedstock cost per unit of PET produced
-        self.unit_process_cost = Parameter(unit_process_cost, unit_process_cost_projection)
+        self.unit_process_cost = Parameter(unit_process_cost, unit_process_cost_projection, sim_time)
         # cost of running process per unit of PET produced
 
-        self.bio_feedstock_cost = Parameter(bio_feedstock_cost, bio_feedstock_cost_projection)
+        self.bio_feedstock_cost = Parameter(bio_feedstock_cost, bio_feedstock_cost_projection, sim_time)
         # bio feedstock cost per unit of PET produced
-        self.bio_process_cost = Parameter(bio_process_cost, bio_process_cost_projection)
+        self.bio_process_cost = Parameter(bio_process_cost, bio_process_cost_projection, sim_time)
         # cost of process per unit of PET from bio routes
-        self.proportion_bio = Parameter(proportion_bio, proportion_bio_projection)
+        self.proportion_bio = Parameter(proportion_bio, proportion_bio_projection, sim_time)
         # proportion of production from biological feedstocks
-        self.levy_rate = Parameter(levy_rate, levy_rate_projection, init=np.float64(0.2))
+        self.levy_rate = Parameter(levy_rate, levy_rate_projection, sim_time, init=np.float64(0.2))
 
-        self.bio_capacity = Parameter(bio_capacity, bio_capacity_projection)
-        self.fossil_capacity = Parameter(fossil_capacity, fossil_capacity_projection, init=np.float64(1000))
+        self.bio_capacity = Parameter(bio_capacity, bio_capacity_projection, sim_time)
+        self.fossil_capacity = Parameter(fossil_capacity, fossil_capacity_projection, sim_time,
+                                         init=initial_production_volume)
 
-        # list of all independent variables, listed in the order in which they must be computed (if it matters at all)
-        self.independent_variables = [
+        self.expansion_cost = Parameter(expansion_cost, expansion_cost_projection, sim_time)
+        # cost of increasing production capacity
+        self.gross_profit = Parameter(gross_profit, gross_profit_projection, sim_time)
+        # profits after levies and before taxes
+        self.emissions = Parameter(emissions, emissions_projection, sim_time)
+        # emissions from manufacturing PET from fossil fuels
+        self.tax_payable = Parameter(tax_payable, tax_payable_projection, sim_time)
+        self.levies_payable = Parameter(levies_payable, levies_payable_projection, sim_time)
+        self.net_profit = Parameter(net_profit, net_profit_projection, sim_time)
+        # monthly profit after tax and levies
+        self.profitability = Parameter(profitability, profitability_projection, sim_time)
+        # profitability (net profit per unit production)
+        self.liquidity = Parameter(liquidity, liquidity_projection, sim_time, init=np.float64(5000))  # accumulated cash
+        self.profit_margin = Parameter(profit_margin, profit_margin_projection, sim_time)
+
+        # list of all variables in the order in which they should be computed
+        self.variables = [
             self.production_volume,
             self.unit_sale_price,
             self.unit_feedstock_cost,
@@ -542,25 +527,7 @@ class Manufacturer(Agent):
             self.proportion_bio,
             self.levy_rate,
             self.bio_capacity,
-            self.fossil_capacity
-        ]
-
-        # define dependent variables
-        self.expansion_cost = Parameter(expansion_cost, expansion_cost_projection)
-        # cost of increasing production capacity
-        self.gross_profit = Parameter(gross_profit, gross_profit_projection)  # profits after levies and before taxes
-        self.emissions = Parameter(emissions, emissions_projection)
-        # emissions from manufacturing PET from fossil fuels
-        self.tax_payable = Parameter(tax_payable, tax_payable_projection)
-        self.levies_payable = Parameter(levies_payable, levies_payable_projection)
-        self.net_profit = Parameter(net_profit, net_profit_projection)  # monthly profit after tax and levies
-        self.profitability = Parameter(profitability, profitability_projection)
-        # profitability (net profit per unit production)
-        self.liquidity = Parameter(liquidity, liquidity_projection, init=np.float64(5000))  # accumulated cash
-        self.profit_margin = Parameter(profit_margin, profit_margin_projection)
-
-        # list of all parametrised dependent variables, listed in the order in which they must be computed
-        self.dependent_variables = [
+            self.fossil_capacity,
             self.expansion_cost,
             self.emissions,
             self.levies_payable,
@@ -573,7 +540,6 @@ class Manufacturer(Agent):
         ]
 
         # now define other parameters which will not be recorded or projected
-        self.projection_time = 120  # how many months into the future will be predicted?
 
         self.proportion_bio_target = np.float64()  # target value for the proportion of production via bio route
         self.projection_met = False  # 1 or 0 depending on whether the next target will be met by current
@@ -623,50 +589,21 @@ class Manufacturer(Agent):
         return
 
     # region -- methods for updating values and projections
-    def update_independent_variables(self):
-        # calculate new values for all independent variables
-        for parameter in self.independent_variables:
-            parameter.update(self)
-
-        return
-
-    def update_dependent_variables(self):
-        for parameter in self.dependent_variables:
+    def update_variables(self):
+        for parameter in self.variables:
             parameter.update(self)
         return
 
     def record_timestep(self):
         # method to write current variables (independent and dependent) to records
-        for variable in self.independent_variables:
-            variable.record(self.month)
-
-        for variable in self.dependent_variables:
+        for variable in self.variables:
             variable.record(self.month)
         return
 
-    def update_current_state(self):
-        # methods to be called every time the month is advanced
-        self.update_independent_variables()
-        self.update_dependent_variables()
-        return
-
-    def project_independents(self):
-        # calculate projections for independent variables
-        for parameter in self.independent_variables:
+    def project_variables(self):
+        # calculate projections for all variables
+        for parameter in self.variables:
             parameter.forecast(self)
-        return
-
-    def project_dependents(self):
-        # calculate projections for dependent variables (i.e. must run after self.project_independents)
-        # order of operations for these methods may be important - CHECK
-        for parameter in self.dependent_variables:
-            parameter.forecast(self)
-
-        return
-
-    def new_projection(self):
-        self.project_independents()
-        self.project_dependents()
         return
 
     # endregion
@@ -709,7 +646,7 @@ class Manufacturer(Agent):
                 if not self.under_construction:
                     self.implementation_countdown = self.implementation_delay
                 self.proportion_bio_target += 0.1
-                self.new_projection()
+                self.project_variables()
                 self.projection_check()
                 if self.proportion_bio_target == 1 and not self.projection_met:
                     print('Month:', self.month, '\n next profitability target could not be met'
@@ -727,9 +664,9 @@ class Manufacturer(Agent):
         if self.implementation_countdown > 0:
             self.implementation_countdown -= 1
 
-        self.update_current_state()
+        self.update_variables()
         if self.month % 12 == 1:
-            self.new_projection()
+            self.project_variables()
             self.projection_check()
             self.investment_decision()
         self.record_timestep()
