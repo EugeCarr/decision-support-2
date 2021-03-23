@@ -11,7 +11,7 @@ if __name__ == '__main__':
           '=============================================== \n',
           )
 
-    months = 120
+    months = 240
 
     simulate(months, table=False, plot=True)
 
