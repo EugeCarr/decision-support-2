@@ -2,6 +2,41 @@ import numpy as np
 import agent as ag
 
 
+class Environment_Variable(object):
+    def __init__(self, fun, sim_length, init=np.float64(0)):
+        assert type(sim_length) == int
+        assert sim_length > 0
+
+        self.fun = fun
+
+        self.value = np.float64(init)
+
+        self.history = np.zeros(sim_length)
+
+        return
+
+    def update(self, dictionary):
+        # calls the defined update function to calculate the next value of the variable
+        assert isinstance(dictionary, dict)
+        self.value = np.float64(self.fun(dictionary))
+        return
+
+    def record(self, time):
+        # writes the current value of the parameter to a chosen element of the record array
+        self.history[time] = self.value
+        return
+
+
+def pet_price(dictionary):
+    current = dictionary['pet_price'].value
+    std_dev = 0.01
+    deviation = np.float64(np.random.normal(0, std_dev, None))
+    val = current + deviation
+
+    # val = dictionary['pet_price']
+    return val
+
+
 class Parameter(object):
     # an object class with a current value, a record of all past values, and a variable to hold a projection
     # only compatible with data types which can be parsed as a float

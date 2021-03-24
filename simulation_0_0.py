@@ -7,6 +7,7 @@ from tabulate import tabulate
 from matplotlib import pyplot as plt
 import copy
 from parameter import Parameter
+from parameter import Environment_Variable
 import parameter as par
 
 
@@ -14,6 +15,10 @@ def simulate(months, table=False, plot=False):
     # create agents and specify their parameters
     month = int(0)
     initial_production_volume = np.float64(1000)
+
+    environment = {
+        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5))
+    }
 
     # dictionary of all variables in the order in which they should be computed
     manufacturer1_parameters = {
@@ -50,7 +55,7 @@ def simulate(months, table=False, plot=False):
         'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
     }
 
-    manufacturer1 = ag.Manufacturer('PET Manufacturer', manufacturer1_parameters, months)
+    manufacturer1 = ag.Manufacturer('PET Manufacturer', manufacturer1_parameters, months, environment)
 
     policy = Policy()
     policy.add_level([1900, 0.19, 0.2])
@@ -60,7 +65,7 @@ def simulate(months, table=False, plot=False):
 
     notice_period = int(18)
 
-    regulator = Regulator('Regulator', months, notice_period, policy)
+    regulator = Regulator('Regulator', months, notice_period, policy, environment)
 
     agents = [
         manufacturer1,
@@ -91,6 +96,9 @@ def simulate(months, table=False, plot=False):
         else:
             pass
 
+        environment['pet_price'].update(environment)
+        environment['pet_price'].record(month)
+
         month += 1
 
     print(' ============ \n FINAL STATE \n ============',
@@ -111,7 +119,7 @@ def simulate(months, table=False, plot=False):
         print(tabulate(table, headers))
 
     if plot:
-        y = manufacturer1.parameter['liquidity'].history
+        y = environment['pet_price'].history
         x = t
         fig, ax1 = plt.subplots()
         ax1.plot(x, y)
