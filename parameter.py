@@ -88,6 +88,11 @@ class Parameter(object):
 
 
 # region -- evaluation of parameters at time t
+def blank(agent):
+    # an empty function intended for use when a parameter needs to be projected by an agent
+    # but is calculated in the environment. exists to satisfy argument requirements of Parameter object
+    pass
+
 
 def production_volume(agent) -> np.float64:
     volume = agent.parameter['production_volume'].value

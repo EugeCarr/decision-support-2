@@ -17,17 +17,20 @@ def simulate(months, table=False, plot=False):
     initial_production_volume = np.float64(1000)
 
     # the dictionary of environment variables (see parameter.py) to pass to the Environment object
-    shared_variables = {
+    env_variables = {
         'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5))
     }
 
-    environment = ag.Environment(shared_variables)
+    environment = ag.Environment(env_variables)
 
     # dictionary of all variables in the order in which they should be computed
+    # parameters from the environment that need to be projected by the agent use par.blank for the fun argument
+    # similarly for parameters calculated by the agent but which are not projected
+    
     manufacturer1_parameters = {
         'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
                                        init=initial_production_volume),
-        'unit_sale_price': Parameter(par.unit_sale_price, par.unit_sale_price_projection, months,
+        'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months,
                                      init=np.float64(4.5)),
         'unit_feedstock_cost': Parameter(par.unit_feedstock_cost, par.unit_feedstock_cost_projection, months,
                                          init=np.float64(2)),
