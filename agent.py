@@ -37,14 +37,8 @@ class Manufacturer(Agent):
     # object initialisation
     def __init__(self, name, dictionary, sim_time):
         super().__init__(name, sim_time)
-        """To add a new parameter, define it as an attribute of object type Parameter. Then add it to the correct list
-        of variables (dependent or independent) in the correct place so parameters are computed in the right order. 
-        The argument fun is the function which, given an argument of object type Agent, returns a single float which
-        is the next value of the parameter. 
-        The argument project is a function which, given an argument of object type Agent, returns an array of size n
-        which is the projected value of the parameter for the next n months.
-        Optional argument init is the initial value of the parameter. This is usually unnecessary.
-        history_time and projection_time should only be changed from their default values with great care."""
+        """To add a new parameter, define it in the dictionary as a Parameter object in the correct place so that 
+        parameters are computed in the right order."""
 
         self.projection_time = 120  # how many months into the future will be predicted?
 

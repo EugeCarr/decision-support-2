@@ -1,5 +1,5 @@
 """This file defines simulation parameters for the first build of the model"""
-import agent
+import agent as ag
 from regulator import Regulator
 from regulator import Policy
 import numpy as np
@@ -10,7 +10,7 @@ from parameter import Parameter
 import parameter as par
 
 
-def simulate(months, table=bool, plot=bool):
+def simulate(months, table=False, plot=False):
     # create agents and specify their parameters
     month = int(0)
     initial_production_volume = np.float64(1000)
@@ -50,7 +50,7 @@ def simulate(months, table=bool, plot=bool):
         'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
     }
 
-    pet_manufacturer = agent.Manufacturer('PET Manufacturer', dictionary, months)
+    pet_manufacturer = ag.Manufacturer('PET Manufacturer', dictionary, months)
 
     policy = Policy()
     policy.add_level([1900, 0.19, 0.2])
@@ -70,8 +70,8 @@ def simulate(months, table=bool, plot=bool):
     # Run simulation for defined number of months
     while month < months:
         # advance time counter in each agent
-        for entity in agents:
-            entity.month = month
+        for agent in agents:
+            agent.month = month
 
         # execute standard monthly routines
         pet_manufacturer.time_step()

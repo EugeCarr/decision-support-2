@@ -5,12 +5,22 @@ import agent as ag
 class Parameter(object):
     # an object class with a current value, a record of all past values, and a variable to hold a projection
     # only compatible with data types which can be parsed as a float
-    # argument FUN is a function taking a single AGENT object as an argument and returns the next value of the variable
+
+    """The argument fun is the function which, given an argument of object type Agent, returns a single float which
+        is the next value of the parameter.
+        The argument project is a function which, given an argument of object type Agent, returns an array
+        which is the projected value of the parameter for the next n months.
+        Optional argument init is the initial value of the parameter. Default value zero.
+        sim_length is the number of months the simulation will run for, used to initialise records of the correct length
+        projection_time should only be changed from the default with great care."""
+
     def __init__(self, fun, project, sim_length, projection_time=120, init=np.float64(0)):
         assert type(sim_length) == int
         assert sim_length > 0
         assert type(projection_time) == int
         assert projection_time > 0
+
+        self.projection_time = projection_time
 
         self.fun = fun
         self.project = project
@@ -22,10 +32,10 @@ class Parameter(object):
 
         return
 
-    def update(self, actor):
+    def update(self, agent):
         # calls the defined update function to calculate the next value of the variable
-        assert isinstance(actor, ag.Agent)
-        self.value = self.fun(actor)
+        assert isinstance(agent, ag.Agent)
+        self.value = np.float64(self.fun(agent))
         return
 
     def record(self, time):
@@ -33,9 +43,10 @@ class Parameter(object):
         self.history[time] = self.value
         return
 
-    def forecast(self, actor):
-        assert isinstance(actor, ag.Agent)
-        self.projection = self.project(actor)
+    def forecast(self, agent):
+        assert isinstance(agent, ag.Agent)
+        array = self.project(agent)
+        self.projection = array
         return
 
 
