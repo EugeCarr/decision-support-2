@@ -87,6 +87,9 @@ class Manufacturer(Agent):
         self.fossil_capacity_cost = np.float64(10)  # one-time cost of increasing production capacity for fossil route
         self.bio_capacity_cost = np.float64(12)  # one-time cost of increasing production capacity for bio route
 
+        self.fossil_resource_ratio = np.float64(1)  # no. of units of fossil resource used per unit of PET produced
+        self.bio_resource_ratio = np.float64(1)  # no. of units of bio resource used per unit of PET produced
+
         self.negative_liquidity = False
 
         # output initialisation state to console

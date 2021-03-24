@@ -35,7 +35,18 @@ def pet_price(env) -> np.float64:
     deviation = np.float64(np.random.normal(0, std_dev, None))
     val = current + deviation
 
-    # val = dictionary['pet_price'].history[0]
+    # val = env.parameter['pet_price'].history[0]
+    return val
+
+
+def fossil_feedstock_price(env) -> np.float64:
+    # price is a random walk from the initial value
+    current = env.parameter['fossil_feedstock_price'].value
+    std_dev = 0.01
+    deviation = np.float64(np.random.normal(0, std_dev, None))
+    val = current + deviation
+
+    # val = env.parameter['pet_price'].history[0]
     return val
 
 
@@ -87,7 +98,6 @@ class Parameter(object):
         return
 
 
-# region -- evaluation of parameters at time t
 def blank(agent):
     # an empty function intended for use when a parameter needs to be projected by an agent
     # but is calculated in the environment. exists to satisfy argument requirements of Parameter object
@@ -126,19 +136,20 @@ def unit_sale_price(agent) -> np.float64:
 
 def unit_feedstock_cost(agent) -> np.float64:
     # random walk based on normal distribution
-    current = agent.parameter['unit_feedstock_cost'].value
-    std_dev = 0.01
-    deviation = np.float64(np.random.normal(0, std_dev, None))
-    val = current + deviation
+    # current = agent.env.parameter['fossil_feedstock_price'].value
+    # std_dev = 0.01
+    # deviation = np.float64(np.random.normal(0, std_dev, None))
+    # val = current + deviation
 
     # if agent.month == 0:
-    #     mean = agent.parameter['unit_feedstock_cost'].value
+    #     mean = agent.env.parameter['fossil_feedstock_price'].value
     # else:
     #     mean = agent.parameter['unit_feedstock_cost'].history[0]
     # std_dev = 0.01
     # val = np.float64(np.random.normal(mean, std_dev, None))
 
-    return val
+    # return val
+    pass
 
 
 def unit_process_cost(agent) -> np.float64:
@@ -234,7 +245,7 @@ def gross_profit(agent) -> np.float64:
             production_in_month *
             (
                     (1 - agent.parameter['proportion_bio'].value) *
-                    (agent.parameter['unit_feedstock_cost'].value + agent.parameter['unit_process_cost'].value) +
+                    (agent.env.parameter['fossil_feedstock_price'].value + agent.parameter['unit_process_cost'].value) +
 
                     agent.parameter['proportion_bio'].value *
                     (agent.parameter['bio_feedstock_cost'].value + agent.parameter['bio_process_cost'].value)
@@ -325,10 +336,6 @@ def profit_margin(agent) -> np.float64:
     return val
 
 
-# endregion
-
-# region -- projection functions
-
 def production_volume_projection(agent) -> np.ndarray:
     # calculates the projected (annualised) PET production volume for each month,
     # recording it to self.production_projection
@@ -355,7 +362,7 @@ def unit_sale_price_projection(agent) -> np.ndarray:
 def unit_feedstock_cost_projection(agent) -> np.ndarray:
     # Calculate the projected PET feedstock costs
     proj = np.zeros(agent.projection_time)
-    current = agent.parameter['unit_feedstock_cost'].value
+    current = agent.env.parameter['fossil_feedstock_price'].value
     proj.fill(current)
     return proj
 
@@ -546,4 +553,34 @@ def profit_margin_projection(agent) -> np.ndarray:
     proj = np.divide(agent.parameter['net_profit'].projection, monthly_production_projection)
     return proj
 
-# endregion
+
+def fossil_feedstock_use(agent) -> np.float64:
+    production_in_month = agent.parameter['production_volume'].value / 12
+    fossil_production = production_in_month * (1 - agent.parameter['proportion_bio'].value)
+    val = np.float64(fossil_production * agent.fossil_resource_ratio)
+    return val
+
+
+def fossil_feedstock_use_projection(agent) -> np.ndarray:
+    monthly_production = agent.parameter['production_volume'].projection / 12
+    fossil_production = np.multiply(monthly_production,
+                                    np.subtract(np.ones(agent.projection_time),
+                                                agent.parameter['proportion_bio'].projection))
+    proj = np.multiply(fossil_production, agent.fossil_resource_ratio)
+    return proj
+
+
+def bio_feedstock_use(agent) -> np.float64:
+    production_in_month = agent.parameter['production_volume'].value / 12
+    bio_production = production_in_month * agent.parameter['proportion_bio'].value
+    val = np.float64(bio_production * agent.bio_resource_ratio)
+    return val
+
+
+def bio_feedstock_use_projection(agent) -> np.ndarray:
+    monthly_production = agent.parameter['production_volume'].projection / 12
+    bio_production = np.multiply(monthly_production, agent.parameter['proportion_bio'].projection)
+    proj = np.multiply(bio_production, agent.bio_resource_ratio)
+    return proj
+
+

@@ -18,8 +18,11 @@ def simulate(months, table=False, plot=False):
 
     # the dictionary of environment variables (see parameter.py) to pass to the Environment object
     env_variables = {
-        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5))
+        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5)),
+        'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2))
     }
+
+    env_keys = list(env_variables.keys())
 
     environment = ag.Environment(env_variables)
 
@@ -30,8 +33,7 @@ def simulate(months, table=False, plot=False):
     manufacturer1_parameters = {
         'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
                                        init=initial_production_volume),
-        'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months,
-                                     init=np.float64(4.5)),
+        'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months),
         'unit_feedstock_cost': Parameter(par.unit_feedstock_cost, par.unit_feedstock_cost_projection, months,
                                          init=np.float64(2)),
         'unit_process_cost': Parameter(par.unit_process_cost, par.unit_process_cost_projection, months,
@@ -42,6 +44,9 @@ def simulate(months, table=False, plot=False):
                                       init=np.float64(1.05)),
 
         'proportion_bio': Parameter(par.proportion_bio, par.proportion_bio_projection, months),
+
+        'fossil_feedstock_use': Parameter(par.fossil_feedstock_use, par.fossil_feedstock_use_projection, months),
+        'bio_feedstock_use': Parameter(par.bio_feedstock_use, par.bio_feedstock_use_projection, months),
 
         'bio_capacity': Parameter(par.bio_capacity, par.bio_capacity_projection, months),
         'fossil_capacity': Parameter(par.fossil_capacity, par.fossil_capacity_projection, months,
@@ -64,10 +69,10 @@ def simulate(months, table=False, plot=False):
     manufacturer1 = ag.Manufacturer('PET Manufacturer', manufacturer1_parameters, months, environment)
 
     policy = Policy()
-    policy.add_level([1900, 0.19, 0.2])
+    policy.add_level([1800, 0.19, 0.2])
     policy.add_level([2000, 0.19, 0.225])
-    policy.add_level([2100, 0.19, 0.25])
-    policy.add_level([2200, 0.19, 0.275])
+    policy.add_level([2200, 0.19, 0.25])
+    policy.add_level([2400, 0.19, 0.275])
 
     notice_period = int(18)
 
@@ -80,10 +85,11 @@ def simulate(months, table=False, plot=False):
 
     # Run simulation for defined number of months
     while month < months:
-        if month != 0:
-            environment.parameter['pet_price'].update(environment)
+        for key in list(env_keys):
+            if month != 0:
+                environment.parameter[key].update(environment)
 
-        environment.parameter['pet_price'].record(month)
+            environment.parameter[key].record(month)
 
         # advance time counter in each agent
         for agent in agents:
@@ -127,14 +133,16 @@ def simulate(months, table=False, plot=False):
         print(tabulate(table, headers))
 
     if plot:
-        graph(manufacturer1.parameter['emissions'].history)
+        graph(manufacturer1.parameter['bio_feedstock_use'])
+        graph(manufacturer1.parameter['proportion_bio'])
+        graph(environment.parameter['fossil_feedstock_price'])
 
     return
 
 
 def graph(parameter):
-    assert type(parameter) == np.ndarray
-    y = parameter
+    assert isinstance(parameter, Parameter) or isinstance(parameter, Environment_Variable)
+    y = parameter.history
     x = np.arange(0, len(y), 1)
     fig, ax1 = plt.subplots()
     ax1.plot(x, y)
