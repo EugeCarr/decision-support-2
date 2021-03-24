@@ -21,12 +21,21 @@ def run_check():
         pass
 
 
+class Environment(object):
+    def __init__(self, dictionary):
+        assert type(dictionary) == dict
+
+        self.variable = dictionary
+        return
+
+
 class Agent(object):
     def __init__(self, name, sim_time, env):
         assert type(name) == str, ('name must be a string. input value is a', type(name))
         assert type(sim_time) == int, ('sim_time must be an integer. input value is a', type(sim_time))
         assert sim_time > 0, 'sim_time must be greater than zero'
-        assert type(env) == dict
+        assert type(env) == Environment
+
         self.name = name
         self.month = int(0)
         self.env = env

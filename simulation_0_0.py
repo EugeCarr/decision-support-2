@@ -16,9 +16,12 @@ def simulate(months, table=False, plot=False):
     month = int(0)
     initial_production_volume = np.float64(1000)
 
-    environment = {
+    # the dictionary of environment variables (see parameter.py) to pass to the Environment object
+    shared_variables = {
         'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5))
     }
+
+    environment = ag.Environment(shared_variables)
 
     # dictionary of all variables in the order in which they should be computed
     manufacturer1_parameters = {
@@ -74,6 +77,11 @@ def simulate(months, table=False, plot=False):
 
     # Run simulation for defined number of months
     while month < months:
+        if month != 0:
+            environment.variable['pet_price'].update(environment)
+
+        environment.variable['pet_price'].record(month)
+
         # advance time counter in each agent
         for agent in agents:
             agent.month = month
@@ -96,8 +104,7 @@ def simulate(months, table=False, plot=False):
         else:
             pass
 
-        environment['pet_price'].update(environment)
-        environment['pet_price'].record(month)
+
 
         month += 1
 
@@ -113,13 +120,13 @@ def simulate(months, table=False, plot=False):
         table = []
         for i in range(0, months):
             table.append([t[i],
-                          manufacturer1.parameter['profitability'].history[i]])
+                          environment.variable['pet_price'].history[i]])
 
-        headers = ['Month', 'Profitability']
+        headers = ['Month', 'pet_price']
         print(tabulate(table, headers))
 
     if plot:
-        y = environment['pet_price'].history
+        y = environment.variable['pet_price'].history
         x = t
         fig, ax1 = plt.subplots()
         ax1.plot(x, y)

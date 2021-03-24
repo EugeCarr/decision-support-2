@@ -3,6 +3,7 @@ import agent as ag
 
 
 class Environment_Variable(object):
+    # shared variables, such as market prices and aggregated demand, are stored as environment variables
     def __init__(self, fun, sim_length, init=np.float64(0)):
         assert type(sim_length) == int
         assert sim_length > 0
@@ -15,10 +16,10 @@ class Environment_Variable(object):
 
         return
 
-    def update(self, dictionary):
+    def update(self, environment):
         # calls the defined update function to calculate the next value of the variable
-        assert isinstance(dictionary, dict)
-        self.value = np.float64(self.fun(dictionary))
+        assert isinstance(environment, ag.Environment)
+        self.value = np.float64(self.fun(environment))
         return
 
     def record(self, time):
@@ -27,13 +28,14 @@ class Environment_Variable(object):
         return
 
 
-def pet_price(dictionary):
-    current = dictionary['pet_price'].value
+def pet_price(env) -> np.float64:
+    # pet price is a random walk from the initial value
+    current = env.variable['pet_price'].value
     std_dev = 0.01
     deviation = np.float64(np.random.normal(0, std_dev, None))
     val = current + deviation
 
-    # val = dictionary['pet_price']
+    # val = dictionary['pet_price'].history[0]
     return val
 
 
@@ -106,19 +108,15 @@ def production_volume(agent) -> np.float64:
 
 
 def unit_sale_price(agent) -> np.float64:
-    # unit sale price is a random walk based on a normal distribution from the starting price
-    current = agent.parameter['unit_sale_price'].value
-    std_dev = 0.01
-    deviation = np.float64(np.random.normal(0, std_dev, None))
-    val = current + deviation
-
     # if agent.month == 0:
-    #     mean = agent.parameter['unit_sale_price'].value
+    #     mean = agent.env.variable['pet_price'].value
     # else:
     #     mean = agent.parameter['unit_sale_price'].history[0]
     # std_dev = 0.01
     # val = np.float64(np.random.normal(mean, std_dev, None))
-    return val
+    # val = agent.env.variable['pet_price'].value
+    # return val
+    pass
 
 
 def unit_feedstock_cost(agent) -> np.float64:
@@ -226,7 +224,7 @@ def levies_payable(agent) -> np.float64:
 
 def gross_profit(agent) -> np.float64:
     production_in_month = agent.parameter['production_volume'].value / 12
-    revenue = production_in_month * agent.parameter['unit_sale_price'].value
+    revenue = production_in_month * agent.env.variable['pet_price'].value
     costs = (
             production_in_month *
             (
@@ -318,7 +316,7 @@ def liquidity(agent) -> np.float64:
 
 def profit_margin(agent) -> np.float64:
     production_in_month = agent.parameter['production_volume'].value / 12
-    val = agent.parameter['net_profit'].value / (production_in_month * agent.parameter['unit_sale_price'].value)
+    val = agent.parameter['net_profit'].value / (production_in_month * agent.env.variable['pet_price'].value)
     return val
 
 
@@ -344,7 +342,7 @@ def production_volume_projection(agent) -> np.ndarray:
 def unit_sale_price_projection(agent) -> np.ndarray:
     # Calculate the projected PET sale prices
     proj = np.zeros(agent.projection_time)
-    current = agent.parameter['unit_sale_price'].value
+    current = agent.env.variable['pet_price'].value
     proj.fill(current)
     return proj
 
