@@ -35,12 +35,14 @@ class Agent(object):
 
 class Manufacturer(Agent):
     # object initialisation
-    def __init__(self, name, dictionary, sim_time, value_function='profitability'):
+    def __init__(self, name, dictionary, sim_time, value_function='profitability', target_value=0.35):
         super().__init__(name, sim_time)
         """To add a new parameter, define it in the dictionary as a Parameter object in the correct place so that 
         parameters are computed in the right order."""
+        assert type(value_function) == str
         assert value_function in dictionary
         self.value_function = value_function
+        self.target_value = np.float64(target_value)
 
         self.projection_time = 120  # how many months into the future will be predicted?
 
@@ -65,9 +67,6 @@ class Manufacturer(Agent):
 
         # additional projection variables
         self.tax_rate_projection = np.ones(self.projection_time) * self.tax_rate
-
-        # define variable for the target against which projections are measured
-        self.target_value = np.float64(0.35)  # currently fixed values
 
         self.proportion_change_rate = np.float64(0.1 / 9)  # greatest possible monthly change in self.proportion_bio
         self.implementation_delay = int(15)  # time delay between investment decision and movement of bio_proportion
