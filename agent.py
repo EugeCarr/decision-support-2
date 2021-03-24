@@ -54,8 +54,8 @@ class Manufacturer(Agent):
         self.keys = list(self.parameter.keys())
 
         # now define other parameters which will not be recorded or projected
-        self.proportion_bio_target = np.float64()  # target value for the proportion of production via bio route
-        self.projection_met = False  # 1 or 0 depending on whether the next target will be met by current
+        self.proportion_bio_target = np.float64(0)  # target value for the proportion of production via bio route
+        self.projection_met = False  # boolean dependent on whether the next target will be met by current
         # projection
 
         self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
