@@ -35,10 +35,12 @@ class Agent(object):
 
 class Manufacturer(Agent):
     # object initialisation
-    def __init__(self, name, dictionary, sim_time):
+    def __init__(self, name, dictionary, sim_time, value_function='profitability'):
         super().__init__(name, sim_time)
         """To add a new parameter, define it in the dictionary as a Parameter object in the correct place so that 
         parameters are computed in the right order."""
+        assert value_function in dictionary
+        self.value_function = value_function
 
         self.projection_time = 120  # how many months into the future will be predicted?
 
@@ -117,13 +119,13 @@ class Manufacturer(Agent):
         time_to_target2 = time_to_target1 + 60
 
         if time_to_target1 > 12:
-            if self.parameter['profitability'].projection[time_to_target1] >= self.target_value:
+            if self.parameter[self.value_function].projection[time_to_target1] >= self.target_value:
                 self.projection_met = True
             else:
                 self.projection_met = False
 
         else:
-            if self.parameter['profitability'].projection[time_to_target2] >= self.target_value:
+            if self.parameter[self.value_function].projection[time_to_target2] >= self.target_value:
                 self.projection_met = True
             else:
                 self.projection_met = False

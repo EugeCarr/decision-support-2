@@ -16,7 +16,7 @@ def simulate(months, table=False, plot=False):
     initial_production_volume = np.float64(1000)
 
     # dictionary of all variables in the order in which they should be computed
-    dictionary = {
+    manufacturer1_parameters = {
         'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
                                        init=initial_production_volume),
         'unit_sale_price': Parameter(par.unit_sale_price, par.unit_sale_price_projection, months,
@@ -50,7 +50,7 @@ def simulate(months, table=False, plot=False):
         'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
     }
 
-    pet_manufacturer = ag.Manufacturer('PET Manufacturer', dictionary, months)
+    manufacturer1 = ag.Manufacturer('PET Manufacturer', manufacturer1_parameters, months)
 
     policy = Policy()
     policy.add_level([1900, 0.19, 0.2])
@@ -63,7 +63,7 @@ def simulate(months, table=False, plot=False):
     regulator = Regulator('Regulator', months, notice_period, policy)
 
     agents = [
-        pet_manufacturer,
+        manufacturer1,
         regulator
     ]
 
@@ -74,20 +74,20 @@ def simulate(months, table=False, plot=False):
             agent.month = month
 
         # execute standard monthly routines
-        pet_manufacturer.time_step()
-        regulator.iterate_regulator(pet_manufacturer.parameter['emissions'].value)
+        manufacturer1.time_step()
+        regulator.iterate_regulator(manufacturer1.parameter['emissions'].value)
 
         # if the regulator rate has just changed (resulting in mismatch between agents) then update it
-        if pet_manufacturer.parameter['levy_rate'].value != regulator.levy_rate:
-            pet_manufacturer.parameter['levy_rate'].value = regulator.levy_rate
-            pet_manufacturer.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
-            pet_manufacturer.levy_rate_changing = False
+        if manufacturer1.parameter['levy_rate'].value != regulator.levy_rate:
+            manufacturer1.parameter['levy_rate'].value = regulator.levy_rate
+            manufacturer1.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
+            manufacturer1.levy_rate_changing = False
 
         # if a change in the levy rate is approaching, tell the pet_manufacturer
         if regulator.changing:
-            pet_manufacturer.levy_rate_changing = True
-            pet_manufacturer.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
-            pet_manufacturer.future_levy_rate = regulator.pol_table[regulator.level + 1][2]
+            manufacturer1.levy_rate_changing = True
+            manufacturer1.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
+            manufacturer1.future_levy_rate = regulator.pol_table[regulator.level + 1][2]
         else:
             pass
 
@@ -96,7 +96,7 @@ def simulate(months, table=False, plot=False):
     print(' ============ \n FINAL STATE \n ============',
           '\n Regulation level:', regulator.level,
           '\n Levy rate:', regulator.levy_rate,
-          '\n Bio proportion', pet_manufacturer.parameter['proportion_bio'].value)
+          '\n Bio proportion', manufacturer1.parameter['proportion_bio'].value)
 
     # data output & analysis
     t = np.arange(0, months, 1)
@@ -105,13 +105,13 @@ def simulate(months, table=False, plot=False):
         table = []
         for i in range(0, months):
             table.append([t[i],
-                          pet_manufacturer.parameter['profitability'].history[i]])
+                          manufacturer1.parameter['profitability'].history[i]])
 
         headers = ['Month', 'Profitability']
         print(tabulate(table, headers))
 
     if plot:
-        y = pet_manufacturer.parameter['liquidity'].history
+        y = manufacturer1.parameter['liquidity'].history
         x = t
         fig, ax1 = plt.subplots()
         ax1.plot(x, y)
