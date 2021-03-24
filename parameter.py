@@ -30,7 +30,7 @@ class Environment_Variable(object):
 
 def pet_price(env) -> np.float64:
     # pet price is a random walk from the initial value
-    current = env.variable['pet_price'].value
+    current = env.parameter['pet_price'].value
     std_dev = 0.01
     deviation = np.float64(np.random.normal(0, std_dev, None))
     val = current + deviation
@@ -229,7 +229,7 @@ def levies_payable(agent) -> np.float64:
 
 def gross_profit(agent) -> np.float64:
     production_in_month = agent.parameter['production_volume'].value / 12
-    revenue = production_in_month * agent.env.variable['pet_price'].value
+    revenue = production_in_month * agent.env.parameter['pet_price'].value
     costs = (
             production_in_month *
             (
@@ -321,7 +321,7 @@ def liquidity(agent) -> np.float64:
 
 def profit_margin(agent) -> np.float64:
     production_in_month = agent.parameter['production_volume'].value / 12
-    val = agent.parameter['net_profit'].value / (production_in_month * agent.env.variable['pet_price'].value)
+    val = agent.parameter['net_profit'].value / (production_in_month * agent.env.parameter['pet_price'].value)
     return val
 
 
@@ -347,7 +347,7 @@ def production_volume_projection(agent) -> np.ndarray:
 def unit_sale_price_projection(agent) -> np.ndarray:
     # Calculate the projected PET sale prices
     proj = np.zeros(agent.projection_time)
-    current = agent.env.variable['pet_price'].value
+    current = agent.env.parameter['pet_price'].value
     proj.fill(current)
     return proj
 

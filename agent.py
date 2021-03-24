@@ -25,7 +25,7 @@ class Environment(object):
     def __init__(self, dictionary):
         assert type(dictionary) == dict
 
-        self.variable = dictionary
+        self.parameter = dictionary
         return
 
 

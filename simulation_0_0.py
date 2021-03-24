@@ -26,7 +26,7 @@ def simulate(months, table=False, plot=False):
     # dictionary of all variables in the order in which they should be computed
     # parameters from the environment that need to be projected by the agent use par.blank for the fun argument
     # similarly for parameters calculated by the agent but which are not projected
-    
+
     manufacturer1_parameters = {
         'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
                                        init=initial_production_volume),
@@ -81,9 +81,9 @@ def simulate(months, table=False, plot=False):
     # Run simulation for defined number of months
     while month < months:
         if month != 0:
-            environment.variable['pet_price'].update(environment)
+            environment.parameter['pet_price'].update(environment)
 
-        environment.variable['pet_price'].record(month)
+        environment.parameter['pet_price'].record(month)
 
         # advance time counter in each agent
         for agent in agents:
@@ -107,8 +107,6 @@ def simulate(months, table=False, plot=False):
         else:
             pass
 
-
-
         month += 1
 
     print(' ============ \n FINAL STATE \n ============',
@@ -123,21 +121,26 @@ def simulate(months, table=False, plot=False):
         table = []
         for i in range(0, months):
             table.append([t[i],
-                          environment.variable['pet_price'].history[i]])
+                          environment.parameter['pet_price'].history[i]])
 
         headers = ['Month', 'pet_price']
         print(tabulate(table, headers))
 
     if plot:
-        y = environment.variable['pet_price'].history
-        x = t
-        fig, ax1 = plt.subplots()
-        ax1.plot(x, y)
-
-        ax1.set_xlabel('Month')
-        ax1.set_ylabel('')
-
-        fig.tight_layout()
-        plt.show()
+        graph(manufacturer1.parameter['emissions'].history)
 
     return
+
+
+def graph(parameter):
+    assert type(parameter) == np.ndarray
+    y = parameter
+    x = np.arange(0, len(y), 1)
+    fig, ax1 = plt.subplots()
+    ax1.plot(x, y)
+
+    ax1.set_xlabel('Month')
+    ax1.set_ylabel('')
+
+    fig.tight_layout()
+    plt.show()
