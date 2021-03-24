@@ -65,6 +65,13 @@ def unit_sale_price(agent) -> np.float64:
     std_dev = 0.01
     deviation = np.float64(np.random.normal(0, std_dev, None))
     val = current + deviation
+
+    # if agent.month == 0:
+    #     mean = agent.parameter['unit_sale_price'].value
+    # else:
+    #     mean = agent.parameter['unit_sale_price'].history[0]
+    # std_dev = 0.01
+    # val = np.float64(np.random.normal(mean, std_dev, None))
     return val
 
 
@@ -74,6 +81,14 @@ def unit_feedstock_cost(agent) -> np.float64:
     std_dev = 0.01
     deviation = np.float64(np.random.normal(0, std_dev, None))
     val = current + deviation
+
+    # if agent.month == 0:
+    #     mean = agent.parameter['unit_feedstock_cost'].value
+    # else:
+    #     mean = agent.parameter['unit_feedstock_cost'].history[0]
+    # std_dev = 0.01
+    # val = np.float64(np.random.normal(mean, std_dev, None))
+
     return val
 
 
@@ -83,6 +98,14 @@ def unit_process_cost(agent) -> np.float64:
     std_dev = 0.005
     deviation = np.float64(np.random.normal(0, std_dev, None))
     val = current + deviation
+
+    # if agent.month == 0:
+    #     mean = agent.parameter['unit_process_cost'].value
+    # else:
+    #     mean = agent.parameter['unit_process_cost'].history[0]
+    # std_dev = 0.01
+    # val = np.float64(np.random.normal(mean, std_dev, None))
+
     return val
 
 
@@ -92,6 +115,13 @@ def bio_feedstock_cost(agent) -> np.float64:
     std_dev = 0.01
     deviation = np.float64(np.random.normal(0, std_dev, None))
     val = current + deviation
+
+    # if agent.month == 0:
+    #     mean = agent.parameter['bio_feedstock_cost'].value
+    # else:
+    #     mean = agent.parameter['bio_feedstock_cost'].history[0]
+    # std_dev = 0.01
+    # val = np.float64(np.random.normal(mean, std_dev, None))
     return val
 
 
@@ -101,6 +131,14 @@ def bio_process_cost(agent) -> np.float64:
     std_dev = 0.005
     deviation = np.float64(np.random.normal(0, std_dev, None))
     val = current + deviation
+
+    # if agent.month == 0:
+    #     mean = agent.parameter['bio_process_cost'].value
+    # else:
+    #     mean = agent.parameter['bio_process_cost'].history[0]
+    # std_dev = 0.01
+    # val = np.float64(np.random.normal(mean, std_dev, None))
+
     return val
 
 
