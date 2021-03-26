@@ -19,34 +19,44 @@ def simulate(months, table=False, plot=False):
     # the dictionary of environment variables (see parameter.py) to pass to the Environment object
     env_variables = {
         'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5)),
-        'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2))
+        'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2)),
+        'bio_feedstock_price': Environment_Variable(par.bio_feedstock_price, months, init=np.float64(2))
     }
 
     env_keys = list(env_variables.keys())
 
-    environment = ag.Environment(env_variables)
+    env_aggregates = {
+        'fossil_feedstock_consumption': Environment_Variable(par.blank, months),
+        'bio_feedstock_consumption': Environment_Variable(par.blank, months)
+    }
+
+    env_aggregates_keys = list(env_aggregates.keys())
+
+    environment = ag.Environment(env_variables, env_aggregates)
 
     # dictionary of all variables in the order in which they should be computed
     # parameters from the environment that need to be projected by the agent use par.blank for the fun argument
     # similarly for parameters calculated by the agent but which are not projected
-
     manufacturer1_parameters = {
+        'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months),
+        'unit_feedstock_cost': Parameter(par.blank, par.unit_feedstock_cost_projection, months,
+                                         init=np.float64(2)),
+        'bio_feedstock_cost': Parameter(par.blank, par.bio_feedstock_cost_projection, months),
+
         'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
                                        init=initial_production_volume),
-        'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months),
-        'unit_feedstock_cost': Parameter(par.unit_feedstock_cost, par.unit_feedstock_cost_projection, months,
-                                         init=np.float64(2)),
+
         'unit_process_cost': Parameter(par.unit_process_cost, par.unit_process_cost_projection, months,
                                        init=np.float64(1)),
-        'bio_feedstock_cost': Parameter(par.bio_feedstock_cost, par.bio_feedstock_cost_projection, months,
-                                        init=np.float64(2)),
         'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
                                       init=np.float64(1.05)),
 
         'proportion_bio': Parameter(par.proportion_bio, par.proportion_bio_projection, months),
 
-        'fossil_feedstock_use': Parameter(par.fossil_feedstock_use, par.fossil_feedstock_use_projection, months),
-        'bio_feedstock_use': Parameter(par.bio_feedstock_use, par.bio_feedstock_use_projection, months),
+        'fossil_feedstock_consumption': Parameter(par.fossil_feedstock_consumption,
+                                                  par.fossil_feedstock_consumption_projection, months),
+        'bio_feedstock_consumption': Parameter(par.bio_feedstock_consumption,
+                                               par.bio_feedstock_consumption_projection, months),
 
         'bio_capacity': Parameter(par.bio_capacity, par.bio_capacity_projection, months),
         'fossil_capacity': Parameter(par.fossil_capacity, par.fossil_capacity_projection, months,
@@ -66,17 +76,18 @@ def simulate(months, table=False, plot=False):
         'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
     }
 
-    manufacturer1 = ag.Manufacturer('PET Manufacturer', manufacturer1_parameters, months, environment)
+    manufacturer1 = ag.Manufacturer('PET Manufacturer', months, environment, manufacturer1_parameters)
 
     policy = Policy()
     policy.add_level([1800, 0.19, 0.2])
     policy.add_level([2000, 0.19, 0.225])
     policy.add_level([2200, 0.19, 0.25])
     policy.add_level([2400, 0.19, 0.275])
+    policy.add_level([2600, 0.19, 0.3])
 
     notice_period = int(18)
 
-    regulator = Regulator('Regulator', months, notice_period, policy, environment)
+    regulator = Regulator('Regulator', months, environment, notice_period, policy)
 
     agents = [
         manufacturer1,
@@ -85,7 +96,9 @@ def simulate(months, table=False, plot=False):
 
     # Run simulation for defined number of months
     while month < months:
-        for key in list(env_keys):
+        environment.reset_aggregates()
+
+        for key in env_keys:
             if month != 0:
                 environment.parameter[key].update(environment)
 
@@ -98,6 +111,14 @@ def simulate(months, table=False, plot=False):
         # execute standard monthly routines
         manufacturer1.time_step()
         regulator.iterate_regulator(manufacturer1.parameter['emissions'].value)
+
+        for key in env_aggregates_keys:
+            try:
+                environment.aggregate[key].value += manufacturer1.parameter[key].value
+            except KeyError:
+                pass
+
+            environment.aggregate[key].record(month)
 
         # if the regulator rate has just changed (resulting in mismatch between agents) then update it
         if manufacturer1.parameter['levy_rate'].value != regulator.levy_rate:
@@ -133,9 +154,7 @@ def simulate(months, table=False, plot=False):
         print(tabulate(table, headers))
 
     if plot:
-        graph(manufacturer1.parameter['bio_feedstock_use'])
-        graph(manufacturer1.parameter['proportion_bio'])
-        graph(environment.parameter['fossil_feedstock_price'])
+        graph(environment.aggregate['bio_feedstock_consumption'])
 
     return
 

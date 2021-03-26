@@ -1,5 +1,6 @@
 """This file defines the Agent class, and subclasses thereof, for the agent-based simulation"""
 import numpy as np
+import parameter as par
 
 
 def run_check():
@@ -22,10 +23,21 @@ def run_check():
 
 
 class Environment(object):
-    def __init__(self, dictionary):
-        assert type(dictionary) == dict
+    def __init__(self, variables, aggregates):
+        assert type(variables) == dict
+        assert type(aggregates) == dict
+        for value in list(variables.values()):
+            assert isinstance(value, par.Environment_Variable)
+        for value in list(aggregates.values()):
+            assert isinstance(value, par.Environment_Variable)
 
-        self.parameter = dictionary
+        self.parameter = variables
+        self.aggregate = aggregates
+        return
+
+    def reset_aggregates(self):
+        for item in list(self.aggregate.keys()):
+            self.aggregate[item].value = 0
         return
 
 
@@ -46,19 +58,19 @@ class Agent(object):
 
 class Manufacturer(Agent):
     # object initialisation
-    def __init__(self, name, dictionary, sim_time, env, value_function='profitability', target_value=0.35):
+    def __init__(self, name, sim_time, env, parameters, value_function='profitability', target_value=0.35):
         super().__init__(name, sim_time, env)
         """To add a new parameter, define it in the dictionary as a Parameter object in the correct place so that 
         parameters are computed in the right order."""
         assert type(value_function) == str
-        assert value_function in dictionary
+        assert value_function in parameters
         self.value_function = value_function
         self.target_value = np.float64(target_value)
 
         self.projection_time = 120  # how many months into the future will be predicted?
 
         # dictionary of all variables in the order in which they should be computed
-        self.parameter = dictionary
+        self.parameter = parameters
 
         # list of keys in the dictionary in the order passed to the object on initialisation
         # ensures computation order is preserved

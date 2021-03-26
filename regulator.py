@@ -49,7 +49,7 @@ class Policy(list):
 
 class Regulator(Agent):
 
-    def __init__(self, name, sim_time, notice_period, pol, env):
+    def __init__(self, name, sim_time, env, notice_period, pol):
         super().__init__(name, sim_time, env)
         assert type(notice_period) == int, 'notice period must be an integer'
         assert isinstance(pol, Policy)
