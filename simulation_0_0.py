@@ -27,7 +27,8 @@ def simulate(months, table=False, plot=False):
 
     env_aggregates = {
         'fossil_feedstock_consumption': Environment_Variable(par.blank, months),
-        'bio_feedstock_consumption': Environment_Variable(par.blank, months)
+        'bio_feedstock_consumption': Environment_Variable(par.blank, months),
+        'emissions': Environment_Variable(par.blank, months)
     }
 
     env_aggregates_keys = list(env_aggregates.keys())
@@ -39,15 +40,15 @@ def simulate(months, table=False, plot=False):
     # similarly for parameters calculated by the agent but which are not projected
     manufacturer1_parameters = {
         'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months),
-        'unit_feedstock_cost': Parameter(par.blank, par.unit_feedstock_cost_projection, months,
-                                         init=np.float64(2)),
-        'bio_feedstock_cost': Parameter(par.blank, par.bio_feedstock_cost_projection, months),
+        'fossil_feedstock_price': Parameter(par.blank, par.fossil_feedstock_price_projection, months,
+                                            init=np.float64(2)),
+        'bio_feedstock_price': Parameter(par.blank, par.bio_feedstock_price_projection, months),
 
         'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
                                        init=initial_production_volume),
 
-        'unit_process_cost': Parameter(par.unit_process_cost, par.unit_process_cost_projection, months,
-                                       init=np.float64(1)),
+        'fossil_process_cost': Parameter(par.fossil_process_cost, par.fossil_process_cost_projection, months,
+                                         init=np.float64(1)),
         'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
                                       init=np.float64(1.05)),
 
@@ -96,8 +97,6 @@ def simulate(months, table=False, plot=False):
 
     # Run simulation for defined number of months
     while month < months:
-        environment.reset_aggregates()
-
         for key in env_keys:
             if month != 0:
                 environment.parameter[key].update(environment)
@@ -112,6 +111,7 @@ def simulate(months, table=False, plot=False):
         manufacturer1.time_step()
         regulator.iterate_regulator(manufacturer1.parameter['emissions'].value)
 
+        environment.reset_aggregates()
         for key in env_aggregates_keys:
             try:
                 environment.aggregate[key].value += manufacturer1.parameter[key].value
