@@ -7,7 +7,7 @@ import math
 from operator import itemgetter
 
 
-class Policy(List):
+class Policy(list):
     def __init__(self):
         self.policy = []
         return
@@ -128,12 +128,17 @@ class Regulator(Agent):
         self.calc_levy_rate()
         return"""
 
-    def __init__(self, name, sim_time, notice_period, fraction, start_levy):
+    def __init__(self, name, sim_time, notice_period, fraction, start_levy, compliance_threshold):
         super().__init__(name, sim_time)
         assert type(notice_period) == int, 'notice period must be an integer'
-        assert type(fraction) == float and 0.0 < fraction < 1.0, ("fraction input", fraction, "must be a float "
-                                                                                              "between 0 and 1")
+        assert type(fraction) == float and 0.0 < fraction < 1.0, ("fraction input", fraction, 'must be a float '
+                                                                                              'between 0 and 1')
         assert type(start_levy) == float, ("starting levy must be a float, not a", type(start_levy))
+        assert type(compliance_threshold) == float and 0.0 < fraction < 1.0, ("compliance threshold input", fraction,
+                                                                              "must be a float " "between 0 and 1")
+
+        self.month = 0
+        # need to write a function that interacts with the outside to receive the time
 
         self.notice = notice_period
         self.level = 0
@@ -149,6 +154,9 @@ class Regulator(Agent):
 
         self.punish = 0
         self.intercept = start_levy
+        self.dec_jump = 0.2
+        self.comp_threshold = compliance_threshold
+        # may add this variable into the initialisation
 
         self.changing_punish = False
         self.changing_decade = False
@@ -194,9 +202,46 @@ class Regulator(Agent):
         return
 
     def exC_level_raise(self):
-        self.exC_timer = self.notice
+        self.timer_exC = self.notice
         new_levy = self.calculate_levy(self.intercept, (self.level + 1))
         # now this new levy needs to be broadcasted to the system
+        return
+
+    def comp_level_raise(self):
+        self.timer_punish = self.notice
+        new_levy = self.calculate_levy(self.intercept, (self.level + 1))
+    #     this new levy needs to be sent to the simulation
+        return
+
+    def decade_level_change(self):
+        self.timer_decade = 24  # this is so the decade change comes in two years from now
+        new_intercept = (1 + self.dec_jump) * self.intercept
+        new_levy = self.calculate_levy(new_intercept, self.level)
+    #     this new levy needs to be sent to the simulation
+        return
+
+    def compliance_check(self):
+        if not self.comp_check:
+            self.comp_timer -= 1
+            if self.comp_timer < 1:
+                comp_level = self.emissions / self.emissions_hist[-(self.notice + 12)]
+                if comp_level > self.comp_threshold:
+                    self.changing_punish = True
+                    self.comp_level_raise()
+
+        return
+
+    def decade_check(self):
+        if self.month % 12 == 0:
+            # checks if it's at the end of a year
+            year = self.month / 12
+            if (year + 2) % 10 == 0:
+                # checks if it is 2 years before a new decade
+                self.changing_decade = True
+                self.comp_check = True
+                self.comp_timer = 36
+                self.decade_level_change()
+
         return
 
     def change_check(self):
@@ -208,6 +253,13 @@ class Regulator(Agent):
             return True
         else:
             return False
+
+    def generate_levyrate(self):
+        self.levy_rate = self.calculate_levy(self.intercept, self.level)
+        # final function to change the levy rate
+        return
+
+
 
     """To run this regulator
     make a policy table by adding in levels in the format [threshold, tax rate, levy rate]
