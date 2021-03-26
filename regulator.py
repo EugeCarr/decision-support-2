@@ -1,9 +1,10 @@
 from agent import Agent
 import numpy as np
+import math
 # import copy
 # from tabulate import tabulate
 # from matplotlib import pyplot as plt
-import math
+
 from operator import itemgetter
 
 
@@ -128,10 +129,14 @@ class Regulator(Agent):
         self.calc_levy_rate()
         return"""
 
-    def __init__(self, name, sim_time, notice_period, fraction, start_levy, compliance_threshold):
+    def __init__(self, name, sim_time, tax_rate,  notice_period, fraction, start_levy, compliance_threshold, decade_jump):
         super().__init__(name, sim_time)
         assert type(notice_period) == int, 'notice period must be an integer'
         assert type(fraction) == float and 0.0 < fraction < 1.0, ("fraction input", fraction, 'must be a float '
+                                                                                              'between 0 and 1')
+        assert type(tax_rate) == float and 0.0 < tax_rate < 1.0, ("Starter tax rate input", tax_rate, 'must be a float '
+                                                                                              'between 0 and 1')
+        assert type(decade_jump) == float and 0.0 < decade_jump < 1.0, ("decade_jump input", decade_jump, 'must be a float '
                                                                                               'between 0 and 1')
         assert type(start_levy) == float, ("starting levy must be a float, not a", type(start_levy))
         assert type(compliance_threshold) == float and 0.0 < fraction < 1.0, ("compliance threshold input", fraction,
@@ -154,7 +159,7 @@ class Regulator(Agent):
 
         self.punish = 0
         self.intercept = start_levy
-        self.dec_jump = 0.2
+        self.dec_jump = decade_jump
         self.comp_threshold = compliance_threshold
         # may add this variable into the initialisation
 
@@ -164,10 +169,7 @@ class Regulator(Agent):
 
         self.comp_check = False
         self.comp_timer = 0
-        # arbitrary value for now
-        # self.limit = np.float64(100)
-        # self.pol_table = pol
-        self.tax_rate = np.float64(0.19)
+        self.tax_rate = np.float64(tax_rate)
         self.levy_rate = np.float64(5)
 
         return
@@ -194,8 +196,10 @@ class Regulator(Agent):
         return (carbon - self.c0) / (self.fraction * self.c0) + self.punish
 
     def asses_carbon_level(self):
+        if self.changing_punish:
+            return
         curr_carbon = self.calculate_Carbon(self.emissions)
-        if curr_carbon > self.level:
+        if curr_carbon > (self.level + 1):
             self.trigger_exC_change()
 
         return
@@ -262,6 +266,13 @@ class Regulator(Agent):
             year = self.month / 12
             if (year + 2) % 10 == 0:
                 # checks if it is 2 years before a new decade
+                if self.changing_excess:
+                    self.changing_excess = False
+                    self.timer_exC = 0
+                if self.changing_punish:
+                    self.changing_punish = False
+                    self.timer_punish = 0
+                #     this sets the other levy changes to inactive so that the decade one dominates
                 self.changing_decade = True
                 self.comp_check = True
                 self.comp_timer = 36
@@ -279,7 +290,7 @@ class Regulator(Agent):
         else:
             return False
 
-    def decr_timer(self):
+    def decrement_timer(self):
         if self.change_check():
             if self.changing_excess:
                 self.timer_exC -= 1
@@ -303,11 +314,12 @@ class Regulator(Agent):
         # final function to change the levy rate
         return
 
-    def iterate_regulator(self):
-        self.set_emissions()
+    def iterate_regulator(self, new_emissions, timing):
+        self.set_emissions(new_emissions)
+        # needs the clock function to take time from the simulator for processing too
         self.decade_check()
         if self.change_check():
-            self.decr_timer()
+            self.decrement_timer()
         else:
             self.compliance_check()
             self.asses_carbon_level()
@@ -315,8 +327,4 @@ class Regulator(Agent):
         return
 
 
-    """To run this regulator
-    make a policy table by adding in levels in the format [threshold, tax rate, levy rate]
-    make the regulator with inputs notice period and the policy table
-    each iteration
-    give the regulator an emmision stat and run. A tax-rate and levy_rate will be given"""
+
