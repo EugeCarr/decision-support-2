@@ -88,10 +88,6 @@ class Manufacturer(Agent):
         self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
         self.emissions_rate = np.float64(5)  # units of emissions per unit of PET produced from non-bio route
 
-        self.levy_rate_changing = False
-        self.time_to_levy_change = int()
-        self.future_levy_rate = np.float64()
-
         # additional projection variables
         self.tax_rate_projection = np.ones(self.projection_time) * self.tax_rate
 
