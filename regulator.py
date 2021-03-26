@@ -7,43 +7,43 @@ import math
 from operator import itemgetter
 
 
-class Policy(list):
-    def __init__(self):
-        self.policy = []
-        return
-
-    def add_level(self, new_level):
-        assert type(new_level) == list, ('level input must be a list not:', type(new_level))
-        assert len(new_level) == 3, ('level input must be length 3 not:', len(new_level))
-
-        self.policy.append(new_level)
-
-        sorted(self.policy, key=itemgetter(0))
-
-        for policy_level in self.policy:
-            print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
-                  '--Levy rate', policy_level[2])
-        return
-
-    def remove_level(self, ind):
-        assert type(ind) == int, ('should be an integer input not:', type(ind))
-        assert ind < len(self.policy), ('deleted level should exist. There are only', len(self.policy), 'levels. Not',
-                                        ind)
-        del self.policy[ind]
-        print('Successfully deleted level', ind)
-
-        for policy_level in self.policy:
-            print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
-                  '--Levy rate', policy_level[2])
-        return
-
-    def level(self, lev):
-        assert type(lev) == int, ('should be an integer input not:', type(int))
-        assert lev < len(self.policy), ('level', lev, 'does not exist')
-
-        lev_copy = self.policy[lev][:]
-        # makes a copy of the level requested
-        return lev_copy
+# class Policy(list):
+#     def __init__(self):
+#         self.policy = []
+#         return
+#
+#     def add_level(self, new_level):
+#         assert type(new_level) == list, ('level input must be a list not:', type(new_level))
+#         assert len(new_level) == 3, ('level input must be length 3 not:', len(new_level))
+#
+#         self.policy.append(new_level)
+#
+#         sorted(self.policy, key=itemgetter(0))
+#
+#         for policy_level in self.policy:
+#             print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
+#                   '--Levy rate', policy_level[2])
+#         return
+#
+#     def remove_level(self, ind):
+#         assert type(ind) == int, ('should be an integer input not:', type(ind))
+#         assert ind < len(self.policy), ('deleted level should exist. There are only', len(self.policy), 'levels. Not',
+#                                         ind)
+#         del self.policy[ind]
+#         print('Successfully deleted level', ind)
+#
+#         for policy_level in self.policy:
+#             print('Level:', self.policy.index(policy_level), '--Limit', policy_level[0], '--Tax rate', policy_level[1],
+#                   '--Levy rate', policy_level[2])
+#         return
+#
+#     def level(self, lev):
+#         assert type(lev) == int, ('should be an integer input not:', type(int))
+#         assert lev < len(self.policy), ('level', lev, 'does not exist')
+#
+#         lev_copy = self.policy[lev][:]
+#         # makes a copy of the level requested
+#         return lev_copy
 
 
 class Regulator(Agent):
@@ -175,20 +175,26 @@ class Regulator(Agent):
     def set_emissions(self, new_emissions):
         assert type(new_emissions) == np.float64, ('emission input must be a float not:', type(new_emissions))
         self.emissions = new_emissions
+
+        if len(self.emissions_hist) == 0:
+            self.c0 = new_emissions
+
         self.emissions_hist.append(new_emissions)
         return
 
     def calculate_levy(self, intercept, level):
         assert type(intercept) == float, ("intercept input must be a float, not:", type(intercept))
+        assert type(level) == int, ("level input must be an integer, not:", type(intercept))
+
         val = intercept + 0.1 * level + 0.04 * math.pow(level, 2)
         # the function may have to be changed to make the levy rates more significant
         return val
 
-    def calculate_Carbon(self, carbon, fraction, c0):
-        return (carbon - c0) / (fraction * c0) + self.punish
+    def calculate_Carbon(self, carbon):
+        return (carbon - self.c0) / (self.fraction * self.c0) + self.punish
 
     def asses_carbon_level(self):
-        curr_carbon = self.calculate_Carbon(self.emissions, self.fraction, self.c0)
+        curr_carbon = self.calculate_Carbon(self.emissions)
         if curr_carbon > self.level:
             self.trigger_exC_change()
 
@@ -220,10 +226,29 @@ class Regulator(Agent):
     #     this new levy needs to be sent to the simulation
         return
 
+    def change_level_ex(self):
+        self.level += 1
+        self.changing_excess = False
+        return
+
+    def change_level_punish(self):
+        self.punish += 1
+        # so that subsequent level calculations take this punishment into account
+        self.level += 1
+        self.changing_punish = False
+        return
+
+    def change_level_decade(self):
+        self.intercept *= 1 + self.dec_jump
+    #     now the next levy calculation will be increased
+        self.changing_decade = False
+        return
+
     def compliance_check(self):
-        if not self.comp_check:
+        if self.comp_check:
             self.comp_timer -= 1
-            if self.comp_timer < 1:
+            if self.comp_timer == 0:
+                self.comp_check = False
                 comp_level = self.emissions / self.emissions_hist[-(self.notice + 12)]
                 if comp_level > self.comp_threshold:
                     self.changing_punish = True
@@ -254,11 +279,40 @@ class Regulator(Agent):
         else:
             return False
 
+    def decr_timer(self):
+        if self.change_check():
+            if self.changing_excess:
+                self.timer_exC -= 1
+                if self.timer_exC == 0:
+                    self.change_level_ex()
+
+            elif self.changing_punish:
+                self.timer_punish -= 1
+                if self.timer_punish == 0:
+                    self.change_level_punish()
+
+            elif self.changing_decade:
+                self.timer_decade -= 1
+                if self.timer_decade == 0:
+                    self.change_level_decade()
+
+        return
+
     def generate_levyrate(self):
-        self.levy_rate = self.calculate_levy(self.intercept, self.level)
+        self.levy_rate = np.float64(self.calculate_levy(self.intercept, self.level))
         # final function to change the levy rate
         return
 
+    def iterate_regulator(self):
+        self.set_emissions()
+        self.decade_check()
+        if self.change_check():
+            self.decr_timer()
+        else:
+            self.compliance_check()
+            self.asses_carbon_level()
+        self.generate_levyrate()
+        return
 
 
     """To run this regulator
