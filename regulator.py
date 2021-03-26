@@ -143,7 +143,6 @@ class Regulator(Agent):
                                                                               "must be a float " "between 0 and 1")
 
         self.month = 0
-        # need to write a function that interacts with the outside to receive the time
 
         self.notice = notice_period
         self.level = 0
@@ -170,7 +169,8 @@ class Regulator(Agent):
         self.comp_check = False
         self.comp_timer = 0
         self.tax_rate = np.float64(tax_rate)
-        self.levy_rate = np.float64(5)
+        self.levy_rate = np.float64(start_levy)
+        self.future_levy_rate = np.float64(start_levy)
 
         return
 
@@ -214,20 +214,20 @@ class Regulator(Agent):
     def exC_level_raise(self):
         self.timer_exC = self.notice
         new_levy = self.calculate_levy(self.intercept, (self.level + 1))
-        # now this new levy needs to be broadcasted to the system
+        self.future_levy_rate = np.float64(new_levy)
         return
 
     def comp_level_raise(self):
         self.timer_punish = self.notice
         new_levy = self.calculate_levy(self.intercept, (self.level + 1))
-    #     this new levy needs to be sent to the simulation
+        self.future_levy_rate = np.float64(new_levy)
         return
 
     def decade_level_change(self):
         self.timer_decade = 24  # this is so the decade change comes in two years from now
         new_intercept = (1 + self.dec_jump) * self.intercept
         new_levy = self.calculate_levy(new_intercept, self.level)
-    #     this new levy needs to be sent to the simulation
+        self.future_levy_rate = np.float64(new_levy)
         return
 
     def change_level_ex(self):
@@ -289,6 +289,20 @@ class Regulator(Agent):
             return True
         else:
             return False
+
+    def time_to_change(self):
+        if self.change_check():
+
+            if self.changing_excess:
+                return self.timer_exC
+
+            elif self.changing_punish:
+                return self.timer_punish
+
+            elif self.changing_decade:
+                return self.timer_decade
+        else:
+            return None
 
     def decrement_timer(self):
         if self.change_check():
