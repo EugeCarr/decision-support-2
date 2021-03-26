@@ -61,6 +61,10 @@ def bio_feedstock_price(env) -> np.float64:
     return val
 
 
+def levy_rate(env) -> np.float64:
+    return env.parameter['levy_rate'].value
+
+
 class Parameter(object):
     # an object class with a current value, a record of all past values, and a variable to hold a projection
     # only compatible with data types which can be parsed as a float
@@ -193,10 +197,6 @@ def proportion_bio(agent) -> np.float64:
     return val
 
 
-def levy_rate(agent) -> np.float64:
-    return agent.parameter['levy_rate'].value
-
-
 def emissions(agent) -> np.float64:
     fossil_production = agent.parameter['production_volume'].value / 12 * (1 - agent.parameter['proportion_bio'].value)
     val = fossil_production * agent.emissions_rate
@@ -205,7 +205,7 @@ def emissions(agent) -> np.float64:
 
 def levies_payable(agent) -> np.float64:
     """This will calculate the levies payable on production/consumption/emission, once they are defined"""
-    val = agent.parameter['levy_rate'].value * agent.parameter['emissions'].value
+    val = agent.env.parameter['levy_rate'].value * agent.parameter['emissions'].value
     return val
 
 
@@ -447,12 +447,12 @@ def tax_rate_projection(agent) -> np.ndarray:
 
 def levy_rate_projection(agent) -> np.ndarray:
     proj = np.zeros(agent.projection_time)
-    if not agent.levy_rate_changing:
-        proj.fill(agent.parameter['levy_rate'].value)
+    if not agent.env.levy_rate_changing:
+        proj.fill(agent.env.parameter['levy_rate'].value)
     else:
-        proj.fill(agent.future_levy_rate)
-        for i in range(agent.time_to_levy_change):
-            proj[i] = agent.parameter['levy_rate'].value
+        proj.fill(agent.env.future_levy_rate)
+        for i in range(agent.env.time_to_levy_change):
+            proj[i] = agent.env.parameter['levy_rate'].value
     return proj
 
 

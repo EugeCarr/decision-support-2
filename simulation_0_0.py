@@ -9,6 +9,7 @@ import copy
 from parameter import Parameter
 from parameter import Environment_Variable
 import parameter as par
+from datetime import datetime
 
 
 def simulate(months, table=False, plot=False):
@@ -20,7 +21,8 @@ def simulate(months, table=False, plot=False):
     env_variables = {
         'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5)),
         'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2)),
-        'bio_feedstock_price': Environment_Variable(par.bio_feedstock_price, months, init=np.float64(2))
+        'bio_feedstock_price': Environment_Variable(par.bio_feedstock_price, months, init=np.float64(2)),
+        'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.2))
     }
 
     env_keys = list(env_variables.keys())
@@ -65,7 +67,7 @@ def simulate(months, table=False, plot=False):
         'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
 
         'emissions': Parameter(par.emissions, par.emissions_projection, months),
-        'levy_rate': Parameter(par.levy_rate, par.levy_rate_projection, months, init=np.float64(0.2)),
+        'levy_rate': Parameter(par.blank, par.levy_rate_projection, months, init=np.float64(0.2)),
         'levies_payable': Parameter(par.levies_payable, par.levies_payable_projection, months),
 
         'gross_profit': Parameter(par.gross_profit, par.gross_profit_projection, months),
@@ -95,6 +97,7 @@ def simulate(months, table=False, plot=False):
         regulator
     ]
 
+    sim_start = datetime.now()
     # Run simulation for defined number of months
     while month < months:
         for key in env_keys:
@@ -121,22 +124,25 @@ def simulate(months, table=False, plot=False):
             environment.aggregate[key].record(month)
 
         # if the regulator rate has just changed (resulting in mismatch between agents) then update it
-        if manufacturer1.parameter['levy_rate'].value != regulator.levy_rate:
-            manufacturer1.parameter['levy_rate'].value = regulator.levy_rate
-            manufacturer1.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
-            manufacturer1.levy_rate_changing = False
+        if environment.parameter['levy_rate'].value != regulator.levy_rate:
+            environment.parameter['levy_rate'].value = regulator.levy_rate
+            environment.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
+            environment.levy_rate_changing = False
 
         # if a change in the levy rate is approaching, tell the pet_manufacturer
         if regulator.changing:
-            manufacturer1.levy_rate_changing = True
-            manufacturer1.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
-            manufacturer1.future_levy_rate = regulator.pol_table[regulator.level + 1][2]
+            environment.levy_rate_changing = True
+            environment.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
+            environment.future_levy_rate = regulator.pol_table[regulator.level + 1][2]
         else:
             pass
 
         month += 1
 
-    print(' ============ \n FINAL STATE \n ============',
+    sim_end = datetime.now()
+    elapsed = sim_end - sim_start
+    print('\n Simulation elapsed time:', elapsed)
+    print('\n ============ \n FINAL STATE \n ============',
           '\n Regulation level:', regulator.level,
           '\n Levy rate:', regulator.levy_rate,
           '\n Bio proportion', manufacturer1.parameter['proportion_bio'].value)
@@ -154,7 +160,7 @@ def simulate(months, table=False, plot=False):
         print(tabulate(table, headers))
 
     if plot:
-        graph(environment.aggregate['bio_feedstock_consumption'])
+        graph(environment.parameter['levy_rate'])
 
     return
 
@@ -162,12 +168,41 @@ def simulate(months, table=False, plot=False):
 def graph(parameter):
     assert isinstance(parameter, Parameter) or isinstance(parameter, Environment_Variable)
     y = parameter.history
-    x = np.arange(0, len(y), 1)
+    t = np.arange(0, len(y), 1)
     fig, ax1 = plt.subplots()
-    ax1.plot(x, y)
+    ax1.plot(t, y)
 
     ax1.set_xlabel('Month')
     ax1.set_ylabel('')
 
     fig.tight_layout()
     plt.show()
+    return
+
+
+def graph2(parameter1, parameter2):
+    assert isinstance(parameter1, Parameter) or isinstance(parameter1, Environment_Variable)
+    assert isinstance(parameter2, Parameter) or isinstance(parameter2, Environment_Variable)
+    y1 = parameter1.history
+    t1 = np.arange(0, len(y1), 1)
+    y2 = parameter2.history
+    t2 = np.arange(0, len(y2), 1)
+
+    fig, ax1 = plt.subplots()
+
+    color = 'tab:red'
+    ax1.set_xlabel('time (months)')
+    ax1.set_ylabel('', color=color)
+    ax1.plot(t1, y1, color=color)
+    ax1.tick_params(axis='y', labelcolor=color)
+
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+    color = 'tab:blue'
+    ax2.set_ylabel('', color=color)  # we already handled the x-label with ax1
+    ax2.plot(t2, y2, color=color)
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    fig.tight_layout()  # otherwise the right y-label is slightly clipped
+    plt.show()
+    return

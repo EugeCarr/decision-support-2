@@ -70,7 +70,7 @@ class Regulator(Agent):
         for policy_level in self.pol_table:
             print(' Level:', self.pol_table.index(policy_level), '--Limit', policy_level[0],
                   '--Tax rate', policy_level[1], '--Levy rate', policy_level[2])
-        print(' -------------')
+        print(' ------------- \n')
         return
 
     def set_emissions(self, new_emissions):

@@ -33,6 +33,10 @@ class Environment(object):
 
         self.parameter = variables
         self.aggregate = aggregates
+
+        self.levy_rate_changing = False
+        self.time_to_levy_change = int()
+        self.future_levy_rate = np.float64()
         return
 
     def reset_aggregates(self):
@@ -52,7 +56,7 @@ class Agent(object):
         self.month = int(0)
         self.env = env
 
-        print(' ================================ \n', self.name, 'created \n ================================')
+        print('\n ================================ \n', self.name, 'created \n ================================')
         return
 
 
@@ -109,7 +113,7 @@ class Manufacturer(Agent):
               '\n Annual production volume:', self.parameter['production_volume'].value,
               '\n Projection horizon (months):', self.projection_time,
               '\n Target profitability:', self.target_value,
-              '\n -------------')
+              '\n ------------- \n')
 
         # run_check()
 
