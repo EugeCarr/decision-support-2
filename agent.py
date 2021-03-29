@@ -85,7 +85,7 @@ class Manufacturer(Agent):
         self.projection_met = False  # boolean dependent on whether the next target will be met by current
         # projection
 
-        self.tax_rate = np.float64(0.19)  # current tax on profits, starts at 19%
+        self.tax_rate = np.float64(0.19)  # tax on profits, 19%
         self.emissions_rate = np.float64(5)  # units of emissions per unit of PET produced from non-bio route
 
         # additional projection variables

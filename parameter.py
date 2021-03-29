@@ -143,7 +143,7 @@ def fossil_process_cost(agent) -> np.float64:
         mean = agent.parameter['fossil_process_cost'].value
     else:
         mean = agent.parameter['fossil_process_cost'].history[0]
-    std_dev = 0.005
+    std_dev = 0
     deviation = np.float64(np.random.normal(0, std_dev, None))
     val = mean + deviation
 
@@ -163,7 +163,7 @@ def bio_process_cost(agent) -> np.float64:
         mean = agent.parameter['bio_process_cost'].value
     else:
         mean = agent.parameter['bio_process_cost'].history[0]
-    std_dev = 0.005
+    std_dev = 0
     deviation = np.float64(np.random.normal(0, std_dev, None))
     val = mean + deviation
 

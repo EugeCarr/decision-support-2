@@ -79,7 +79,10 @@ def simulate(months, table=False, plot=False):
         'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
     }
 
-    manufacturer1 = ag.Manufacturer('PET Manufacturer', months, environment, manufacturer1_parameters)
+    manufacturer2_parameters = copy.deepcopy(manufacturer1_parameters)
+
+    manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
+    manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
     policy = Policy()
     policy.add_level([1800, 0.19, 0.2])
@@ -94,6 +97,7 @@ def simulate(months, table=False, plot=False):
 
     agents = [
         manufacturer1,
+        manufacturer2,
         regulator
     ]
 
@@ -112,24 +116,26 @@ def simulate(months, table=False, plot=False):
 
         # execute standard monthly routines
         manufacturer1.time_step()
+        manufacturer2.time_step()
         regulator.iterate_regulator(manufacturer1.parameter['emissions'].value)
 
         environment.reset_aggregates()
         for key in env_aggregates_keys:
             try:
                 environment.aggregate[key].value += manufacturer1.parameter[key].value
+                environment.aggregate[key].value += manufacturer2.parameter[key].value
             except KeyError:
                 pass
 
             environment.aggregate[key].record(month)
 
-        # if the regulator rate has just changed (resulting in mismatch between agents) then update it
+        # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
             environment.parameter['levy_rate'].value = regulator.levy_rate
             environment.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
             environment.levy_rate_changing = False
 
-        # if a change in the levy rate is approaching, tell the pet_manufacturer
+        # if a change in the levy rate is approaching, add this information to the environment
         if regulator.changing:
             environment.levy_rate_changing = True
             environment.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
@@ -145,7 +151,8 @@ def simulate(months, table=False, plot=False):
     print('\n ============ \n FINAL STATE \n ============',
           '\n Regulation level:', regulator.level,
           '\n Levy rate:', regulator.levy_rate,
-          '\n Bio proportion', manufacturer1.parameter['proportion_bio'].value)
+          '\n Bio proportion 1', manufacturer1.parameter['proportion_bio'].value,
+          '\n Bio proportion 2', manufacturer2.parameter['proportion_bio'].value)
 
     # data output & analysis
     t = np.arange(0, months, 1)
