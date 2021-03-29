@@ -129,18 +129,19 @@ class Regulator(Agent):
         self.calc_levy_rate()
         return"""
 
-    def __init__(self, name, sim_time, tax_rate,  notice_period, fraction, start_levy, compliance_threshold, decade_jump):
+    def __init__(self, name, sim_time, tax_rate, notice_period, fraction, start_levy, compliance_threshold,
+                 decade_jump):
         super().__init__(name, sim_time)
         assert type(notice_period) == int, 'notice period must be an integer'
         assert type(fraction) == float and 0.0 < fraction < 1.0, ("fraction input", fraction, 'must be a float '
                                                                                               'between 0 and 1')
         assert type(tax_rate) == float and 0.0 < tax_rate < 1.0, ("Starter tax rate input", tax_rate, 'must be a float '
-                                                                                              'between 0 and 1')
-        assert type(decade_jump) == float and 0.0 < decade_jump < 1.0, ("decade_jump input", decade_jump, 'must be a float '
-                                                                                              'between 0 and 1')
+                                                                                                      'between 0 and 1')
+        assert type(decade_jump) == float and 0.0 < decade_jump < 1.0, (
+        "decade_jump input", decade_jump, 'must be a float between 0 and 1')
         assert type(start_levy) == float, ("starting levy must be a float, not a", type(start_levy))
-        assert type(compliance_threshold) == float and 0.0 < fraction < 1.0, ("compliance threshold input", fraction,
-                                                                              "must be a float " "between 0 and 1")
+        assert type(compliance_threshold) == float and 0.0 < compliance_threshold < 1.0, (
+            "compliance threshold input", compliance_threshold, "must be a float between 0 and 1")
 
         self.month = 0
 
@@ -152,7 +153,7 @@ class Regulator(Agent):
         self.timer_decade = 0
         self.timer_punish = 0
 
-        self.emissions = np.float64(0)
+        self.emissions = np.float64(0.0)
         self.c0 = np.float64(0.0)  # this will change once a function to make the history begins
         self.emissions_hist = []
 
@@ -188,12 +189,14 @@ class Regulator(Agent):
         assert type(intercept) == float, ("intercept input must be a float, not:", type(intercept))
         assert type(level) == int, ("level input must be an integer, not:", type(intercept))
 
-        val = intercept + 0.1 * level + 0.04 * math.pow(level, 2)
+        # val = intercept + 0.1 * level + 0.04 * math.pow(level, 2)
+        val = intercept + 0.7 * level + 0.3 * math.pow(level, 2)
         # the function may have to be changed to make the levy rates more significant
         return val
 
     def calculate_Carbon(self, carbon):
         return (carbon - self.c0) / (self.fraction * self.c0) + self.punish
+    # fraction is the gap in emissions between levels. The gap is a fraction of the starter level.
 
     def asses_carbon_level(self):
         if self.changing_punish:
@@ -225,7 +228,7 @@ class Regulator(Agent):
 
     def decade_level_change(self):
         self.timer_decade = 24  # this is so the decade change comes in two years from now
-        new_intercept = (1 + self.dec_jump) * self.intercept
+        new_intercept = (1 + self.dec_jump) * self.intercept # the intercept will get raised pudhing the levy curve up
         new_levy = self.calculate_levy(new_intercept, self.level)
         self.future_levy_rate = np.float64(new_levy)
         return
@@ -244,7 +247,7 @@ class Regulator(Agent):
 
     def change_level_decade(self):
         self.intercept *= 1 + self.dec_jump
-    #     now the next levy calculation will be increased
+        #     now the next levy calculation will be increased
         self.changing_decade = False
         return
 
@@ -330,7 +333,6 @@ class Regulator(Agent):
 
     def iterate_regulator(self, new_emissions, timing):
         self.set_emissions(new_emissions)
-        # needs the clock function to take time from the simulator for processing too
         self.decade_check()
         if self.change_check():
             self.decrement_timer()
@@ -339,6 +341,3 @@ class Regulator(Agent):
             self.asses_carbon_level()
         self.generate_levyrate()
         return
-
-
-
