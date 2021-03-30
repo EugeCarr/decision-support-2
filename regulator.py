@@ -47,12 +47,7 @@ from operator import itemgetter
 #         return lev_copy
 
 
-"""class Regulator(Agent):
-    def __init__(self, name, sim_time, notice_period, pol):
-        super().__init__(name, sim_time)
-from operator import itemgetter
-
-
+"""
 class Policy(list):
     def __init__(self):
         super().__init__()
@@ -198,6 +193,7 @@ class Regulator(Agent):
         self.calc_levy_rate()
         return"""
 
+class Regulator(Agent):
     def __init__(self, name, sim_time, env, tax_rate,  notice_period, fraction, start_levy, compliance_threshold, decade_jump):
         super().__init__(name, sim_time, env)
         assert type(notice_period) == int, 'notice period must be an integer'
