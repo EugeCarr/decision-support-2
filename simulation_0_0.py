@@ -1,7 +1,6 @@
 """This file defines simulation parameters for the first build of the model"""
 import agent as ag
 from regulator import Regulator
-from regulator import Policy
 import numpy as np
 from tabulate import tabulate
 from matplotlib import pyplot as plt
@@ -84,16 +83,8 @@ def simulate(months, table=False, plot=False):
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
     manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
-    policy = Policy()
-    policy.add_level([1800, 0.19, 0.2])
-    policy.add_level([2000, 0.19, 0.225])
-    policy.add_level([2200, 0.19, 0.25])
-    policy.add_level([2400, 0.19, 0.275])
-    policy.add_level([2600, 0.19, 0.3])
-
-    notice_period = int(18)
-
-    regulator = Regulator('Regulator', months, environment, notice_period, policy)
+    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=18,
+                          fraction=0.5, start_levy=0.2, compliance_threshold=0.5, decade_jump=0.01)
 
     agents = [
         manufacturer1,
@@ -117,7 +108,7 @@ def simulate(months, table=False, plot=False):
         # execute standard monthly routines
         manufacturer1.time_step()
         manufacturer2.time_step()
-        regulator.iterate_regulator(manufacturer1.parameter['emissions'].value)
+        regulator.iterate_regulator(environment.aggregate['emissions'].value)
 
         environment.reset_aggregates()
         for key in env_aggregates_keys:
@@ -132,14 +123,14 @@ def simulate(months, table=False, plot=False):
         # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
             environment.parameter['levy_rate'].value = regulator.levy_rate
-            environment.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
+            environment.time_to_levy_change = regulator.timer_exC
             environment.levy_rate_changing = False
 
         # if a change in the levy rate is approaching, add this information to the environment
-        if regulator.changing:
+        if regulator.future_levy_rate > regulator.levy_rate:
             environment.levy_rate_changing = True
-            environment.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
-            environment.future_levy_rate = regulator.pol_table[regulator.level + 1][2]
+            environment.time_to_levy_change = regulator.timer_exC
+            environment.future_levy_rate = regulator.future_levy_rate
         else:
             pass
 
