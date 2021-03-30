@@ -7,7 +7,6 @@ import math
 
 from operator import itemgetter
 
-
 # class Policy(list):
 #     def __init__(self):
 #         self.policy = []
@@ -193,8 +192,10 @@ class Regulator(Agent):
         self.calc_levy_rate()
         return"""
 
+
 class Regulator(Agent):
-    def __init__(self, name, sim_time, env, tax_rate,  notice_period, fraction, start_levy, compliance_threshold, decade_jump):
+    def __init__(self, name, sim_time, env, tax_rate, notice_period, fraction, start_levy, compliance_threshold,
+                 decade_jump):
         super().__init__(name, sim_time, env)
         assert type(notice_period) == int, 'notice period must be an integer'
         assert type(fraction) == float and 0.0 < fraction < 1.0, ("fraction input", fraction, 'must be a float '
@@ -202,7 +203,7 @@ class Regulator(Agent):
         assert type(tax_rate) == float and 0.0 < tax_rate < 1.0, ("Starter tax rate input", tax_rate, 'must be a float '
                                                                                                       'between 0 and 1')
         assert type(decade_jump) == float and 0.0 < decade_jump < 1.0, (
-        "decade_jump input", decade_jump, 'must be a float between 0 and 1')
+            "decade_jump input", decade_jump, 'must be a float between 0 and 1')
         assert type(start_levy) == float, ("starting levy must be a float, not a", type(start_levy))
         assert type(compliance_threshold) == float and 0.0 < compliance_threshold < 1.0, (
             "compliance threshold input", compliance_threshold, "must be a float between 0 and 1")
@@ -260,6 +261,7 @@ class Regulator(Agent):
 
     def calculate_Carbon(self, carbon):
         return (carbon - self.c0) / (self.fraction * self.c0) + self.punish
+
     # fraction is the gap in emissions between levels. The gap is a fraction of the starter level.
 
     def asses_carbon_level(self):
@@ -292,7 +294,7 @@ class Regulator(Agent):
 
     def decade_level_change(self):
         self.timer_decade = 24  # this is so the decade change comes in two years from now
-        new_intercept = (1 + self.dec_jump) * self.intercept # the intercept will get raised pushing the levy curve up
+        new_intercept = (1 + self.dec_jump) * self.intercept  # the intercept will get raised pushing the levy curve up
         new_levy = self.calculate_levy(new_intercept, self.level)
         self.future_levy_rate = np.float64(new_levy)
         return
