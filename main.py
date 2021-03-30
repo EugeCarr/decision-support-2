@@ -8,16 +8,16 @@ if __name__ == '__main__':
     print(' =============================================== \n',
           'DECISION SUPPORT FOR SUSTAINABLE PROCESS DESIGN \n',
           now, '\n',
-          '=============================================== \n',
+          '===============================================',
           )
 
-    months = 120
+    months = 240
 
     simulate(months, table=False, plot=True)
 
     end = datetime.now()
     now = end.strftime("%d/%m/%Y %H:%M:%S")
-    print(' ==================== \n',
+    print('\n ==================== \n',
           'SIMULATION COMPLETE \n',
           now, '\n',
           '==================== \n',
