@@ -1,28 +1,158 @@
 """This file defines simulation parameters for the first build of the model"""
-import agent
+import agent as ag
+from regulator import Regulator
+from regulator import Policy
 import numpy as np
-import copy
 from tabulate import tabulate
 from matplotlib import pyplot as plt
+import copy
+from parameter import Parameter
+from parameter import Environment_Variable
+import parameter as par
+from datetime import datetime
 
 
-def simulate(months, table=bool, plot=bool):
-    # Initialise the manufacturer agent with all values for t = 0
-    pet_manufacturer = agent.PET_Manufacturer('PET Manufacturer', months)
+def simulate(months, table=False, plot=False):
+    # create agents and specify their parameters
+    month = int(0)
+    initial_production_volume = np.float64(1000)
 
-    # starting values
-    pet_manufacturer.refresh_independents()
-    pet_manufacturer.calculate_dependents()
+    # the dictionary of environment variables (see parameter.py) to pass to the Environment object
+    env_variables = {
+        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5)),
+        'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2)),
+        'bio_feedstock_price': Environment_Variable(par.bio_feedstock_price, months, init=np.float64(2)),
+        'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.2))
+    }
 
-    # make projections from t = 0
-    pet_manufacturer.new_projection()
-    pet_manufacturer.projection_check()
+    env_keys = list(env_variables.keys())
 
-    pet_manufacturer.record_timestep()
+    env_aggregates = {
+        'fossil_feedstock_consumption': Environment_Variable(par.blank, months),
+        'bio_feedstock_consumption': Environment_Variable(par.blank, months),
+        'emissions': Environment_Variable(par.blank, months)
+    }
 
+    env_aggregates_keys = list(env_aggregates.keys())
+
+    environment = ag.Environment(env_variables, env_aggregates)
+
+    # dictionary of all variables in the order in which they should be computed
+    # parameters from the environment that need to be projected by the agent use par.blank for the fun argument
+    # similarly for parameters calculated by the agent but which are not projected
+    manufacturer1_parameters = {
+        'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months),
+        'fossil_feedstock_price': Parameter(par.blank, par.fossil_feedstock_price_projection, months,
+                                            init=np.float64(2)),
+        'bio_feedstock_price': Parameter(par.blank, par.bio_feedstock_price_projection, months),
+
+        'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
+                                       init=initial_production_volume),
+
+        'fossil_process_cost': Parameter(par.fossil_process_cost, par.fossil_process_cost_projection, months,
+                                         init=np.float64(1)),
+        'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
+                                      init=np.float64(1.05)),
+
+        'proportion_bio': Parameter(par.proportion_bio, par.proportion_bio_projection, months),
+
+        'fossil_feedstock_consumption': Parameter(par.fossil_feedstock_consumption,
+                                                  par.fossil_feedstock_consumption_projection, months),
+        'bio_feedstock_consumption': Parameter(par.bio_feedstock_consumption,
+                                               par.bio_feedstock_consumption_projection, months),
+
+        'bio_capacity': Parameter(par.bio_capacity, par.bio_capacity_projection, months),
+        'fossil_capacity': Parameter(par.fossil_capacity, par.fossil_capacity_projection, months,
+                                     init=initial_production_volume),
+        'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
+
+        'emissions': Parameter(par.emissions, par.emissions_projection, months),
+        'levy_rate': Parameter(par.blank, par.levy_rate_projection, months, init=np.float64(0.2)),
+        'levies_payable': Parameter(par.levies_payable, par.levies_payable_projection, months),
+
+        'gross_profit': Parameter(par.gross_profit, par.gross_profit_projection, months),
+        'tax_payable': Parameter(par.tax_payable, par.tax_payable_projection, months),
+        'net_profit': Parameter(par.net_profit, par.net_profit_projection, months),
+
+        'profitability': Parameter(par.profitability, par.profitability_projection, months),
+        'liquidity': Parameter(par.liquidity, par.liquidity_projection, months, init=np.float64(5000)),
+        'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
+    }
+
+    manufacturer2_parameters = copy.deepcopy(manufacturer1_parameters)
+
+    manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
+    manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
+
+    policy = Policy()
+    policy.add_level([1800, 0.19, 0.2])
+    policy.add_level([2000, 0.19, 0.225])
+    policy.add_level([2200, 0.19, 0.25])
+    policy.add_level([2400, 0.19, 0.275])
+    policy.add_level([2600, 0.19, 0.3])
+
+    notice_period = int(18)
+
+    regulator = Regulator('Regulator', months, environment, notice_period, policy)
+
+    agents = [
+        manufacturer1,
+        manufacturer2,
+        regulator
+    ]
+
+    sim_start = datetime.now()
     # Run simulation for defined number of months
-    while pet_manufacturer.month < months - 1:
-        pet_manufacturer.time_step()
+    while month < months:
+        for key in env_keys:
+            if month != 0:
+                environment.parameter[key].update(environment)
+
+            environment.parameter[key].record(month)
+
+        # advance time counter in each agent
+        for agent in agents:
+            agent.month = month
+
+        # execute standard monthly routines
+        manufacturer1.time_step()
+        manufacturer2.time_step()
+        regulator.iterate_regulator(manufacturer1.parameter['emissions'].value)
+
+        environment.reset_aggregates()
+        for key in env_aggregates_keys:
+            try:
+                environment.aggregate[key].value += manufacturer1.parameter[key].value
+                environment.aggregate[key].value += manufacturer2.parameter[key].value
+            except KeyError:
+                pass
+
+            environment.aggregate[key].record(month)
+
+        # if the regulator rate has just changed then update it in the environment
+        if environment.parameter['levy_rate'].value != regulator.levy_rate:
+            environment.parameter['levy_rate'].value = regulator.levy_rate
+            environment.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
+            environment.levy_rate_changing = False
+
+        # if a change in the levy rate is approaching, add this information to the environment
+        if regulator.changing:
+            environment.levy_rate_changing = True
+            environment.time_to_levy_change = copy.deepcopy(regulator.time_to_change)
+            environment.future_levy_rate = regulator.pol_table[regulator.level + 1][2]
+        else:
+            pass
+
+        month += 1
+
+    sim_end = datetime.now()
+    elapsed = sim_end - sim_start
+    print('\n Simulation elapsed time:', elapsed)
+    print('\n ============ \n FINAL STATE \n ============',
+          '\n Regulation level:', regulator.level,
+          '\n Levy rate:', regulator.levy_rate,
+          '\n Bio proportion 1', manufacturer1.parameter['proportion_bio'].value,
+          '\n Bio proportion 2', manufacturer2.parameter['proportion_bio'].value)
 
     # data output & analysis
     t = np.arange(0, months, 1)
@@ -31,23 +161,55 @@ def simulate(months, table=bool, plot=bool):
         table = []
         for i in range(0, months):
             table.append([t[i],
-                          pet_manufacturer.projection_met_history[i],
-                          pet_manufacturer.profitability_history[i],
-                          pet_manufacturer.bio_history[i]])
+                          environment.parameter['pet_price'].history[i]])
 
-        headers = ["Month", "Projection met?", "Profitability", "Bio Proportion"]
+        headers = ['Month', 'pet_price']
         print(tabulate(table, headers))
 
     if plot:
-        y = pet_manufacturer.bio_history
-        x = t
-        fig, ax1 = plt.subplots()
-        ax1.plot(x, y)
+        graph(environment.parameter['levy_rate'])
 
-        ax1.set_xlabel('Month')
-        ax1.set_ylabel('bio proportion')
+    return
 
-        fig.tight_layout()
-        plt.show()
 
+def graph(parameter):
+    assert isinstance(parameter, Parameter) or isinstance(parameter, Environment_Variable)
+    y = parameter.history
+    t = np.arange(0, len(y), 1)
+    fig, ax1 = plt.subplots()
+    ax1.plot(t, y)
+
+    ax1.set_xlabel('Month')
+    ax1.set_ylabel('')
+
+    fig.tight_layout()
+    plt.show()
+    return
+
+
+def graph2(parameter1, parameter2):
+    assert isinstance(parameter1, Parameter) or isinstance(parameter1, Environment_Variable)
+    assert isinstance(parameter2, Parameter) or isinstance(parameter2, Environment_Variable)
+    y1 = parameter1.history
+    t1 = np.arange(0, len(y1), 1)
+    y2 = parameter2.history
+    t2 = np.arange(0, len(y2), 1)
+
+    fig, ax1 = plt.subplots()
+
+    color = 'tab:red'
+    ax1.set_xlabel('time (months)')
+    ax1.set_ylabel('', color=color)
+    ax1.plot(t1, y1, color=color)
+    ax1.tick_params(axis='y', labelcolor=color)
+
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+    color = 'tab:blue'
+    ax2.set_ylabel('', color=color)  # we already handled the x-label with ax1
+    ax2.plot(t2, y2, color=color)
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    fig.tight_layout()  # otherwise the right y-label is slightly clipped
+    plt.show()
     return
