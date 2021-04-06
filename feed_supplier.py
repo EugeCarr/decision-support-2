@@ -55,6 +55,10 @@ class Supplier(Agent):
         self.new_resource = np.float(0.0)
         self.resource_timer = 0
 
+        self.inc = False
+        self.prop_inc = 0.0
+        self.prop_inc_timer = 0
+
         return
 
     def calculate_reserves(self):
@@ -99,7 +103,7 @@ class Supplier(Agent):
 
     def increase_resource(self, proportion_added):
         self.planting = True
-        #     this is basically if the government decides to seed growth of more trees
+        #     this is basically if the regulator decides to plant more trees
         assert type(proportion_added) == float and 0.0 < proportion_added < 1.0, ("input must be a float between 0 and 1"
                                                                                   , type(proportion_added))
         self.new_resource = self.nat_stock * proportion_added
@@ -107,10 +111,15 @@ class Supplier(Agent):
 #       now there's a timer before the stocks get boosted
         return
 
-    def plant_resource(self):
-        assert self.planting, "Call to plant resource without authorisation"
-        self.nat_stock += self.new_resource
-        self.planting = False
+    def increment_plant_resource(self):
+        if not self.planting:
+            return
+        self.resource_timer -= 1
+        if self.resource_timer == 0:
+            self.nat_stock += self.new_resource
+            print("Supplier:", self.name, " has just increased stock by:", self.new_resource,"on month:", self.month)
+            self.new_resource = 0.0
+            self.planting = False
         return
 
     def increase_proportion(self, increment, phase_in):
@@ -133,6 +142,14 @@ class Supplier(Agent):
 
             return
 
+    def iterate_supplier(self, demand):
+        self.get_demand(demand)
+        self.calculate_reserves()
+        self.set_price()
+        self.increment_proportion()
+        self.increment_proportion()
+        self.month += 1
+        return
 
 
 
