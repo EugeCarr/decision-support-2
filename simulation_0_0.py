@@ -123,13 +123,13 @@ def simulate(months, table=False, plot=False):
         # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
             environment.parameter['levy_rate'].value = regulator.levy_rate
-            environment.time_to_levy_change = regulator.timer_exC
+            environment.time_to_levy_change = regulator.time_to_change()
             environment.levy_rate_changing = False
 
         # if a change in the levy rate is approaching, add this information to the environment
-        if regulator.future_levy_rate > regulator.levy_rate:
+        if regulator.change_check():
             environment.levy_rate_changing = True
-            environment.time_to_levy_change = regulator.timer_exC
+            environment.time_to_levy_change = regulator.time_to_change()
             environment.future_levy_rate = regulator.future_levy_rate
         else:
             pass
