@@ -6,8 +6,8 @@ import math
 class Supplier(Agent):
     """So the feedstock supplier will have 1 job. To continually create resource X, and supply whatever of Resource X
     there is to the Manufacturers, and set set prices for Resource X based on the availability of said resource. The
-    idea is that the resource will be renewable, for example trees. This means that changes to amount in trees, will take 10
-    years to be realised.
+    idea is that the resource will be renewable, for example trees. This means that changes to amount in trees, will
+    take 10 years to be realised.
 
     It needs to have: a starting price of the resource per kilo, a initial amount of that resource, maximum amount of
     that resource, a current growth rate of the resource stock, A timer for the resource to be replenished for new
@@ -24,7 +24,7 @@ class Supplier(Agent):
         assert type(start_price) == float, ("start_price should be a float, not a", type(start_price))
         assert type(initial_amount) == float, ("initial_amount should be a float, not a", type(initial_amount))
         assert type(max_amount) == float, ("max_amount should be a float, not a", type(max_amount))
-        assert type(ann_growth) == float and 0.0 > ann_growth > 100.0, ("growth should be a float, not a",
+        assert type(ann_growth) == float and 0.0 > ann_growth > 1.0, ("growth should be a float, not a",
                                                                         type(ann_growth))
         assert type(replenish_time) == int, ("replenish_time should be a int, not a", type(replenish_time))
         assert type(proportion_feedstock) == float and 0.0 > abs(proportion_feedstock) > 1.0, (
@@ -38,7 +38,11 @@ class Supplier(Agent):
         self.maximum = max_amount
         self.growth = ann_growth
 
-        self.replenish_time = replenish_time
+        if replenish_time == None:
+            self.replenish_time = 10
+        else:
+            self.replenish_time = replenish_time
+
         self.price = start_price
         self.prop_feedstock = proportion_feedstock
         self.reserves = self.nat_stock * self.prop_feedstock
@@ -58,6 +62,8 @@ class Supplier(Agent):
         self.inc = False
         self.prop_inc = 0.0
         self.prop_inc_timer = 0
+
+        self.random_switch = False
 
         return
 
@@ -96,16 +102,22 @@ class Supplier(Agent):
         else:
             diff = (ratio - self.ratio_baseline)/ self.ratio_baseline
         #     calculates the difference in supply demand ratio between now and the beginning
-            self.price *= 1 + diff * self.sensitivity
+            new_price = self.price * (1 + diff * self.sensitivity)
         #     sensitivity allows you to change the percentage by which the price changes in response to supply and
         #     demand.
+            if self.random_switch:
+                std_dev = 0.01
+                deviation = np.float64(np.random.normal(0, std_dev, None))
+                self.price = new_price + deviation
+            else:
+                self.price = new_price
         return
 
     def increase_resource(self, proportion_added):
         self.planting = True
         #     this is basically if the regulator decides to plant more trees
-        assert type(proportion_added) == float and 0.0 < proportion_added < 1.0, ("input must be a float between 0 and 1"
-                                                                                  , type(proportion_added))
+        assert type(proportion_added) == float and 0.0 < proportion_added < 1.0,("input must be a float between 0 and 1",
+                                                                                  type(proportion_added))
         self.new_resource = self.nat_stock * proportion_added
         self.resource_timer = self.replenish_time
 #       now there's a timer before the stocks get boosted
@@ -117,13 +129,14 @@ class Supplier(Agent):
         self.resource_timer -= 1
         if self.resource_timer == 0:
             self.nat_stock += self.new_resource
-            print("Supplier:", self.name, " has just increased stock by:", self.new_resource,"on month:", self.month)
+            print("Supplier:", self.name, " has just increased stock by:", self.new_resource, "on month:", self.month)
             self.new_resource = 0.0
             self.planting = False
         return
 
     def increase_proportion(self, increment, phase_in):
-        assert type(increment) == float and 0.0 < increment < 1.0, ("input must be a float between 0 and 1", type(increment))
+        assert type(increment) == float and 0.0 < increment < 1.0, ("input must be a float between 0 and 1",
+                                                                    type(increment))
         assert type(phase_in) == int , ("phase_in month timer must be an integer", type(phase_in))
 
         self.prop_inc = increment / phase_in
@@ -137,9 +150,9 @@ class Supplier(Agent):
         if self.prop_inc_timer > 0:
             self.prop_feedstock += self.prop_inc
             self.prop_inc_timer -= 1
+
             if self.prop_inc_timer == 0:
                 self.inc = False
-
             return
 
     def iterate_supplier(self, demand):
