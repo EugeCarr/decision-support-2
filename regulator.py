@@ -254,7 +254,7 @@ class Regulator(Agent):
         assert type(level) == int, ("level input must be an integer, not:", type(intercept))
 
         # val = intercept + 0.1 * level + 0.04 * math.pow(level, 2)
-        val = intercept + 0.7 * level + 0.3 * math.pow(level, 2)
+        val = intercept + 0.01 * level + 0.01 * math.pow(level, 2)
         # the function may have to be changed to make the levy rates more significant
         return val
 
