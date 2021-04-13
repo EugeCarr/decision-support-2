@@ -96,8 +96,7 @@ class Supplier(Agent):
 
     def set_price(self):
         ratio = self.demand / self.reserves
-
-        if len(self.demand_history) == 0:
+        if len(self.demand_history) == 1:
             self.ratio_baseline = ratio
         else:
             diff = (ratio - self.ratio_baseline) / self.ratio_baseline
@@ -164,7 +163,6 @@ class Supplier(Agent):
         self.get_demand()
         self.calculate_reserves(growth_bool)
         self.set_price()
-        self.get_price()
         self.increment_proportion()
         self.increment_plant_resource()
         self.month += 1
