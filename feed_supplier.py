@@ -163,7 +163,6 @@ class Supplier(Agent):
         self.get_demand()
         self.calculate_reserves(growth_bool)
         self.set_price()
-        print(self.price)
         self.increment_proportion()
         self.increment_plant_resource()
         self.month += 1
