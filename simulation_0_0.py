@@ -84,7 +84,7 @@ def simulate(months, table=False, plot=False):
     manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=18,
-                          fraction=0.7, start_levy=0.2, compliance_threshold=0.5, decade_jump=0.1)
+                          fraction=0.7, start_levy=0.2, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=0.1)
 
     agents = [
         manufacturer1,
@@ -158,6 +158,7 @@ def simulate(months, table=False, plot=False):
         print(tabulate(table, headers))
 
     if plot:
+        graph(environment.aggregate['emissions'])
         graph(environment.parameter['levy_rate'])
 
     return
