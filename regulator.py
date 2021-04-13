@@ -254,12 +254,14 @@ class Regulator(Agent):
         assert type(level) == int, ("level input must be an integer, not:", type(intercept))
 
         # val = intercept + 0.1 * level + 0.04 * math.pow(level, 2)
-        val = intercept + 0.7 * level + 0.3 * math.pow(level, 2)
+        val = intercept + 0.07 * level + 0.03 * math.pow(level, 2)
         # the function may have to be changed to make the levy rates more significant
         return val
 
     def calculate_carbon(self, carbon):
-        return (carbon - self.c0) / (self.fraction * self.c0) + self.punish
+        # if self.c0 == np.float64(0.0):
+        #     return np.float64(0.0)
+        return(carbon - self.c0) / (self.fraction * self.c0) + self.punish
 
     # fraction is the gap in emissions between levels. The gap is a fraction of the starter level.
 
@@ -300,6 +302,7 @@ class Regulator(Agent):
 
     def change_level_ex(self):
         self.level += 1
+        print("Month", self.month,", level", self.level, " Excessive emissions in month:", (self.month - self.notice))
         self.changing_excess = False
         return
 
@@ -307,6 +310,8 @@ class Regulator(Agent):
         self.punish += 1
         # so that subsequent level calculations take this punishment into account
         self.level += 1
+        print("Month", self.month, ", level", self.level, " Failure to comply by:", (self.month - self.notice))
+
         self.changing_punish = False
         return
 
@@ -396,8 +401,8 @@ class Regulator(Agent):
         # final function to change the levy rate
         return
 
-    def iterate_regulator(self, new_emissions):
-        self.set_emissions(new_emissions)
+    def iterate_regulator(self):
+        self.set_emissions(self.env.aggregate['emissions'].value)
         # needs the clock function to take time from the simulator for processing too
         self.decade_check()
         if self.change_check():

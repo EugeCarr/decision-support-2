@@ -84,7 +84,7 @@ def simulate(months, table=False, plot=False):
     manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=18,
-                          fraction=0.5, start_levy=0.2, compliance_threshold=0.5, decade_jump=0.01)
+                          fraction=0.7, start_levy=0.2, compliance_threshold=0.5, decade_jump=0.1)
 
     agents = [
         manufacturer1,
@@ -108,7 +108,7 @@ def simulate(months, table=False, plot=False):
         # execute standard monthly routines
         manufacturer1.time_step()
         manufacturer2.time_step()
-        regulator.iterate_regulator(environment.aggregate['emissions'].value)
+        regulator.iterate_regulator()
 
         environment.reset_aggregates()
         for key in env_aggregates_keys:
@@ -152,9 +152,9 @@ def simulate(months, table=False, plot=False):
         table = []
         for i in range(0, months):
             table.append([t[i],
-                          environment.parameter['pet_price'].history[i]])
+                          environment.parameter['levy_rate'].history[i]])
 
-        headers = ['Month', 'pet_price']
+        headers = ['Month', 'levy_rate']
         print(tabulate(table, headers))
 
     if plot:
