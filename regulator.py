@@ -193,7 +193,7 @@ class Regulator(Agent):
         self.calc_levy_rate()
         return"""
 
-    def __init__(self, name, sim_time, env, tax_rate, notice_period, fraction, start_levy, compliance_threshold,
+    def __init__(self, name, sim_time, env, tax_rate, notice_period, fraction, start_levy, ratio_jump, compliance_threshold,
                  decade_jump):
         super().__init__(name, sim_time, env)
         assert type(notice_period) == int, 'notice period must be an integer'
@@ -204,6 +204,7 @@ class Regulator(Agent):
         assert type(decade_jump) == float and 0.0 < decade_jump < 1.0, ("decade_jump input", decade_jump,
                                                                         'must be a float between 0 and 1')
         assert type(start_levy) == float, ("starting levy must be a float, not a", type(start_levy))
+        assert type(ratio_jump) == float, ("ratio jump between level 0 and level 1 must be a float, not a", type(ratio_jump))
         assert type(compliance_threshold) == float and 0.0 < compliance_threshold < 1.0, (
             "compliance threshold input", compliance_threshold, "must be a float between 0 and 1")
 
@@ -223,6 +224,8 @@ class Regulator(Agent):
 
         self.punish = 0
         self.intercept = start_levy
+        self.b = (ratio_jump * start_levy) * (3/10)
+        self.a = self.b * (7/3)
         self.dec_jump = decade_jump
         self.comp_threshold = compliance_threshold
         # may add this variable into the initialisation
@@ -253,13 +256,12 @@ class Regulator(Agent):
         assert type(intercept) == float, ("intercept input must be a float, not:", type(intercept))
         assert type(level) == int, ("level input must be an integer, not:", type(intercept))
 
-        # val = intercept + 0.1 * level + 0.04 * math.pow(level, 2)
-        val = intercept + 0.01 * level + 0.01 * math.pow(level, 2)
+        val = intercept + self.a * level + self.b * math.pow(level, 2)
         # the function may have to be changed to make the levy rates more significant
         return val
 
     def calculate_carbon(self, carbon):
-        return (carbon - self.c0) / (self.fraction * self.c0) + self.punish
+        return(carbon - self.c0) / (self.fraction * self.c0) + self.punish
 
     # fraction is the gap in emissions between levels. The gap is a fraction of the starter level.
 
@@ -300,6 +302,7 @@ class Regulator(Agent):
 
     def change_level_ex(self):
         self.level += 1
+        print("Month", self.month,", level", self.level, " Excessive emissions in month:", (self.month - self.notice))
         self.changing_excess = False
         return
 
@@ -307,6 +310,8 @@ class Regulator(Agent):
         self.punish += 1
         # so that subsequent level calculations take this punishment into account
         self.level += 1
+        print("Month", self.month, ", level", self.level, " Failure to comply by:", (self.month - self.notice))
+
         self.changing_punish = False
         return
 
@@ -396,8 +401,8 @@ class Regulator(Agent):
         # final function to change the levy rate
         return
 
-    def iterate_regulator(self, new_emissions):
-        self.set_emissions(new_emissions)
+    def iterate_regulator(self):
+        self.set_emissions(self.env.aggregate['emissions'].value)
         # needs the clock function to take time from the simulator for processing too
         self.decade_check()
         if self.change_check():

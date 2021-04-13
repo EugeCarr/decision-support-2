@@ -85,13 +85,13 @@ class Supplier(Agent):
         self.growth = new_growth
         return
 
-    def get_demand(self, demand):
-        assert type(demand) == float, ("demand should be a float, not a", type(demand))
-        self.demand = demand
-        if len(self.demand_history) == 0:
-            self.demand_baseline = np.float(demand)
+    def get_demand(self):
 
-        self.demand_history.append(demand)
+        self.demand = self.env.aggregate['bio_feedstock_consumption']
+        if len(self.demand_history) == 0:
+            self.demand_baseline = np.float(self.env.aggregate['bio_feedstock_consumption'])
+
+        self.demand_history.append(self.env.aggregate['bio_feedstock_consumption'])
         return
 
     def set_price(self):
@@ -158,9 +158,9 @@ class Supplier(Agent):
                 self.inc = False
             return
 
-    def iterate_supplier(self, demand, growth_bool):
+    def iterate_supplier(self, growth_bool):
         assert type(growth_bool) == bool, ("growth bool must be type boolean, not:", type(growth_bool))
-        self.get_demand(float(demand))
+        self.get_demand()
         self.calculate_reserves(growth_bool)
         self.set_price()
         self.increment_proportion()
