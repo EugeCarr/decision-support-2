@@ -68,6 +68,9 @@ class Manufacturer(Agent):
         parameters are computed in the right order."""
         assert type(value_function) == str
         assert value_function in parameters
+        for value in list(parameters.values()):
+            assert isinstance(value, par.Parameter)
+
         self.value_function = value_function
         self.target_value = np.float64(target_value)
 

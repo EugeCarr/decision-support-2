@@ -86,13 +86,13 @@ def simulate(months, table=False, plot=False):
     manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=18,
-                          fraction=0.7, start_levy=0.2, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=0.1)
+                          fraction=0.5, start_levy=0.2, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=0.1)
 
     supplier = Supplier('supplier', months, environment, 2.0, 1000.0, 1000.0, 0.01, 0.5, 10, 0.02)
 
     manufacturers = [
         manufacturer1,
-        manufacturer2
+        # manufacturer2
     ]
 
     agents = manufacturers + [regulator, supplier]
@@ -122,7 +122,7 @@ def simulate(months, table=False, plot=False):
                 except KeyError:
                     pass
 
-        environment.aggregate['bio_feedstock_consumption'].value += 1000
+        environment.aggregate['bio_feedstock_consumption'].value += 500
 
         for key in env_aggregates_keys:
             environment.aggregate[key].record(month)
@@ -152,7 +152,7 @@ def simulate(months, table=False, plot=False):
     print('\n Simulation elapsed time:', elapsed)
     print('\n ============ \n FINAL STATE \n ============',
           '\n Regulation level:', regulator.level,
-          '\n Levy rate:', regulator.levy_rate,
+          '\n Levy rate:', environment.parameter['levy_rate'].value,
           '\n Bio proportion 1:', manufacturer1.parameter['proportion_bio'].value)
 
     # data output & analysis
@@ -162,13 +162,12 @@ def simulate(months, table=False, plot=False):
         table = []
         for i in range(0, months):
             table.append([t[i],
-                          environment.parameter['levy_rate'].history[i]])
+                          environment.parameter['bio_feedstock_price'].history[i]])
 
         headers = ['Month', 'levy_rate']
         print(tabulate(table, headers))
 
     if plot:
-        graph(environment.aggregate['emissions'])
         graph(environment.parameter['levy_rate'])
 
     return
