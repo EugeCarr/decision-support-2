@@ -81,7 +81,7 @@ def target_under(manufacturer):
     else:
         manufacturer.projection_met = False
 
-    return under
+    return abs(under)
 
 
 class Manufacturer(Agent):
@@ -238,6 +238,8 @@ class Manufacturer(Agent):
             if not self.projection_met:
                 new_target = self.optimal_strategy()
                 self.proportion_bio_target = new_target
+            self.project_variables()
+            self.projection_check()
         self.record_timestep()
         return
 
