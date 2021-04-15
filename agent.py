@@ -1,6 +1,8 @@
 """This file defines the Agent class, and subclasses thereof, for the agent-based simulation"""
 import numpy as np
 import parameter as par
+import copy
+from scipy import optimize
 
 
 def run_check():
@@ -58,6 +60,28 @@ class Agent(object):
 
         print('\n ================================ \n', self.name, 'created \n ================================')
         return
+
+
+def target_under(manufacturer):
+    assert isinstance(manufacturer, Manufacturer)
+
+    time_to_target1 = 60 - manufacturer.month % 60
+    time_to_target2 = time_to_target1 + 60
+
+    if time_to_target1 > 12:
+        under = (manufacturer.target_value -
+                 manufacturer.parameter[manufacturer.value_function].projection[time_to_target1])
+
+    else:
+        under = (manufacturer.target_value -
+                 manufacturer.parameter[manufacturer.value_function].projection[time_to_target2])
+
+    if under < 0:
+        manufacturer.projection_met = True
+    else:
+        manufacturer.projection_met = False
+
+    return under
 
 
 class Manufacturer(Agent):
@@ -187,6 +211,34 @@ class Manufacturer(Agent):
         else:
             pass
 
+        return
+
+    def scenario(self, bio_target):
+        # a method which runs a projection for a scenario with a different bio_target, returning the
+        # amount by which the target value is underachieved (negative if overachieved)
+        sandbox = copy.deepcopy(self)
+        sandbox.proportion_bio_target = bio_target
+        sandbox.project_variables()
+        target_underachievement = target_under(sandbox)
+        return target_underachievement
+
+    def optimal_strategy(self):
+        res = optimize.minimize_scalar(self.scenario, bounds=(self.parameter['proportion_bio'].value, 1.0),
+                                       method='bounded')
+        return res.x
+
+    def time_step_alt(self):
+        if self.implementation_countdown > 0:
+            self.implementation_countdown -= 1
+
+        self.update_variables()
+        if self.month % 12 == 1:
+            self.project_variables()
+            self.projection_check()
+            if not self.projection_met:
+                new_target = self.optimal_strategy()
+                self.proportion_bio_target = new_target
+        self.record_timestep()
         return
 
     def time_step(self):

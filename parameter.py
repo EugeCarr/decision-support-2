@@ -355,8 +355,8 @@ def proportion_bio_projection(agent) -> np.ndarray:
     time_to_target = int(np.ceil((agent.proportion_bio_target - agent.parameter['proportion_bio'].value) /
                                  agent.proportion_change_rate)
                          + agent.implementation_countdown)
-    proj.fill(agent.proportion_bio_target)
 
+    proj.fill(agent.proportion_bio_target)
     if time_to_target > 1:
 
         for i in range(agent.implementation_countdown):
