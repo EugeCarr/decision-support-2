@@ -80,7 +80,7 @@ def simulate(months, table=False, plot=False):
     }
 
     manufacturer2_parameters = copy.deepcopy(manufacturer1_parameters)
-    manufacturer2_parameters['proportion_bio'].value = np.float64(0.1)
+    # manufacturer2_parameters['proportion_bio'].value = np.float64(0.1)
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
     manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
@@ -92,7 +92,7 @@ def simulate(months, table=False, plot=False):
 
     manufacturers = [
         manufacturer1,
-        # manufacturer2
+        manufacturer2
     ]
 
     agents = manufacturers + [regulator, supplier]
