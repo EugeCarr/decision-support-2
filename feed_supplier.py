@@ -165,5 +165,6 @@ class Supplier(Agent):
         self.set_price()
         self.increment_proportion()
         self.increment_plant_resource()
+        self.month += 1
         self.env.parameter['bio_feedstock_price'].value = self.price
         return
