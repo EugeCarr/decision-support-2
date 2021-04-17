@@ -158,7 +158,7 @@ def simulate(months, table=False, plot=False):
         print(tabulate(table, headers))
 
     if plot:
-        graph(environment.aggregate['emissions'])
+        # graph(manufacturer1.parameter['proportion_bio'])
         graph(environment.parameter['levy_rate'])
 
     return
@@ -172,7 +172,7 @@ def graph(parameter):
     ax1.plot(t, y)
 
     ax1.set_xlabel('Month')
-    ax1.set_ylabel('')
+    ax1.set_ylabel('levy_rate')
 
     fig.tight_layout()
     plt.show()
