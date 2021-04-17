@@ -9,6 +9,7 @@ from parameter import Parameter
 from parameter import Environment_Variable
 import parameter as par
 from datetime import datetime
+from feed_supplier import Supplier
 
 
 def simulate(months, table=False, plot=False):
@@ -79,18 +80,22 @@ def simulate(months, table=False, plot=False):
     }
 
     manufacturer2_parameters = copy.deepcopy(manufacturer1_parameters)
+    # manufacturer2_parameters['proportion_bio'].value = np.float64(0.1)
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
-    manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
+    # manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=18,
                           fraction=0.7, start_levy=0.2, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=0.1)
 
-    agents = [
+    supplier = Supplier('supplier', months, environment, 2.0, 1000.0, 1000.0, 0.01, 0.5, 10, 0.02)
+
+    manufacturers = [
         manufacturer1,
-        manufacturer2,
-        regulator
+        # manufacturer2
     ]
+
+    agents = manufacturers + [regulator, supplier]
 
     sim_start = datetime.now()
     # Run simulation for defined number of months
@@ -105,20 +110,23 @@ def simulate(months, table=False, plot=False):
         for agent in agents:
             agent.month = month
 
-        # execute standard monthly routines
-        manufacturer1.time_step()
-        manufacturer2.time_step()
-        regulator.iterate_regulator()
+        # execute monthly routines on manufacturers
+        for agent in manufacturers:
+            agent.time_step()
 
         environment.reset_aggregates()
         for key in env_aggregates_keys:
-            try:
-                environment.aggregate[key].value += manufacturer1.parameter[key].value
-                environment.aggregate[key].value += manufacturer2.parameter[key].value
-            except KeyError:
-                pass
+            for manufacturer in manufacturers:
+                try:
+                    environment.aggregate[key].value += manufacturer.parameter[key].value
+                except KeyError:
+                    pass
 
             environment.aggregate[key].record(month)
+
+        # supplier.iterate_supplier(environment.aggregate['bio_feedstock_consumption'].value, False)
+
+        regulator.iterate_regulator()
 
         # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
@@ -142,8 +150,7 @@ def simulate(months, table=False, plot=False):
     print('\n ============ \n FINAL STATE \n ============',
           '\n Regulation level:', regulator.level,
           '\n Levy rate:', regulator.levy_rate,
-          '\n Bio proportion 1', manufacturer1.parameter['proportion_bio'].value,
-          '\n Bio proportion 2', manufacturer2.parameter['proportion_bio'].value)
+          '\n Bio proportion 1:', manufacturer1.parameter['proportion_bio'].value)
 
     # data output & analysis
     t = np.arange(0, months, 1)
