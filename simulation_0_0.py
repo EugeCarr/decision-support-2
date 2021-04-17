@@ -181,7 +181,7 @@ def graph(parameter):
     ax1.plot(t, y)
 
     ax1.set_xlabel('Month')
-    ax1.set_ylabel('')
+    ax1.set_ylabel('levy_rate')
 
     fig.tight_layout()
     plt.show()
