@@ -87,11 +87,11 @@ class Supplier(Agent):
 
     def get_demand(self):
 
-        self.demand = self.env.aggregate['bio_feedstock_consumption']
+        self.demand = self.env.aggregate['bio_feedstock_consumption'].value
         if len(self.demand_history) == 0:
-            self.demand_baseline = np.float(self.env.aggregate['bio_feedstock_consumption'])
+            self.demand_baseline = np.float(self.env.aggregate['bio_feedstock_consumption'].value)
 
-        self.demand_history.append(self.env.aggregate['bio_feedstock_consumption'])
+        self.demand_history.append(self.env.aggregate['bio_feedstock_consumption'].value)
         return
 
     def set_price(self):
@@ -165,5 +165,5 @@ class Supplier(Agent):
         self.set_price()
         self.increment_proportion()
         self.increment_plant_resource()
-        self.month += 1
+        self.env.parameter['bio_feedstock_price'].value = self.price
         return

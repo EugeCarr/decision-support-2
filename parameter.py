@@ -53,12 +53,12 @@ def fossil_feedstock_price(env) -> np.float64:
 def bio_feedstock_price(env) -> np.float64:
     # price is a random walk from the initial value
     current = env.parameter['bio_feedstock_price'].value
-    std_dev = 0.01
-    deviation = np.float64(np.random.normal(0, std_dev, None))
-    val = current + deviation
+    # std_dev = 0.01
+    # deviation = np.float64(np.random.normal(0, std_dev, None))
+    # val = current + deviation
 
     # val = env.parameter['pet_price'].history[0]
-    return val
+    return current
 
 
 def levy_rate(env) -> np.float64:
