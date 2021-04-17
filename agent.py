@@ -223,9 +223,10 @@ class Manufacturer(Agent):
         return target_underachievement
 
     def optimal_strategy(self):
-        res = optimize.minimize_scalar(self.scenario, bounds=(self.parameter['proportion_bio'].value, 1.0),
+        res = optimize.minimize_scalar(self.scenario, bounds=(0.0, 1.0),
                                        method='bounded')
-        return res.x
+        new_target = round(res.x, 2)
+        return new_target
 
     def time_step_alt(self):
         if self.implementation_countdown > 0:

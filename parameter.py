@@ -121,7 +121,6 @@ def blank(agent):
 
 def production_volume(agent) -> np.float64:
     volume = agent.parameter['production_volume'].value
-    month = agent.month
 
     # production volume is defined by growth rates
 
@@ -129,17 +128,12 @@ def production_volume(agent) -> np.float64:
     growth_rate_monthly = np.power(growth_rate, 1 / 12)  # annual growth rate changed to month-on-month
     target_amount = volume * growth_rate_monthly
 
-    if month == 0:
+    if agent.month == 0:
         val = volume
 
     else:
         val = target_amount
 
-    return val
-
-
-def production_volume_alt(agent) -> np.float64:
-    val = np.float64()
     return val
 
 
@@ -570,3 +564,58 @@ def bio_feedstock_consumption_projection(agent) -> np.ndarray:
     bio_production = np.multiply(monthly_production, agent.parameter['proportion_bio'].projection)
     proj = np.multiply(bio_production, agent.bio_resource_ratio)
     return proj
+
+
+"""new methods for change of Manufacturer structure to facilitate multi-objective multi-variate optimisation"""
+
+
+def fossil_capacity_alt(agent) -> np.float64:
+    current = agent.parameter['fossil_capacity'].value
+    target = np.float64()
+    max_increase = np.float64()
+
+    if target > current and (target - current) > max_increase:
+        val = current + max_increase
+    else:
+        val = target
+
+    return val
+
+
+def bio_capacity_alt(agent) -> np.float64:
+    current = agent.parameter['bio_capacity'].value
+    target = np.float64()
+    max_increase = np.float64()
+
+    if target > current and (target - current) > max_increase:
+        val = current + max_increase
+    else:
+        val = target
+
+    return val
+
+
+def fossil_production(agent) -> np.float64:
+    current = agent.parameter['fossil_production'].value
+    capacity = agent.parameter['fossil_capacity'].value
+    plan = np.float64()
+
+    if current != plan and plan <= capacity:
+        val = plan
+    else:
+        val = current
+
+    return val
+
+
+def bio_production(agent) -> np.float64:
+    current = agent.parameter['bio_production'].value
+    capacity = agent.parameter['bio_capacity'].value
+    plan = np.float64()
+
+    if current != plan and plan <= capacity:
+        val = plan
+    else:
+        val = current
+
+    return val

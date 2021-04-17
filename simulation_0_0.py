@@ -19,7 +19,7 @@ def simulate(months, table=False, plot=False):
 
     # the dictionary of environment variables (see parameter.py) to pass to the Environment object
     env_variables = {
-        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(5)),
+        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5)),
         'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2)),
         'bio_feedstock_price': Environment_Variable(par.bio_feedstock_price, months, init=np.float64(2)),
         'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.2))
