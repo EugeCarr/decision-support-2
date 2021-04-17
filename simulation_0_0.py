@@ -80,13 +80,12 @@ def simulate(months, table=False, plot=False):
     }
 
     manufacturer2_parameters = copy.deepcopy(manufacturer1_parameters)
-    # manufacturer2_parameters['proportion_bio'].value = np.float64(0.1)
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
     manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=18,
-                          fraction=0.5, start_levy=0.2, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=0.1)
+                          fraction=0.7, start_levy=0.2, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=0.1)
 
     supplier = Supplier('supplier', months, environment, 2.0, 1000.0, 1000.0, 0.01, 0.5, 10, 0.02)
 
@@ -128,7 +127,6 @@ def simulate(months, table=False, plot=False):
 
         for key in env_aggregates_keys:
             environment.aggregate[key].record(month)
-
 
         # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
