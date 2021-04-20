@@ -366,6 +366,11 @@ def proportion_bio_projection(agent) -> np.ndarray:
             try:
                 proj[i] = (agent.parameter['proportion_bio'].value +
                            agent.proportion_change_rate * (i + 1))
+
+        # for i in range(agent.implementation_countdown, time_to_target):
+        #     try:
+        #         proj[i] = (agent.parameter['proportion_bio'].value + (i + 1 - agent.implementation_countdown)
+        #                    * agent.proportion_change_rate)
             except IndexError:
                 print('time to reach target bio proportion is longer than', agent.projection_time, 'months')
                 print('behaviour in these conditions is undefined. aborting simulation')
