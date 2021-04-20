@@ -57,6 +57,7 @@ class Agent(object):
         self.name = name
         self.month = int(0)
         self.env = env
+        self.sim_time = sim_time
 
         print('\n ================================ \n', self.name, 'created \n ================================')
         return
