@@ -1,6 +1,7 @@
 from agent import Agent
 import numpy as np
 import math
+
 # import copy
 # from tabulate import tabulate
 # from matplotlib import pyplot as plt
@@ -193,8 +194,8 @@ class Regulator(Agent):
         self.calc_levy_rate()
         return"""
 
-    def __init__(self, name, sim_time, env, tax_rate, notice_period, fraction, start_levy, ratio_jump, compliance_threshold,
-                 decade_jump):
+    def __init__(self, name, sim_time, env, tax_rate, fraction, ratio_jump, start_levy, compliance_threshold,
+                 notice_period=18, decade_jump=0.1):
         super().__init__(name, sim_time, env)
         assert type(notice_period) == int, 'notice period must be an integer'
         assert type(fraction) == float and 0.0 < fraction < 1.0, ("fraction input", fraction, 'must be a float '
@@ -204,7 +205,8 @@ class Regulator(Agent):
         assert type(decade_jump) == float and 0.0 < decade_jump < 1.0, ("decade_jump input", decade_jump,
                                                                         'must be a float between 0 and 1')
         assert type(start_levy) == float, ("starting levy must be a float, not a", type(start_levy))
-        assert type(ratio_jump) == float, ("ratio jump between level 0 and level 1 must be a float, not a", type(ratio_jump))
+        assert type(ratio_jump) == float, (
+        "ratio jump between level 0 and level 1 must be a float, not a", type(ratio_jump))
         assert type(compliance_threshold) == float and 0.0 < compliance_threshold < 1.0, (
             "compliance threshold input", compliance_threshold, "must be a float between 0 and 1")
 
@@ -223,9 +225,12 @@ class Regulator(Agent):
         self.emissions_hist = []
 
         self.punish = 0
+        self.punish_switch = False
+        # This is a switch for compliance checking and punishment
+
         self.intercept = start_levy
-        self.b = (ratio_jump * start_levy) * (3/10)
-        self.a = self.b * (7/3)
+        self.b = (ratio_jump * start_levy) * (3 / 10)
+        self.a = self.b * (7 / 3)
         self.dec_jump = decade_jump
         self.comp_threshold = compliance_threshold
         # may add this variable into the initialisation
@@ -261,7 +266,10 @@ class Regulator(Agent):
         return val
 
     def calculate_carbon(self, carbon):
-        return(carbon - self.c0) / (self.fraction * self.c0) + self.punish
+        if self.punish_switch:
+            return (carbon - self.c0) / (self.fraction * self.c0) + self.punish
+        else:
+            return (carbon - self.c0) / (self.fraction * self.c0)
 
     # fraction is the gap in emissions between levels. The gap is a fraction of the starter level.
 
@@ -288,6 +296,8 @@ class Regulator(Agent):
         return
 
     def comp_level_raise(self):
+        if not self.punish_switch:
+            return
         self.timer_punish = self.notice
         new_levy = self.calculate_levy(self.intercept, (self.level + 1))
         self.future_levy_rate = np.float64(new_levy)
@@ -302,11 +312,13 @@ class Regulator(Agent):
 
     def change_level_ex(self):
         self.level += 1
-        print("Month", self.month,", level", self.level, " Excessive emissions in month:", (self.month - self.notice))
+        print("Month", self.month, ", level", self.level, " Excessive emissions in month:", (self.month - self.notice))
         self.changing_excess = False
         return
 
     def change_level_punish(self):
+        if not self.punish_switch:
+            return
         self.punish += 1
         # so that subsequent level calculations take this punishment into account
         self.level += 1
@@ -322,6 +334,8 @@ class Regulator(Agent):
         return
 
     def compliance_check(self):
+        if not self.punish_switch:
+            return
         if self.comp_check:
             self.comp_timer -= 1
             if self.comp_timer == 0:
