@@ -194,7 +194,7 @@ class Regulator(Agent):
         self.calc_levy_rate()
         return"""
 
-    def __init__(self, name, sim_time, env, tax_rate, fraction, ratio_jump, start_levy, compliance_threshold,
+    def __init__(self, name, sim_time, env, tax_rate, fraction, ratio_jump, start_levy, compliance_threshold=0.1,
                  notice_period=18, decade_jump=0.1):
         super().__init__(name, sim_time, env)
         assert type(notice_period) == int, 'notice period must be an integer'
