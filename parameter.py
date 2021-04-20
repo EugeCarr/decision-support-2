@@ -1,5 +1,6 @@
 import numpy as np
 import agent as ag
+from agent import run_check
 
 
 class Environment_Variable(object):
@@ -7,6 +8,8 @@ class Environment_Variable(object):
     def __init__(self, fun, sim_length, init=np.float64(0)):
         assert type(sim_length) == int
         assert sim_length > 0
+
+        self.month = int(0)
 
         self.fun = fun
 
@@ -22,9 +25,9 @@ class Environment_Variable(object):
         self.value = np.float64(self.fun(environment))
         return
 
-    def record(self, time):
+    def record(self):
         # writes the current value of the parameter to a chosen element of the record array
-        self.history[time] = self.value
+        self.history[self.month] = self.value
         return
 
 
@@ -63,6 +66,21 @@ def bio_feedstock_price(env) -> np.float64:
 
 def levy_rate(env) -> np.float64:
     return env.parameter['levy_rate'].value
+
+
+def demand(env) -> np.float64:
+    current = env.parameter['demand'].value
+
+    if env.month != 0:
+        # demand is defined by constant growth rate
+        growth_rate = 1.02  # YoY growth rate, expressed as a ratio
+        growth_rate_monthly = np.power(growth_rate, 1 / 12)  # annual growth rate changed to month-on-month
+        val = current * growth_rate_monthly
+
+    else:
+        val = current
+
+    return val
 
 
 class Parameter(object):
@@ -596,21 +614,41 @@ def bio_capacity_alt(agent) -> np.float64:
 
 
 def fossil_production(agent) -> np.float64:
+    print('WARNING: Function parameter.fossil_production is unfinished')
+    run_check()
+
     current = agent.parameter['fossil_production'].value
     capacity = agent.parameter['fossil_capacity'].value
-    plan = np.float64()
 
-    if current != plan and plan <= capacity:
-        val = plan
+    # optimisation routine to find the best combination of fossil_production and bio_production values
+
+    output = np.float64()
+
+    if current != output and output <= capacity:
+        val = output
     else:
         val = current
 
     return val
+
+
+def fossil_production_projection(agent) -> np.ndarray:
+    proj = np.zeros(agent.projection_time)
+    print('WARNING: Function parameter.fossil_production_projection is unfinished')
+    run_check()
+
+    return proj
 
 
 def bio_production(agent) -> np.float64:
+    print('WARNING: Function parameter.bio_production is unfinished')
+    run_check()
+
     current = agent.parameter['bio_production'].value
     capacity = agent.parameter['bio_capacity'].value
+
+    # needs to take the optimum bio_production value found by the algorithm in fossil_production function
+
     plan = np.float64()
 
     if current != plan and plan <= capacity:
@@ -619,3 +657,21 @@ def bio_production(agent) -> np.float64:
         val = current
 
     return val
+
+
+def bio_production_projection(agent) -> np.ndarray:
+    proj = np.zeros(agent.projection_time)
+    print('WARNING: Function parameter.bio_production_projection is unfinished')
+    run_check()
+
+    return proj
+
+
+def total_production(agent) -> np.float64:
+    return agent.parameter['fossil_production'].value + agent.parameter['bio_production'].value
+
+
+def total_production_projection(agent) -> np.ndarray:
+    proj = np.add(agent.parameter['fossil_production'].projection,
+                  agent.parameter['bio_production'].projection)
+    return proj

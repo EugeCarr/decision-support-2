@@ -56,6 +56,10 @@ def simulate(months, table=False, plot=False):
 
         'proportion_bio': Parameter(par.proportion_bio, par.proportion_bio_projection, months),
 
+        'fossil_production': Parameter(par.fossil_production, par.fossil_production_projection, months),
+        'bio_production': Parameter(par.bio_production, par.bio_production_projection, months),
+        'total_production': Parameter(par.total_production, par.total_production_projection, months),
+
         'fossil_feedstock_consumption': Parameter(par.fossil_feedstock_consumption,
                                                   par.fossil_feedstock_consumption_projection, months),
         'bio_feedstock_consumption': Parameter(par.bio_feedstock_consumption,
@@ -79,11 +83,7 @@ def simulate(months, table=False, plot=False):
         'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
     }
 
-    manufacturer2_parameters = copy.deepcopy(manufacturer1_parameters)
-    # manufacturer2_parameters['proportion_bio'].value = np.float64(0.1)
-
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
-    # manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=18,
                           fraction=0.5, start_levy=0.2, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=0.1)
@@ -91,8 +91,7 @@ def simulate(months, table=False, plot=False):
     supplier = Supplier('supplier', months, environment, 2.0, 1000.0, 1000.0, 0.01, 0.5, 10, 0.02)
 
     manufacturers = [
-        manufacturer1,
-        # manufacturer2
+        manufacturer1
     ]
 
     agents = manufacturers + [regulator, supplier]
@@ -106,6 +105,8 @@ def simulate(months, table=False, plot=False):
 
             environment.parameter[key].record(month)
 
+        # advance time counter in environment
+        environment.month = month
         # advance time counter in each agent
         for agent in agents:
             agent.month = month
@@ -125,7 +126,7 @@ def simulate(months, table=False, plot=False):
         environment.aggregate['bio_feedstock_consumption'].value += 500
 
         for key in env_aggregates_keys:
-            environment.aggregate[key].record(month)
+            environment.aggregate[key].record()
 
         supplier.iterate_supplier(False)
 
