@@ -69,6 +69,8 @@ def simulate(months, table=False, plot=False):
         'bio_capacity': Parameter(par.bio_capacity, par.bio_capacity_projection, months),
         'fossil_capacity': Parameter(par.fossil_capacity, par.fossil_capacity_projection, months,
                                      init=initial_production_volume),
+        'bio_capacity_max': Parameter(par.bio_capacity_max, par.bio_capacity_max_projection, months),
+        'fossil_capacity_max': Parameter(par.fossil_capacity_max, par.fossil_capacity_max_projection, months),
         'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
 
         'emissions': Parameter(par.emissions, par.emissions_projection, months),
@@ -184,7 +186,7 @@ def graph(parameter):
     ax1.plot(t, y)
 
     ax1.set_xlabel('Month')
-    ax1.set_ylabel('')
+    ax1.set_ylabel('levy_rate')
 
     fig.tight_layout()
     plt.show()

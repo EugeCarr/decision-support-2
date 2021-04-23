@@ -319,6 +319,19 @@ def profit_margin(agent) -> np.float64:
     return val
 
 
+def bio_capacity_max(agent) -> np.float64:
+    baseline_capacity = agent.parameter['production_volume'].history[0]
+    max_cap = baseline_capacity * np.power(1.02, agent.sim_time) * 2
+    # defines an arbitrary maximum capacity as the starting production in month 0 multiplied by two after growth
+    return max_cap
+
+
+def fossil_capacity_max(agent) -> np.float64:
+    baseline_capacity = agent.parameter['production_volume'].history[0]
+    max_cap = baseline_capacity * np.power(1.02, agent.sim_time) * 2
+    return max_cap
+
+
 def production_volume_projection(agent) -> np.ndarray:
     # calculates the projected (annualised) PET production volume for each month,
     # recording it to self.production_projection
@@ -674,4 +687,15 @@ def total_production(agent) -> np.float64:
 def total_production_projection(agent) -> np.ndarray:
     proj = np.add(agent.parameter['fossil_production'].projection,
                   agent.parameter['bio_production'].projection)
+    return proj
+
+
+def bio_capacity_max_projection(agent) -> np.float64:
+    proj = np.ones(agent.projection_time) * agent.parameter['bio_capacity_max']
+    # keeps the maximum constant
+    return proj
+
+
+def fossil_capacity_max_projection(agent) -> np.float64:
+    proj = np.ones(agent.projection_time) * agent.parameter['fossil_capacity_max']
     return proj
