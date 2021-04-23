@@ -1,5 +1,6 @@
 """This file defines simulation parameters for the first build of the model"""
 import agent as ag
+from agent import Environment
 from regulator import Regulator
 import numpy as np
 from tabulate import tabulate
@@ -35,7 +36,7 @@ def simulate(months, table=False, plot=False):
 
     env_aggregates_keys = list(env_aggregates.keys())
 
-    environment = ag.Environment(env_variables, env_aggregates)
+    environment: Environment = ag.Environment(env_variables, env_aggregates)
 
     # dictionary of all variables in the order in which they should be computed
     # parameters from the environment that need to be projected by the agent use par.blank for the fun argument
@@ -103,7 +104,7 @@ def simulate(months, table=False, plot=False):
             if month != 0:
                 environment.parameter[key].update(environment)
 
-            environment.parameter[key].record(month)
+            environment.parameter[key].record()
 
         # advance time counter in environment
         environment.month = month

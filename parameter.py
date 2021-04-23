@@ -9,6 +9,8 @@ class Environment_Variable(object):
         assert type(sim_length) == int
         assert sim_length > 0
 
+        self.month = int(0)
+
         self.fun = fun
 
         self.value = np.float64(init)
@@ -23,9 +25,9 @@ class Environment_Variable(object):
         self.value = np.float64(self.fun(environment))
         return
 
-    def record(self, month):
+    def record(self):
         # writes the current value of the parameter to a chosen element of the record array
-        self.history[month] = self.value
+        self.history[self.month] = self.value
         return
 
 
