@@ -33,6 +33,8 @@ class Environment(object):
         for value in list(aggregates.values()):
             assert isinstance(value, par.Environment_Variable)
 
+        self.month = int(0)
+
         self.parameter = variables
         self.aggregate = aggregates
 

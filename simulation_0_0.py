@@ -106,7 +106,7 @@ def simulate(months, table=False, plot=False):
             if month != 0:
                 environment.parameter[key].update(environment)
 
-            environment.parameter[key].record()
+            environment.parameter[key].record(month)
 
         # advance time counter in environment
         environment.month = month
@@ -129,7 +129,7 @@ def simulate(months, table=False, plot=False):
         environment.aggregate['bio_feedstock_consumption'].value += 500
 
         for key in env_aggregates_keys:
-            environment.aggregate[key].record()
+            environment.aggregate[key].record(month)
 
         supplier.iterate_supplier(False)
 
