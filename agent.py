@@ -132,6 +132,9 @@ class Manufacturer(Agent):
         self.fossil_resource_ratio = np.float64(1)  # no. of units of fossil resource used per unit of PET produced
         self.bio_resource_ratio = np.float64(1)  # no. of units of bio resource used per unit of PET produced
 
+        self.capacity_maintenance_cost = np.float64(0.01)  # cost of maintaining manufacturing
+        # capacity per unit per month
+
         self.negative_liquidity = False
 
         # output initialisation state to console

@@ -23,7 +23,8 @@ def simulate(months, table=False, plot=False):
         'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5)),
         'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2)),
         'bio_feedstock_price': Environment_Variable(par.bio_feedstock_price, months, init=np.float64(2)),
-        'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.2))
+        'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.2)),
+        'demand': Environment_Variable(par.demand, months, init=np.float64(1000))
     }
 
     env_keys = list(env_variables.keys())
