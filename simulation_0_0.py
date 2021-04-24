@@ -1,5 +1,6 @@
 """This file defines simulation parameters for the first build of the model"""
 import agent as ag
+from agent import Environment
 from regulator import Regulator
 import numpy as np
 from tabulate import tabulate
@@ -22,7 +23,8 @@ def simulate(months, table=False, plot=False):
         'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5)),
         'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2)),
         'bio_feedstock_price': Environment_Variable(par.bio_feedstock_price, months, init=np.float64(2)),
-        'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.2))
+        'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.2)),
+        'demand': Environment_Variable(par.demand, months, init=np.float64(1000))
     }
 
     env_keys = list(env_variables.keys())
@@ -35,7 +37,7 @@ def simulate(months, table=False, plot=False):
 
     env_aggregates_keys = list(env_aggregates.keys())
 
-    environment = ag.Environment(env_variables, env_aggregates)
+    environment: Environment = ag.Environment(env_variables, env_aggregates)
 
     # dictionary of all variables in the order in which they should be computed
     # parameters from the environment that need to be projected by the agent use par.blank for the fun argument
@@ -68,6 +70,8 @@ def simulate(months, table=False, plot=False):
         'bio_capacity': Parameter(par.bio_capacity, par.bio_capacity_projection, months),
         'fossil_capacity': Parameter(par.fossil_capacity, par.fossil_capacity_projection, months,
                                      init=initial_production_volume),
+        'bio_capacity_max': Parameter(par.bio_capacity_max, par.bio_capacity_max_projection, months),
+        'fossil_capacity_max': Parameter(par.fossil_capacity_max, par.fossil_capacity_max_projection, months),
         'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
 
         'emissions': Parameter(par.emissions, par.emissions_projection, months),
@@ -126,7 +130,7 @@ def simulate(months, table=False, plot=False):
         environment.aggregate['bio_feedstock_consumption'].value += 500
 
         for key in env_aggregates_keys:
-            environment.aggregate[key].record()
+            environment.aggregate[key].record(month)
 
         supplier.iterate_supplier(False)
 

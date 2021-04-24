@@ -33,6 +33,8 @@ class Environment(object):
         for value in list(aggregates.values()):
             assert isinstance(value, par.Environment_Variable)
 
+        self.month = int(0)
+
         self.parameter = variables
         self.aggregate = aggregates
 
@@ -57,6 +59,7 @@ class Agent(object):
         self.name = name
         self.month = int(0)
         self.env = env
+        self.sim_time = sim_time
 
         print('\n ================================ \n', self.name, 'created \n ================================')
         return
@@ -128,6 +131,9 @@ class Manufacturer(Agent):
 
         self.fossil_resource_ratio = np.float64(1)  # no. of units of fossil resource used per unit of PET produced
         self.bio_resource_ratio = np.float64(1)  # no. of units of bio resource used per unit of PET produced
+
+        self.capacity_maintenance_cost = np.float64(0.01)  # cost of maintaining manufacturing
+        # capacity per unit per month
 
         self.negative_liquidity = False
 
