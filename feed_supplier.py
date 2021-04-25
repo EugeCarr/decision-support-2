@@ -59,7 +59,7 @@ class Supplier(Agent):
         self.max_switch = False
         # this is so the environment can see if the maximum trees/ resource has been planted
 
-        self.random_switch = False
+        self.random_switch = True
 
         return
 
@@ -117,28 +117,30 @@ class Supplier(Agent):
 
     def set_price(self):
         if len(self.demand_history) < 8:
-            print('not started calculating yet, current demand:', self.demand, 'month:', self.month)
+            # print('not started calculating yet, current demand:', self.demand, 'month:', self.month)
+            annual_feed_price_decrease = self.env.ann_feed_price_decrease
+            new_price = self.price * np.power((1 - annual_feed_price_decrease), 1/12)
 
-            return
         else:
-            print('calculating new prices')
             demand_now = self.demand
             demand_six = self.demand_history[self.month - 6]
-            print('current demand:', demand_now, 'demand six', demand_six)
+
             delta_demand = demand_now/demand_six - 1
 
             feedstock_elasticity = 0.1
-            annual_price_decrease = 0.008
+            #value from paper on the commit
+            annual_feed_price_decrease = self.env.ann_feed_price_decrease
 
-            new_price = self.price * (np.power((1 - annual_price_decrease), 1/12) + delta_demand * feedstock_elasticity)
-            print(new_price)
+            new_price = self.price * (np.power((1 - annual_feed_price_decrease), 1/12) + delta_demand * feedstock_elasticity)
+            # print(new_price)
 
-            if self.random_switch:
-                std_dev = 0.05
-                deviation = np.float64(np.random.normal(0, std_dev, None))
-                self.price = new_price + deviation
-            else:
-                self.price = new_price
+        if self.random_switch:
+            std_dev_ratio = 0.005
+            deviation = np.float64(np.random.normal(0, (std_dev_ratio * new_price), None))
+            self.price = new_price + deviation
+        else:
+            self.price = new_price
+        return
 
 
     def get_price(self):

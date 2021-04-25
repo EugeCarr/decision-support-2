@@ -386,7 +386,14 @@ def bio_feedstock_price_projection(agent) -> np.ndarray:
     proj = np.zeros(agent.projection_time)
     current = agent.env.parameter['bio_feedstock_price'].value
     proj.fill(current)
-    return proj
+    price_decline = np.ones(agent.projection_time)
+    monthly_multiplier = np.power((1 - agent.env.ann_feed_price_decrease), 1 / 12)
+
+    for i in range(len(price_decline)):
+        index_multiplier = np.power(monthly_multiplier, i)
+        price_decline[i] *= index_multiplier
+    res = np.multiply(proj, price_decline)
+    return res
 
 
 def bio_process_cost_projection(agent) -> np.ndarray:
