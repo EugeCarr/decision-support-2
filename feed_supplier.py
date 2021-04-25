@@ -94,26 +94,52 @@ class Supplier(Agent):
         self.demand_history.append(self.env.aggregate['bio_feedstock_consumption'].value)
         return
 
+    # def set_price(self):
+    #     ratio = self.demand / self.reserves
+    #     # print('month:', self.month, 'ratio:',ratio)
+    #     if len(self.demand_history) < 3:
+    #         self.ratio_baseline = ratio
+    #         # print(self.ratio_baseline)
+    #     else:
+    #         # print('successfully entered evaluation branch.month:', self.month, 'baseline:', self.ratio_baseline)
+    #         diff = (ratio - self.ratio_baseline) / self.ratio_baseline
+    #         #     calculates the difference in supply demand ratio between now and the beginning
+    #         new_price = self.price * (1 + diff * self.sensitivity)
+    #         #     sensitivity allows you to change the percentage by which the price changes in response to supply and
+    #         #     demand.
+    #         if self.random_switch:
+    #             std_dev = 0.05
+    #             deviation = np.float64(np.random.normal(0, std_dev, None))
+    #             self.price = new_price + deviation
+    #         else:
+    #             self.price = new_price
+    #     return
+
     def set_price(self):
-        ratio = self.demand / self.reserves
-        # print('month:', self.month, 'ratio:',ratio)
-        if len(self.demand_history) < 3:
-            self.ratio_baseline = ratio
-            # print(self.ratio_baseline)
+        if len(self.demand_history) < 8:
+            print('not started calculating yet, current demand:', self.demand, 'month:', self.month)
+
+            return
         else:
-            # print('successfully entered evaluation branch.month:', self.month, 'baseline:', self.ratio_baseline)
-            diff = (ratio - self.ratio_baseline) / self.ratio_baseline
-            #     calculates the difference in supply demand ratio between now and the beginning
-            new_price = self.price * (1 + diff * self.sensitivity)
-            #     sensitivity allows you to change the percentage by which the price changes in response to supply and
-            #     demand.
+            print('calculating new prices')
+            demand_now = self.demand
+            demand_six = self.demand_history[self.month - 6]
+            print('current demand:', demand_now, 'demand six', demand_six)
+            delta_demand = demand_now/demand_six - 1
+
+            feedstock_elasticity = 0.1
+            annual_price_decrease = 0.008
+
+            new_price = self.price * (np.power((1 - annual_price_decrease), 1/12) + delta_demand * feedstock_elasticity)
+            print(new_price)
+
             if self.random_switch:
                 std_dev = 0.05
                 deviation = np.float64(np.random.normal(0, std_dev, None))
                 self.price = new_price + deviation
             else:
                 self.price = new_price
-        return
+
 
     def get_price(self):
         return np.float64(self.price)
