@@ -96,16 +96,19 @@ class Supplier(Agent):
 
     def set_price(self):
         ratio = self.demand / self.reserves
-        if len(self.demand_history) == 1:
+        # print('month:', self.month, 'ratio:',ratio)
+        if len(self.demand_history) < 3:
             self.ratio_baseline = ratio
+            # print(self.ratio_baseline)
         else:
+            # print('successfully entered evaluation branch.month:', self.month, 'baseline:', self.ratio_baseline)
             diff = (ratio - self.ratio_baseline) / self.ratio_baseline
             #     calculates the difference in supply demand ratio between now and the beginning
             new_price = self.price * (1 + diff * self.sensitivity)
             #     sensitivity allows you to change the percentage by which the price changes in response to supply and
             #     demand.
             if self.random_switch:
-                std_dev = 0.01
+                std_dev = 0.05
                 deviation = np.float64(np.random.normal(0, std_dev, None))
                 self.price = new_price + deviation
             else:
@@ -161,7 +164,9 @@ class Supplier(Agent):
     def iterate_supplier(self, growth_bool):
         assert type(growth_bool) == bool, ("growth bool must be type boolean, not:", type(growth_bool))
         self.get_demand()
+        # print(self.demand)
         self.calculate_reserves(growth_bool)
+        # print(self.reserves)
         self.set_price()
         self.increment_proportion()
         self.increment_plant_resource()
