@@ -85,7 +85,7 @@ def simulate(months, table=False, plot=False):
     manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, fraction=0.7,ratio_jump=0.5,
-                          start_levy=0.2)
+                          start_levy=0.2, decade_jump=3.0)
 
     supplier = Supplier('supplier', months, environment, 2.0, 1000.0, 1000.0, 0.01, 0.5, 10, 0.02)
 
@@ -165,7 +165,8 @@ def simulate(months, table=False, plot=False):
         print(tabulate(table, headers))
 
     if plot:
-        graph(environment.aggregate['emissions'])
+        # graph(manufacturer1.parameter['bio_capacity'])
+        # graph(environment.parameter['bio_feedstock_price'])
         graph(environment.parameter['levy_rate'])
 
     return
@@ -179,7 +180,9 @@ def graph(parameter):
     ax1.plot(t, y)
 
     ax1.set_xlabel('Month')
-    ax1.set_ylabel('levy_rate')
+    # ax1.set_ylabel('Price of bio feedstock')
+    # ax1.set_ylabel('Proportion bio-PET')
+    ax1.set_ylabel('Levy rate')
 
     fig.tight_layout()
     plt.show()

@@ -33,6 +33,8 @@ class Environment(object):
 
         self.parameter = variables
         self.aggregate = aggregates
+        self.ann_feed_price_decrease = 0.008
+        # assumed rate of annual price decrease. Used by both feed_supplier and manufacturer
 
         self.levy_rate_changing = False
         self.time_to_levy_change = int()

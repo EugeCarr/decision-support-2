@@ -59,7 +59,7 @@ class Supplier(Agent):
         self.max_switch = False
         # this is so the environment can see if the maximum trees/ resource has been planted
 
-        self.random_switch = False
+        self.random_switch = True
 
         return
 
@@ -94,26 +94,54 @@ class Supplier(Agent):
         self.demand_history.append(self.env.aggregate['bio_feedstock_consumption'].value)
         return
 
+    # def set_price(self):
+    #     ratio = self.demand / self.reserves
+    #     # print('month:', self.month, 'ratio:',ratio)
+    #     if len(self.demand_history) < 3:
+    #         self.ratio_baseline = ratio
+    #         # print(self.ratio_baseline)
+    #     else:
+    #         # print('successfully entered evaluation branch.month:', self.month, 'baseline:', self.ratio_baseline)
+    #         diff = (ratio - self.ratio_baseline) / self.ratio_baseline
+    #         #     calculates the difference in supply demand ratio between now and the beginning
+    #         new_price = self.price * (1 + diff * self.sensitivity)
+    #         #     sensitivity allows you to change the percentage by which the price changes in response to supply and
+    #         #     demand.
+    #         if self.random_switch:
+    #             std_dev = 0.05
+    #             deviation = np.float64(np.random.normal(0, std_dev, None))
+    #             self.price = new_price + deviation
+    #         else:
+    #             self.price = new_price
+    #     return
+
     def set_price(self):
-        ratio = self.demand / self.reserves
-        # print('month:', self.month, 'ratio:',ratio)
-        if len(self.demand_history) < 3:
-            self.ratio_baseline = ratio
-            # print(self.ratio_baseline)
+        if len(self.demand_history) < 8:
+            # print('not started calculating yet, current demand:', self.demand, 'month:', self.month)
+            annual_feed_price_decrease = self.env.ann_feed_price_decrease
+            new_price = self.price * np.power((1 - annual_feed_price_decrease), 1/12)
+
         else:
-            # print('successfully entered evaluation branch.month:', self.month, 'baseline:', self.ratio_baseline)
-            diff = (ratio - self.ratio_baseline) / self.ratio_baseline
-            #     calculates the difference in supply demand ratio between now and the beginning
-            new_price = self.price * (1 + diff * self.sensitivity)
-            #     sensitivity allows you to change the percentage by which the price changes in response to supply and
-            #     demand.
-            if self.random_switch:
-                std_dev = 0.05
-                deviation = np.float64(np.random.normal(0, std_dev, None))
-                self.price = new_price + deviation
-            else:
-                self.price = new_price
+            demand_now = self.demand
+            demand_six = self.demand_history[self.month - 6]
+
+            delta_demand = demand_now/demand_six - 1
+
+            feedstock_elasticity = 0.1
+            #value from paper on the commit
+            annual_feed_price_decrease = self.env.ann_feed_price_decrease
+
+            new_price = self.price * (np.power((1 - annual_feed_price_decrease), 1/12) + delta_demand * feedstock_elasticity)
+            # print(new_price)
+
+        if self.random_switch:
+            std_dev_ratio = 0.005
+            deviation = np.float64(np.random.normal(0, (std_dev_ratio * new_price), None))
+            self.price = new_price + deviation
+        else:
+            self.price = new_price
         return
+
 
     def get_price(self):
         return np.float64(self.price)
@@ -164,12 +192,11 @@ class Supplier(Agent):
     def iterate_supplier(self, growth_bool):
         assert type(growth_bool) == bool, ("growth bool must be type boolean, not:", type(growth_bool))
         self.get_demand()
-        # print(self.demand)
         self.calculate_reserves(growth_bool)
-        # print(self.reserves)
         self.set_price()
         self.increment_proportion()
         self.increment_plant_resource()
+        # These two functions don't do anything because the regulator action of planting more trees has been excluded.
         self.month += 1
         self.env.parameter['bio_feedstock_price'].value = self.price
         return
