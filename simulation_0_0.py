@@ -47,9 +47,10 @@ def simulate(months, table=False, plot=False):
         'fossil_feedstock_price': Parameter(par.blank, par.fossil_feedstock_price_projection, months,
                                             init=np.float64(2)),
         'bio_feedstock_price': Parameter(par.blank, par.bio_feedstock_price_projection, months),
+        'demand': Parameter(par.blank, par.demand_projection, months),
 
-        'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
-                                       init=initial_production_volume),
+        # 'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
+        #                                init=initial_production_volume),
 
         'fossil_process_cost': Parameter(par.fossil_process_cost, par.fossil_process_cost_projection, months,
                                          init=np.float64(1)),
@@ -67,8 +68,8 @@ def simulate(months, table=False, plot=False):
         'bio_feedstock_consumption': Parameter(par.bio_feedstock_consumption,
                                                par.bio_feedstock_consumption_projection, months),
 
-        'bio_capacity': Parameter(par.bio_capacity, par.bio_capacity_projection, months),
-        'fossil_capacity': Parameter(par.fossil_capacity, par.fossil_capacity_projection, months,
+        'bio_capacity': Parameter(par.bio_capacity_alt, par.bio_capacity_projection, months),
+        'fossil_capacity': Parameter(par.fossil_capacity_alt, par.fossil_capacity_projection, months,
                                      init=initial_production_volume),
         'bio_capacity_max': Parameter(par.bio_capacity_max, par.bio_capacity_max_projection, months),
         'fossil_capacity_max': Parameter(par.fossil_capacity_max, par.fossil_capacity_max_projection, months),

@@ -126,8 +126,19 @@ class Manufacturer(Agent):
         self.implementation_countdown = int(0)  # countdown to start of increase in bio proportion
         self.under_construction = False  # is change in bio capacity occurring?
 
-        self.fossil_capacity_cost = np.float64(10)  # one-time cost of increasing production capacity for fossil route
-        self.bio_capacity_cost = np.float64(12)  # one-time cost of increasing production capacity for bio route
+        self.fossil_capacity_target = np.float64(1000)
+        self.bio_capacity_target = np.float64(0)
+
+        self.change_rate = 100  # maximum amount of production capacity that can be built/decommissioned in a month
+        self.design_time = int(12)  # delay between decision to build and start of construction
+
+        self.fossil_build_countdown = int(0)
+        self.fossil_building = False
+        self.bio_build_countdown = int(0)
+        self.bio_building = False
+
+        self.fossil_capacity_cost = np.float64(10)  # capital cost of 1 unit/yr production capacity for fossil route
+        self.bio_capacity_cost = np.float64(12)  # capital cost of 1 unit/yr production capacity for bio route
 
         self.fossil_resource_ratio = np.float64(1)  # no. of units of fossil resource used per unit of PET produced
         self.bio_resource_ratio = np.float64(1)  # no. of units of bio resource used per unit of PET produced
@@ -194,7 +205,7 @@ class Manufacturer(Agent):
         # decision logic for increasing investment in biological process route
         if self.projection_met:
             pass
-        elif not self.projection_met:
+        else:
             while self.proportion_bio_target < 1 and not self.projection_met:
 
                 if not self.under_construction:
@@ -211,17 +222,12 @@ class Manufacturer(Agent):
                     print('Month:', self.month, '\n next profitability target could not be met'
                                                 'at any bio proportion target')
 
-            else:
-                pass
-
-        else:
-            pass
-
         return
 
     def scenario(self, bio_target):
         # a method which runs a projection for a scenario with a different bio_target, returning the
         # amount by which the target value is underachieved (negative if overachieved)
+        """needs fixing for 2 parameters"""
         sandbox = copy.deepcopy(self)
         sandbox.proportion_bio_target = bio_target
         sandbox.project_variables()
@@ -229,24 +235,34 @@ class Manufacturer(Agent):
         return target_underachievement
 
     def optimal_strategy(self):
+
+        """needs fixing for 2 parameters"""
         res = optimize.minimize_scalar(self.scenario, bounds=(0.0, 1.0),
                                        method='bounded')
         new_target = round(res.x, 2)
         return new_target
 
     def time_step_alt(self):
-        if self.implementation_countdown > 0:
-            self.implementation_countdown -= 1
+        if self.fossil_build_countdown > 0:
+            self.fossil_build_countdown -= 1
+        if self.bio_build_countdown > 0:
+            self.bio_build_countdown -= 1
 
         self.update_variables()
         if self.month % 12 == 1:
             self.project_variables()
             self.projection_check()
             if not self.projection_met:
+                """needs fixing for two parameter optimisation"""
                 new_target = self.optimal_strategy()
                 self.proportion_bio_target = new_target
-            self.project_variables()
-            self.projection_check()
+                if not self.bio_building:
+                    self.bio_build_countdown = self.design_time
+                if not self.fossil_building:
+                    self.fossil_build_countdown = self.design_time
+
+                self.project_variables()
+                self.projection_check()
         self.record_timestep()
         return
 
