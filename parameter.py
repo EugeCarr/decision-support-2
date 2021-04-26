@@ -1,6 +1,6 @@
 import numpy as np
 import agent as ag
-from agent import run_check
+# from agent import run_check
 
 
 class Environment_Variable(object):
@@ -25,9 +25,9 @@ class Environment_Variable(object):
         self.value = np.float64(self.fun(environment))
         return
 
-    def record(self):
+    def record(self, time):
         # writes the current value of the parameter to a chosen element of the record array
-        self.history[self.month] = self.value
+        self.history[time] = self.value
         return
 
 
@@ -66,21 +66,6 @@ def bio_feedstock_price(env) -> np.float64:
 
 def levy_rate(env) -> np.float64:
     return env.parameter['levy_rate'].value
-
-
-def demand(env) -> np.float64:
-    current = env.parameter['demand'].value
-
-    if env.month != 0:
-        # demand is defined by constant growth rate
-        growth_rate = 1.02  # YoY growth rate, expressed as a ratio
-        growth_rate_monthly = np.power(growth_rate, 1 / 12)  # annual growth rate changed to month-on-month
-        val = current * growth_rate_monthly
-
-    else:
-        val = current
-
-    return val
 
 
 class Parameter(object):
@@ -139,24 +124,24 @@ def blank(agent):
 
 def production_volume(agent) -> np.float64:
     volume = agent.parameter['production_volume'].value
+    month = agent.month
 
     # production volume is defined by growth rates
 
     growth_rate = 1.02  # YoY growth rate for the second simulation period, expressed as a ratio
     growth_rate_monthly = np.power(growth_rate, 1 / 12)  # annual growth rate changed to month-on-month
-    target_amount = volume * growth_rate_monthly
 
-    if agent.month == 0:
+    if month == 0:
         val = volume
 
     else:
-        val = target_amount
+        val = volume * growth_rate_monthly
 
     return val
 
 
 def fossil_process_cost(agent) -> np.float64:
-    # normal distribution
+    # normal distribution about mean value
     if agent.month == 0:
         mean = agent.parameter['fossil_process_cost'].value
     else:
@@ -165,11 +150,18 @@ def fossil_process_cost(agent) -> np.float64:
     deviation = np.float64(np.random.normal(0, std_dev, None))
     val = mean + deviation
 
+    # if agent.month == 0:
+    #     mean = agent.parameter['fossil_process_cost'].value
+    # else:
+    #     mean = agent.parameter['fossil_process_cost'].history[0]
+    # std_dev = 0.01
+    # val = np.float64(np.random.normal(mean, std_dev, None))
+
     return val
 
 
 def bio_process_cost(agent) -> np.float64:
-    # normal distribution
+    # random walk based on normal distribution
     if agent.month == 0:
         mean = agent.parameter['bio_process_cost'].value
     else:
@@ -177,6 +169,13 @@ def bio_process_cost(agent) -> np.float64:
     std_dev = 0
     deviation = np.float64(np.random.normal(0, std_dev, None))
     val = mean + deviation
+
+    # if agent.month == 0:
+    #     mean = agent.parameter['bio_process_cost'].value
+    # else:
+    #     mean = agent.parameter['bio_process_cost'].history[0]
+    # std_dev = 0.01
+    # val = np.float64(np.random.normal(mean, std_dev, None))
 
     return val
 
@@ -319,19 +318,6 @@ def profit_margin(agent) -> np.float64:
     return val
 
 
-def bio_capacity_max(agent) -> np.float64:
-    baseline_capacity = agent.parameter['production_volume'].history[0]
-    max_cap = baseline_capacity * np.power(1.02, agent.sim_time) * 2
-    # defines an arbitrary maximum capacity as the starting production in month 0 multiplied by two after growth
-    return max_cap
-
-
-def fossil_capacity_max(agent) -> np.float64:
-    baseline_capacity = agent.parameter['production_volume'].history[0]
-    max_cap = baseline_capacity * np.power(1.02, agent.sim_time) * 2
-    return max_cap
-
-
 def production_volume_projection(agent) -> np.ndarray:
     # calculates the projected (annualised) PET production volume for each month,
     # recording it to self.production_projection
@@ -374,27 +360,20 @@ def fossil_process_cost_projection(agent) -> np.ndarray:
 def proportion_bio_projection(agent) -> np.ndarray:
     # projection of proportion of production from bio routes
     proj = np.zeros(agent.projection_time)
-    distance_to_target = (agent.proportion_bio_target - agent.parameter['proportion_bio'].value)
-    time_to_target = int(np.ceil(abs(distance_to_target) /
+    time_to_target = int(np.ceil((agent.proportion_bio_target - agent.parameter['proportion_bio'].value) /
                                  agent.proportion_change_rate)
                          + agent.implementation_countdown)
-
     proj.fill(agent.proportion_bio_target)
+
     if time_to_target > 1:
 
         for i in range(agent.implementation_countdown):
             proj[i] = agent.parameter['proportion_bio'].value
 
         for i in range(agent.implementation_countdown, time_to_target - 1):
-            j = i - agent.implementation_countdown
             try:
-                if distance_to_target > 0:
-                    proj[i] = (agent.parameter['proportion_bio'].value +
-                               agent.proportion_change_rate * (j + 1))
-                else:
-                    proj[i] = (agent.parameter['proportion_bio'].value -
-                               agent.proportion_change_rate * (j + 1))
-
+                proj[i] = (agent.parameter['proportion_bio'].value +
+                           agent.proportion_change_rate * (i + 1))
             except IndexError:
                 print('time to reach target bio proportion is longer than', agent.projection_time, 'months')
                 print('behaviour in these conditions is undefined. aborting simulation')
@@ -410,7 +389,14 @@ def bio_feedstock_price_projection(agent) -> np.ndarray:
     proj = np.zeros(agent.projection_time)
     current = agent.env.parameter['bio_feedstock_price'].value
     proj.fill(current)
-    return proj
+    price_decline = np.ones(agent.projection_time)
+    monthly_multiplier = np.power((1 - agent.env.ann_feed_price_decrease), 1 / 12)
+
+    for i in range(len(price_decline)):
+        index_multiplier = np.power(monthly_multiplier, i)
+        price_decline[i] *= index_multiplier
+    res = np.multiply(proj, price_decline)
+    return res
 
 
 def bio_process_cost_projection(agent) -> np.ndarray:
