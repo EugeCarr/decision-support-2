@@ -40,6 +40,51 @@ def simulate(months, table=False, plot=False):
     # dictionary of all variables in the order in which they should be computed
     # parameters from the environment that need to be projected by the agent use par.blank for the fun argument
     # similarly for parameters calculated by the agent but which are not projected
+    # manufacturer1_parameters = {
+    #     'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months),
+    #     'fossil_feedstock_price': Parameter(par.blank, par.fossil_feedstock_price_projection, months,
+    #                                         init=np.float64(2)),
+    #     'bio_feedstock_price': Parameter(par.blank, par.bio_feedstock_price_projection, months),
+    #
+    #     'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
+    #                                    init=initial_production_volume),
+    #
+    #     'fossil_process_cost': Parameter(par.fossil_process_cost, par.fossil_process_cost_projection, months,
+    #                                      init=np.float64(1)),
+    #     'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
+    #                                   init=np.float64(1.05)),
+    #
+    #     'proportion_bio': Parameter(par.proportion_bio, par.proportion_bio_projection, months),
+    #
+    #     'fossil_production': Parameter(par.fossil_production, par.fossil_production_projection, months),
+    #     'bio_production': Parameter(par.bio_production, par.bio_production_projection, months),
+    #     'total_production': Parameter(par.total_production, par.total_production_projection, months),
+    #
+    #     'fossil_feedstock_consumption': Parameter(par.fossil_feedstock_consumption,
+    #                                               par.fossil_feedstock_consumption_projection, months),
+    #     'bio_feedstock_consumption': Parameter(par.bio_feedstock_consumption,
+    #                                            par.bio_feedstock_consumption_projection, months),
+    #
+    #     'bio_capacity': Parameter(par.bio_capacity, par.bio_capacity_projection, months),
+    #     'fossil_capacity': Parameter(par.fossil_capacity, par.fossil_capacity_projection, months,
+    #                                  init=initial_production_volume),
+    #     'bio_capacity_max': Parameter(par.bio_capacity_max, par.bio_capacity_max_projection, months),
+    #     'fossil_capacity_max': Parameter(par.fossil_capacity_max, par.fossil_capacity_max_projection, months),
+    #     'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
+    #
+    #     'emissions': Parameter(par.emissions, par.emissions_projection, months),
+    #     'levy_rate': Parameter(par.blank, par.levy_rate_projection, months, init=np.float64(0.2)),
+    #     'levies_payable': Parameter(par.levies_payable, par.levies_payable_projection, months),
+    #
+    #     'gross_profit': Parameter(par.gross_profit, par.gross_profit_projection, months),
+    #     'tax_payable': Parameter(par.tax_payable, par.tax_payable_projection, months),
+    #     'net_profit': Parameter(par.net_profit, par.net_profit_projection, months),
+    #
+    #     'profitability': Parameter(par.profitability, par.profitability_projection, months),
+    #     'liquidity': Parameter(par.liquidity, par.liquidity_projection, months, init=np.float64(5000)),
+    #     'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
+    # }
+
     manufacturer1_parameters = {
         'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months),
         'fossil_feedstock_price': Parameter(par.blank, par.fossil_feedstock_price_projection, months,
@@ -55,10 +100,6 @@ def simulate(months, table=False, plot=False):
                                       init=np.float64(1.05)),
 
         'proportion_bio': Parameter(par.proportion_bio, par.proportion_bio_projection, months),
-
-        'fossil_production': Parameter(par.fossil_production, par.fossil_production_projection, months),
-        'bio_production': Parameter(par.bio_production, par.bio_production_projection, months),
-        'total_production': Parameter(par.total_production, par.total_production_projection, months),
 
         'fossil_feedstock_consumption': Parameter(par.fossil_feedstock_consumption,
                                                   par.fossil_feedstock_consumption_projection, months),
@@ -89,7 +130,7 @@ def simulate(months, table=False, plot=False):
     # manufacturer2_parameters['proportion_bio'].value = np.float64(0.1)
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
-    manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
+    # manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, fraction=0.7,ratio_jump=0.5,
                           start_levy=0.2, decade_jump=3.0)
@@ -121,6 +162,10 @@ def simulate(months, table=False, plot=False):
         for agent in manufacturers:
             agent.time_step_alt()
 
+        supplier.iterate_supplier(False)
+
+        regulator.iterate_regulator()
+
         environment.reset_aggregates()
         for key in env_aggregates_keys:
             for manufacturer in manufacturers:
@@ -134,9 +179,7 @@ def simulate(months, table=False, plot=False):
         for key in env_aggregates_keys:
             environment.aggregate[key].record(month)
 
-        supplier.iterate_supplier(False)
 
-        regulator.iterate_regulator()
 
         # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
@@ -169,15 +212,16 @@ def simulate(months, table=False, plot=False):
         table = []
         for i in range(0, months):
             table.append([t[i],
-                          environment.parameter['levy_rate'].history[i]])
+                          manufacturer1.parameter['bio_feedstock_price'].history[i]])
 
-        headers = ['Month', 'levy_rate']
+        headers = ['Month', 'feedstock price']
         print(tabulate(table, headers))
 
     if plot:
         # graph(manufacturer1.parameter['bio_capacity'])
-        # graph(environment.parameter['bio_feedstock_price'])
-        graph(environment.parameter['levy_rate'])
+        graph(environment.parameter['bio_feedstock_price'])
+        # graph(manufacturer1.parameter['proportion_bio'])
+        # graph(environment.parameter['levy_rate'])
 
     return
 
