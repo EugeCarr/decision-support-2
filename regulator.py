@@ -202,8 +202,8 @@ class Regulator(Agent):
                                                                                               'between 0 and 1')
         assert type(tax_rate) == float and 0.0 < tax_rate < 1.0, ("Starter tax rate input", tax_rate, 'must be a float '
                                                                                                       'between 0 and 1')
-        assert type(decade_jump) == float and 0.0 < decade_jump < 1.0, ("decade_jump input", decade_jump,
-                                                                        'must be a float between 0 and 1')
+        assert type(decade_jump) == float and 0.0 < decade_jump, ("decade_jump input", decade_jump,
+                                                                        'must be a float above 0')
         assert type(start_levy) == float, ("starting levy must be a float, not a", type(start_levy))
         assert type(ratio_jump) == float, (
         "ratio jump between level 0 and level 1 must be a float, not a", type(ratio_jump))

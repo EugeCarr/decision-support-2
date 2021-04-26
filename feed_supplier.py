@@ -192,12 +192,11 @@ class Supplier(Agent):
     def iterate_supplier(self, growth_bool):
         assert type(growth_bool) == bool, ("growth bool must be type boolean, not:", type(growth_bool))
         self.get_demand()
-        # print(self.demand)
         self.calculate_reserves(growth_bool)
-        # print(self.reserves)
         self.set_price()
         self.increment_proportion()
         self.increment_plant_resource()
+        # These two functions don't do anything because the regulator action of planting more trees has been excluded.
         self.month += 1
         self.env.parameter['bio_feedstock_price'].value = self.price
         return
