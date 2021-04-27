@@ -3,6 +3,7 @@ import numpy as np
 import parameter as par
 import copy
 from scipy import optimize
+from scipy.optimize import Bounds
 
 
 def run_check():
@@ -148,6 +149,9 @@ class Manufacturer(Agent):
 
         self.negative_liquidity = False
 
+        self.fossil_utilisation_target = 0.9  # capacity utilisation targets
+        self.bio_utilisation_target = 0.9
+
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'
               '\n Annual production volume:', self.parameter['production_volume'].value,
@@ -201,46 +205,58 @@ class Manufacturer(Agent):
 
         return
 
-    def investment_decision(self):
-        # decision logic for increasing investment in biological process route
-        if self.projection_met:
-            pass
-        else:
-            while self.proportion_bio_target < 1 and not self.projection_met:
+    # def investment_decision(self):
+    #     # decision logic for increasing investment in biological process route
+    #     if self.projection_met:
+    #         pass
+    #     else:
+    #         while self.proportion_bio_target < 1 and not self.projection_met:
+    #
+    #             if not self.under_construction:
+    #                 self.implementation_countdown = self.implementation_delay
+    #
+    #             self.proportion_bio_target += 0.05
+    #             if self.proportion_bio_target > 1:
+    #                 self.proportion_bio_target = 1
+    #
+    #             self.project_variables()
+    #             self.projection_check()
+    #
+    #             if self.proportion_bio_target == 1 and not self.projection_met:
+    #                 print('Month:', self.month, '\n next profitability target could not be met'
+    #                                             'at any bio proportion target')
+    #
+    #     return
 
-                if not self.under_construction:
-                    self.implementation_countdown = self.implementation_delay
+    def capacity_scenario(self, targets):
+        assert isinstance(targets, np.ndarray)
+        assert len(targets) == 2
+        fossil_target = targets[0]
+        bio_target = targets[1]
 
-                self.proportion_bio_target += 0.05
-                if self.proportion_bio_target > 1:
-                    self.proportion_bio_target = 1
-
-                self.project_variables()
-                self.projection_check()
-
-                if self.proportion_bio_target == 1 and not self.projection_met:
-                    print('Month:', self.month, '\n next profitability target could not be met'
-                                                'at any bio proportion target')
-
-        return
-
-    def scenario(self, bio_target):
-        # a method which runs a projection for a scenario with a different bio_target, returning the
-        # amount by which the target value is underachieved (negative if overachieved)
-        """needs fixing for 2 parameters"""
         sandbox = copy.deepcopy(self)
-        sandbox.proportion_bio_target = bio_target
+        sandbox.fossil_capacity_target = fossil_target
+        sandbox.bio_capacity_target = bio_target
+
         sandbox.project_variables()
-        target_underachievement = target_under(sandbox)
-        return target_underachievement
+
+        utility = -1 * sandbox.parameter['liquidity'].projection[-1]  # optimisation will seek to maximise liquidity at
+        # end of projection period (maximise integral of net profit - expansion costs)
+        return utility
 
     def optimal_strategy(self):
+        current_fossil = self.parameter['fossil_capacity'].value
+        current_bio = self.parameter['bio_capacity'].value
 
-        """needs fixing for 2 parameters"""
-        res = optimize.minimize_scalar(self.scenario, bounds=(0.0, 1.0),
-                                       method='bounded')
-        new_target = round(res.x, 2)
-        return new_target
+        max_fossil = self.parameter['fossil_capacity_max'].value
+        max_bio = self.parameter['bio_capacity_max'].value
+
+        res = optimize.minimize(self.capacity_scenario, np.ndarray([current_fossil, current_bio]),
+                                method='l-bfgs-b', bounds=Bounds([0.0, 0.0], [max_fossil, max_bio]))
+
+        targets = res.x
+
+        return targets
 
     def time_step_alt(self):
         if self.fossil_build_countdown > 0:
@@ -252,10 +268,12 @@ class Manufacturer(Agent):
         if self.month % 12 == 1:
             self.project_variables()
             self.projection_check()
+
             if not self.projection_met:
-                """needs fixing for two parameter optimisation"""
-                new_target = self.optimal_strategy()
-                self.proportion_bio_target = new_target
+                new_targets = self.optimal_strategy()
+                self.fossil_capacity_target = new_targets[0]
+                self.bio_capacity_target = new_targets[1]
+
                 if not self.bio_building:
                     self.bio_build_countdown = self.design_time
                 if not self.fossil_building:
@@ -266,14 +284,14 @@ class Manufacturer(Agent):
         self.record_timestep()
         return
 
-    def time_step(self):
-        if self.implementation_countdown > 0:
-            self.implementation_countdown -= 1
-
-        self.update_variables()
-        if self.month % 12 == 1:
-            self.project_variables()
-            self.projection_check()
-            self.investment_decision()
-        self.record_timestep()
-        return
+    # def time_step(self):
+    #     if self.implementation_countdown > 0:
+    #         self.implementation_countdown -= 1
+    #
+    #     self.update_variables()
+    #     if self.month % 12 == 1:
+    #         self.project_variables()
+    #         self.projection_check()
+    #         self.investment_decision()
+    #     self.record_timestep()
+    #     return

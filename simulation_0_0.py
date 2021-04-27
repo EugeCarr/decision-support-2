@@ -57,7 +57,13 @@ def simulate(months, table=False, plot=False):
         'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
                                       init=np.float64(1.05)),
 
-        'proportion_bio': Parameter(par.proportion_bio, par.proportion_bio_projection, months),
+        'bio_capacity_max': Parameter(par.bio_capacity_max, par.bio_capacity_max_projection, months),
+        'fossil_capacity_max': Parameter(par.fossil_capacity_max, par.fossil_capacity_max_projection, months),
+
+        'fossil_capacity': Parameter(par.fossil_capacity_alt, par.fossil_capacity_projection, months,
+                                     init=initial_production_volume),
+        'bio_capacity': Parameter(par.bio_capacity_alt, par.bio_capacity_projection, months),
+        'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
 
         'fossil_production': Parameter(par.fossil_production, par.fossil_production_projection, months),
         'bio_production': Parameter(par.bio_production, par.bio_production_projection, months),
@@ -67,13 +73,6 @@ def simulate(months, table=False, plot=False):
                                                   par.fossil_feedstock_consumption_projection, months),
         'bio_feedstock_consumption': Parameter(par.bio_feedstock_consumption,
                                                par.bio_feedstock_consumption_projection, months),
-
-        'bio_capacity': Parameter(par.bio_capacity_alt, par.bio_capacity_projection, months),
-        'fossil_capacity': Parameter(par.fossil_capacity_alt, par.fossil_capacity_projection, months,
-                                     init=initial_production_volume),
-        'bio_capacity_max': Parameter(par.bio_capacity_max, par.bio_capacity_max_projection, months),
-        'fossil_capacity_max': Parameter(par.fossil_capacity_max, par.fossil_capacity_max_projection, months),
-        'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
 
         'emissions': Parameter(par.emissions, par.emissions_projection, months),
         'levy_rate': Parameter(par.blank, par.levy_rate_projection, months, init=np.float64(0.2)),

@@ -279,13 +279,14 @@ def profitability(agent) -> np.float64:
 def expansion_cost(agent) -> np.float64:
     val = np.float64()
     if agent.month > 0:
-        bio_increase = (agent.parameter['bio_capacity'].value -
-                        agent.parameter['bio_capacity'].history[agent.month - 1])
-        bio_cost = agent.bio_capacity_cost * bio_increase
+        bio_change = abs(agent.parameter['bio_capacity'].value -
+                         agent.parameter['bio_capacity'].history[agent.month - 1])
+        bio_cost = agent.bio_capacity_cost * bio_change
 
-        fossil_increase = (agent.parameter['fossil_capacity'].value -
-                           agent.parameter['fossil_capacity'].history[agent.month - 1])
-        fossil_cost = agent.fossil_capacity_cost * fossil_increase
+        fossil_change = abs(agent.parameter['fossil_capacity'].value -
+                            agent.parameter['fossil_capacity'].history[agent.month - 1])
+        fossil_cost = agent.fossil_capacity_cost * fossil_change
+
         val = np.float64(bio_cost + fossil_cost)
     elif agent.month == 0:
         val = 0
@@ -344,30 +345,35 @@ def profit_margin(agent) -> np.float64:
 
 def bio_capacity_max(agent) -> np.float64:
     baseline_capacity = agent.parameter['total_production'].history[0]
-    max_cap = baseline_capacity * np.power(1.02, agent.sim_time) * 2
-    # defines an arbitrary maximum capacity as the starting production in month 0 multiplied by two after growth
+    if agent.month == 0:
+        baseline_capacity = agent.parameter['total_production'].value
+    max_cap = baseline_capacity * 2
+    # defines an arbitrary maximum capacity as the starting production in month 0 multiplied by two
     return max_cap
 
 
 def fossil_capacity_max(agent) -> np.float64:
     baseline_capacity = agent.parameter['total_production'].history[0]
-    max_cap = baseline_capacity * np.power(1.02, agent.sim_time) * 2
+    if agent.month == 0:
+        baseline_capacity = agent.parameter['total_production'].value
+    max_cap = baseline_capacity * 2
+    # defines an arbitrary maximum capacity as the starting production in month 0 multiplied by two
     return max_cap
 
 
-def production_volume_projection(agent) -> np.ndarray:
-    # calculates the projected (annualised) PET production volume for each month,
-    # recording it to self.production_projection
-    predicted_annual_growth_rate = 1.02
-    monthly_growth_rate = np.power(predicted_annual_growth_rate, 1 / 12)
-    current_volume = agent.parameter['total_production'].value
-    # calculated using a fixed month-on-month growth rate from the most recent production volume
-
-    proj = np.empty(agent.projection_time)
-    for i in range(agent.projection_time):
-        proj[i] = current_volume * pow(monthly_growth_rate, i + 1)
-
-    return proj
+# def production_volume_projection(agent) -> np.ndarray:
+#     # calculates the projected (annualised) PET production volume for each month,
+#     # recording it to self.production_projection
+#     predicted_annual_growth_rate = 1.02
+#     monthly_growth_rate = np.power(predicted_annual_growth_rate, 1 / 12)
+#     current_volume = agent.parameter['total_production'].value
+#     # calculated using a fixed month-on-month growth rate from the most recent production volume
+#
+#     proj = np.empty(agent.projection_time)
+#     for i in range(agent.projection_time):
+#         proj[i] = current_volume * pow(monthly_growth_rate, i + 1)
+#
+#     return proj
 
 
 def unit_sale_price_projection(agent) -> np.ndarray:
@@ -394,39 +400,39 @@ def fossil_process_cost_projection(agent) -> np.ndarray:
     return proj
 
 
-def proportion_bio_projection(agent) -> np.ndarray:
-    # projection of proportion of production from bio routes
-    proj = np.zeros(agent.projection_time)
-    distance_to_target = (agent.proportion_bio_target - agent.parameter['proportion_bio'].value)
-    time_to_target = int(np.ceil(abs(distance_to_target) /
-                                 agent.proportion_change_rate)
-                         + agent.implementation_countdown)
-
-    proj.fill(agent.proportion_bio_target)
-    if time_to_target > 1:
-
-        for i in range(agent.implementation_countdown):
-            proj[i] = agent.parameter['proportion_bio'].value
-
-        for i in range(agent.implementation_countdown, time_to_target - 1):
-            j = i - agent.implementation_countdown
-            try:
-                if distance_to_target > 0:
-                    proj[i] = (agent.parameter['proportion_bio'].value +
-                               agent.proportion_change_rate * (j + 1))
-                else:
-                    proj[i] = (agent.parameter['proportion_bio'].value -
-                               agent.proportion_change_rate * (j + 1))
-
-            except IndexError:
-                print('time to reach target bio proportion is longer than', agent.projection_time, 'months')
-                print('behaviour in these conditions is undefined. aborting simulation')
-                raise SystemExit(0)
-
-    else:
-        pass
-
-    return proj
+# def proportion_bio_projection(agent) -> np.ndarray:
+#     # projection of proportion of production from bio routes
+#     proj = np.zeros(agent.projection_time)
+#     distance_to_target = (agent.proportion_bio_target - agent.parameter['proportion_bio'].value)
+#     time_to_target = int(np.ceil(abs(distance_to_target) /
+#                                  agent.proportion_change_rate)
+#                          + agent.implementation_countdown)
+#
+#     proj.fill(agent.proportion_bio_target)
+#     if time_to_target > 1:
+#
+#         for i in range(agent.implementation_countdown):
+#             proj[i] = agent.parameter['proportion_bio'].value
+#
+#         for i in range(agent.implementation_countdown, time_to_target - 1):
+#             j = i - agent.implementation_countdown
+#             try:
+#                 if distance_to_target > 0:
+#                     proj[i] = (agent.parameter['proportion_bio'].value +
+#                                agent.proportion_change_rate * (j + 1))
+#                 else:
+#                     proj[i] = (agent.parameter['proportion_bio'].value -
+#                                agent.proportion_change_rate * (j + 1))
+#
+#             except IndexError:
+#                 print('time to reach target bio proportion is longer than', agent.projection_time, 'months')
+#                 print('behaviour in these conditions is undefined. aborting simulation')
+#                 raise SystemExit(0)
+#
+#     else:
+#         pass
+#
+#     return proj
 
 
 def bio_feedstock_price_projection(agent) -> np.ndarray:
@@ -529,10 +535,10 @@ def expansion_cost_projection(agent) -> np.ndarray:
     bio_expansion = np.zeros(agent.projection_time)
     fossil_expansion = np.zeros(agent.projection_time)
     if agent.month > 0:
-        bio_expansion[0] = (agent.parameter['bio_capacity'].value -
-                            agent.parameter['bio_capacity'].history[agent.month - 1])
-        fossil_expansion[0] = (agent.parameter['fossil_capacity'].value -
-                               agent.parameter['fossil_capacity'].history[agent.month - 1])
+        bio_expansion[0] = abs(agent.parameter['bio_capacity'].value -
+                               agent.parameter['bio_capacity'].history[agent.month - 1])
+        fossil_expansion[0] = abs(agent.parameter['fossil_capacity'].value -
+                                  agent.parameter['fossil_capacity'].history[agent.month - 1])
     elif agent.month == 0:
         bio_expansion[0] = 0
         fossil_expansion[0] = 0
@@ -540,10 +546,10 @@ def expansion_cost_projection(agent) -> np.ndarray:
         pass
 
     for i in range(1, agent.projection_time):
-        bio_expansion[i] = (agent.parameter['bio_capacity'].projection[i] -
-                            agent.parameter['bio_capacity'].projection[i - 1])
-        fossil_expansion[i] = (agent.parameter['fossil_capacity'].projection[i] -
-                               agent.parameter['fossil_capacity'].projection[i - 1])
+        bio_expansion[i] = abs(agent.parameter['bio_capacity'].projection[i] -
+                               agent.parameter['bio_capacity'].projection[i - 1])
+        fossil_expansion[i] = abs(agent.parameter['fossil_capacity'].projection[i] -
+                                  agent.parameter['fossil_capacity'].projection[i - 1])
 
     bio_expansion_cost = bio_expansion * agent.bio_capacity_cost
     fossil_expansion_cost = fossil_expansion * agent.fossil_capacity_cost
@@ -699,10 +705,8 @@ def fossil_production(agent) -> np.float64:
 
 
 def fossil_production_projection(agent) -> np.ndarray:
-    proj = np.zeros(agent.projection_time)
-    print('WARNING: Function parameter.fossil_production_projection is unfinished')
-    run_check()
-
+    # assumes target utilisation of capacity
+    proj = agent.parameter['fossil_capacity'].projection * agent.fossil_utilisation_target
     return proj
 
 
@@ -711,10 +715,8 @@ def bio_production(agent) -> np.float64:
 
 
 def bio_production_projection(agent) -> np.ndarray:
-    proj = np.zeros(agent.projection_time)
-    print('WARNING: Function parameter.bio_production_projection is unfinished')
-    run_check()
-
+    # assumes target utilisation
+    proj = agent.parameter['bio_capacity'].projection * agent.bio_utilisation_target
     return proj
 
 
@@ -740,14 +742,62 @@ def fossil_capacity_max_projection(agent) -> np.ndarray:
 
 
 def bio_capacity_projection(agent) -> np.ndarray:
-    print('WARNING: Function parameter.bio_capacity_projection is unfinished')
-    run_check()
-    proj = np.zeros(agent.projection_time)
+    current = agent.parameter['bio_capacity'].value
+    target = agent.bio_capacity_target
+    if target == current:
+        proj = np.ones(agent.projection_time) * target
+
+    else:
+        max_change = agent.build_rate
+        distance_to_travel = abs(current - target)
+        months_to_completion = int(np.ceil(distance_to_travel / max_change) + agent.bio_build_countdown)
+        proj = np.zeros(agent.projection_time)
+
+        for i in range(agent.bio_build_countdown):  # delay if there is any remaining
+            proj[i] = current
+        for i in range(agent.bio_build_countdown, months_to_completion):  # ramp during building process
+            j = i - agent.bio_build_countdown
+            if target > current:
+                proj[i] = current + max_change * j
+            else:
+                proj[i] = current - max_change * j
+        for i in range(months_to_completion, agent.projection_time):  # finished state
+            proj[i] = target
+
+        proj = np.zeros(agent.projection_time)
     return proj
 
 
 def fossil_capacity_projection(agent) -> np.ndarray:
-    print('WARNING: Function parameter.fossil_capacity_projection is unfinished')
-    run_check()
-    proj = np.zeros(agent.projection_time)
+    current = agent.parameter['fossil_capacity'].value
+    target = agent.fossil_capacity_target
+    if target == current:
+        proj = np.ones(agent.projection_time) * target
+
+    else:
+        max_change = agent.build_rate
+        distance_to_travel = abs(current - target)
+        months_to_completion = int(np.ceil(distance_to_travel / max_change) + agent.fossil_build_countdown)
+        proj = np.zeros(agent.projection_time)
+
+        for i in range(agent.fossil_build_countdown):  # delay if there is any remaining
+            proj[i] = current
+        for i in range(agent.fossil_build_countdown, months_to_completion):  # ramp during building process
+            j = i - agent.fossil_build_countdown
+            if target > current:
+                proj[i] = current + max_change * j
+            else:
+                proj[i] = current - max_change * j
+        for i in range(months_to_completion, agent.projection_time):  # finished state
+            proj[i] = target
+
+        proj = np.zeros(agent.projection_time)
     return proj
+
+
+def fossil_utilisation(agent) -> np.float64:
+    return agent.parameter['fossil_production'].value / agent.parameter['fossil_capacity'].value
+
+
+def bio_utilisation(agent) -> np.float64:
+    return agent.parameter['bio_production'].value / agent.parameter['bio_capacity'].value
