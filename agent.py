@@ -66,26 +66,20 @@ class Agent(object):
         return
 
 
-def target_under(manufacturer):
+def utility_func(manufacturer):
     assert isinstance(manufacturer, Manufacturer)
 
-    time_to_target1 = 60 - manufacturer.month % 60
-    time_to_target2 = time_to_target1 + 60
+    time_to_target = 60
 
-    if time_to_target1 > 12:
-        under = (manufacturer.target_value -
-                 manufacturer.parameter[manufacturer.value_function].projection[time_to_target1])
-
-    else:
-        under = (manufacturer.target_value -
-                 manufacturer.parameter[manufacturer.value_function].projection[time_to_target2])
+    under = (manufacturer.target_value -
+             manufacturer.parameter[manufacturer.value_function].projection[time_to_target])
 
     if under < 0:
         manufacturer.projection_met = True
     else:
         manufacturer.projection_met = False
 
-    return abs(under)
+    return under
 
 
 class Manufacturer(Agent):
@@ -131,7 +125,7 @@ class Manufacturer(Agent):
         self.bio_capacity_target = np.float64(0)
 
         self.change_rate = 100  # maximum amount of production capacity that can be built/decommissioned in a month
-        self.design_time = int(12)  # delay between decision to build and start of construction
+        self.design_time = int(15)  # delay between decision to build and start of construction if not already building
 
         self.fossil_build_countdown = int(0)
         self.fossil_building = False
@@ -144,7 +138,7 @@ class Manufacturer(Agent):
         self.fossil_resource_ratio = np.float64(1)  # no. of units of fossil resource used per unit of PET produced
         self.bio_resource_ratio = np.float64(1)  # no. of units of bio resource used per unit of PET produced
 
-        self.capacity_maintenance_cost = np.float64(0.01)  # cost of maintaining manufacturing
+        self.capacity_maintenance_cost = np.float64(0.001)  # cost of maintaining manufacturing
         # capacity per unit per month
 
         self.negative_liquidity = False
@@ -154,7 +148,7 @@ class Manufacturer(Agent):
 
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'
-              '\n Annual production volume:', self.parameter['production_volume'].value,
+              '\n Annual production volume:', self.parameter['total_production'].value,
               '\n Projection horizon (months):', self.projection_time,
               '\n Target profitability:', self.target_value,
               '\n ------------- \n')
@@ -240,8 +234,8 @@ class Manufacturer(Agent):
 
         sandbox.project_variables()
 
-        utility = -1 * sandbox.parameter['liquidity'].projection[-1]  # optimisation will seek to maximise liquidity at
-        # end of projection period (maximise integral of net profit - expansion costs)
+        utility = utility_func(sandbox)
+
         return utility
 
     def optimal_strategy(self):
@@ -251,7 +245,9 @@ class Manufacturer(Agent):
         max_fossil = self.parameter['fossil_capacity_max'].value
         max_bio = self.parameter['bio_capacity_max'].value
 
-        res = optimize.minimize(self.capacity_scenario, np.ndarray([current_fossil, current_bio]),
+        x0 = np.array([current_fossil, current_bio])
+
+        res = optimize.minimize(self.capacity_scenario, x0,
                                 method='l-bfgs-b', bounds=Bounds([0.0, 0.0], [max_fossil, max_bio]))
 
         targets = res.x
@@ -261,8 +257,12 @@ class Manufacturer(Agent):
     def time_step_alt(self):
         if self.fossil_build_countdown > 0:
             self.fossil_build_countdown -= 1
+            if self.fossil_build_countdown == 0:
+                self.fossil_building = True
         if self.bio_build_countdown > 0:
             self.bio_build_countdown -= 1
+            if self.bio_build_countdown == 0:
+                self.bio_build_countdown = True
 
         self.update_variables()
         if self.month % 12 == 1:

@@ -20,7 +20,7 @@ def simulate(months, table=False, plot=False):
 
     # the dictionary of environment variables (see parameter.py) to pass to the Environment object
     env_variables = {
-        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5)),
+        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(5)),
         'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2)),
         'bio_feedstock_price': Environment_Variable(par.bio_feedstock_price, months, init=np.float64(2)),
         'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.2)),
@@ -65,9 +65,11 @@ def simulate(months, table=False, plot=False):
         'bio_capacity': Parameter(par.bio_capacity_alt, par.bio_capacity_projection, months),
         'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
 
-        'fossil_production': Parameter(par.fossil_production, par.fossil_production_projection, months),
+        'fossil_production': Parameter(par.fossil_production, par.fossil_production_projection, months,
+                                       init=np.float64(1000)),
         'bio_production': Parameter(par.bio_production, par.bio_production_projection, months),
-        'total_production': Parameter(par.total_production, par.total_production_projection, months),
+        'total_production': Parameter(par.total_production, par.total_production_projection, months,
+                                      init=np.float64(1000)),
 
         'fossil_feedstock_consumption': Parameter(par.fossil_feedstock_consumption,
                                                   par.fossil_feedstock_consumption_projection, months),
@@ -89,7 +91,7 @@ def simulate(months, table=False, plot=False):
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
 
-    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=18,
+    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=24,
                           fraction=0.5, start_levy=0.2, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=0.1)
 
     supplier = Supplier('supplier', months, environment, 2.0, 1000.0, 1000.0, 0.01, 0.5, 10, 0.02)
@@ -158,8 +160,8 @@ def simulate(months, table=False, plot=False):
     print('\n ============ \n FINAL STATE \n ============',
           '\n Regulation level:', regulator.level,
           '\n Levy rate:', environment.parameter['levy_rate'].value,
-          '\n Bio proportion 1:', manufacturer1.parameter['proportion_bio'].value)
-    print(' Target:', manufacturer1.proportion_bio_target)
+          '\n Bio capacity 1:', manufacturer1.parameter['bio_capacity'].value)
+    print(' Target:', manufacturer1.bio_capacity_target)
 
     # data output & analysis
     t = np.arange(0, months, 1)
@@ -174,7 +176,7 @@ def simulate(months, table=False, plot=False):
         print(tabulate(table, headers))
 
     if plot:
-        graph(manufacturer1.parameter['proportion_bio'])
+        graph(manufacturer1.parameter['profitability'])
 
     return
 
@@ -187,7 +189,7 @@ def graph(parameter):
     ax1.plot(t, y)
 
     ax1.set_xlabel('Month')
-    ax1.set_ylabel('levy_rate')
+    ax1.set_ylabel('profitability')
 
     fig.tight_layout()
     plt.show()
