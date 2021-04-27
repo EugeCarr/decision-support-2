@@ -1,7 +1,7 @@
 import numpy as np
 import agent as ag
 import copy
-from agent import run_check
+# from agent import run_check
 from scipy import optimize
 from scipy.optimize import Bounds
 
@@ -35,9 +35,9 @@ class Environment_Variable(object):
 def pet_price(env) -> np.float64:
     # pet price is a random walk from the initial value
     val = env.parameter['pet_price'].value
-    std_dev = 0.01
-    deviation = np.float64(np.random.normal(0, std_dev, None))
-    val += deviation
+    # std_dev = 0.01
+    # deviation = np.float64(np.random.normal(0, std_dev, None))
+    # val += deviation
 
     # val = env.parameter['pet_price'].history[0]
     return val
@@ -46,9 +46,9 @@ def pet_price(env) -> np.float64:
 def fossil_feedstock_price(env) -> np.float64:
     # price is a random walk from the initial value
     val = env.parameter['fossil_feedstock_price'].value
-    std_dev = 0.01
-    deviation = np.float64(np.random.normal(0, std_dev, None))
-    val += deviation
+    # std_dev = 0.01
+    # deviation = np.float64(np.random.normal(0, std_dev, None))
+    # val += deviation
 
     # val = env.parameter['pet_price'].history[0]
     return val
@@ -76,9 +76,9 @@ def demand(env) -> np.float64:
     growth_rate = 1.02  # YoY growth rate, expressed as a ratio
     growth_rate_monthly = np.power(growth_rate, 1 / 12)  # annual growth rate changed to month-on-month
     val = current * growth_rate_monthly
-    std_dev = 1
-    random = np.float64(np.random.normal(0, std_dev, None))
-    val += random
+    # std_dev = 1
+    # random = np.float64(np.random.normal(0, std_dev, None))
+    # val += random
 
     if env.month == 0:
         val = current
@@ -196,24 +196,24 @@ def bio_process_cost(agent) -> np.float64:
     return val
 
 
-def proportion_bio(agent) -> np.float64:
-    # monthly change in bio proportion is either the amount to reach the target value, or else the maximum change
-    val = np.float64(agent.parameter['proportion_bio'].value)
-    if agent.implementation_countdown == 0 and agent.parameter['proportion_bio'].value != agent.proportion_bio_target:
-        agent.under_construction = True
-        distance_from_target = agent.proportion_bio_target - agent.parameter['proportion_bio'].value
-        if abs(distance_from_target) < agent.proportion_change_rate:
-            val = agent.proportion_bio_target
-        elif distance_from_target > 0:
-            val += agent.proportion_change_rate
-        elif distance_from_target < 0:
-            val -= agent.proportion_change_rate
-        else:
-            pass
-    else:
-        agent.under_construction = False
-
-    return val
+# def proportion_bio(agent) -> np.float64:
+#     # monthly change in bio proportion is either the amount to reach the target value, or else the maximum change
+#     val = np.float64(agent.parameter['proportion_bio'].value)
+#     if agent.implementation_countdown == 0 and agent.parameter['proportion_bio'].value != agent.proportion_bio_target:
+#         agent.under_construction = True
+#         distance_from_target = agent.proportion_bio_target - agent.parameter['proportion_bio'].value
+#         if abs(distance_from_target) < agent.proportion_change_rate:
+#             val = agent.proportion_bio_target
+#         elif distance_from_target > 0:
+#             val += agent.proportion_change_rate
+#         elif distance_from_target < 0:
+#             val -= agent.proportion_change_rate
+#         else:
+#             pass
+#     else:
+#         agent.under_construction = False
+#
+#     return val
 
 
 def emissions(agent) -> np.float64:
@@ -230,32 +230,28 @@ def levies_payable(agent) -> np.float64:
 def gross_profit(agent) -> np.float64:
     # revenue calculation
     production_in_month = (agent.parameter['fossil_production'].value + agent.parameter['bio_production'].value) / 12
-    sellable_amount = agent.env.parameter['demand'].value
+    sellable_amount = agent.env.parameter['demand'].value / 12
     product_sold = min(sellable_amount, production_in_month)
     revenue = product_sold * agent.env.parameter['pet_price'].value
 
     # costs calculation
-    costs = (
-            agent.parameter['fossil_feedstock_consumption'].value *
-            agent.env.parameter['fossil_feedstock_price'].value +
+    costs = 0
+    costs += (agent.parameter['fossil_feedstock_consumption'].value *
+              agent.env.parameter['fossil_feedstock_price'].value)
 
-            agent.parameter['bio_feedstock_consumption'].value *
-            agent.env.parameter['bio_feedstock_price'].value +
+    costs += (agent.parameter['bio_feedstock_consumption'].value *
+              agent.env.parameter['bio_feedstock_price'].value)
 
-            production_in_month * (
-                    (1 - agent.parameter['proportion_bio'].value) *
-                    agent.parameter['fossil_process_cost'].value +
+    costs += (agent.parameter['fossil_production'].value / 12 *
+              agent.parameter['fossil_process_cost'].value)
 
-                    agent.parameter['proportion_bio'].value *
-                    agent.parameter['bio_process_cost'].value
-            ) +
+    costs += (agent.parameter['bio_production'].value / 12 *
+              agent.parameter['bio_process_cost'].value)
 
-            agent.parameter['levies_payable'].value +
+    costs += agent.parameter['levies_payable'].value
 
-            agent.capacity_maintenance_cost * (
-                    agent.parameter['fossil_capacity'].value + agent.parameter['bio_capacity'].value
-            )
-    )
+    costs += agent.capacity_maintenance_cost * (agent.parameter['fossil_capacity'].value +
+                                                agent.parameter['bio_capacity'].value)
 
     val = revenue - costs
     return val
@@ -461,32 +457,29 @@ def levies_payable_projection(agent) -> np.ndarray:
 def gross_profit_projection(agent) -> np.ndarray:
     # calculate revenues and costs at each month
     monthly_production_projection = agent.parameter['total_production'].projection / 12
+    monthly_demand_projection = agent.parameter['demand'].projection / 12
 
     sales_projection = np.empty(agent.projection_time)
     for i in range(agent.projection_time):
-        sales_projection[i] = min(agent.parameter['demand'].projection[i],
-                                  agent.parameter['total_production'].projection[i])
+        sales_projection[i] = min(monthly_demand_projection[i],
+                                  monthly_production_projection[i])
 
     revenue_projection = np.multiply(sales_projection, agent.parameter['unit_sale_price'].projection)
 
     fossil_cost_projection = np.add(
         np.multiply(agent.parameter['fossil_feedstock_consumption'].projection,
                     agent.parameter['fossil_feedstock_price'].projection),
-        np.multiply(monthly_production_projection,
-                    np.multiply(agent.parameter['fossil_process_cost'].projection,
-                                np.subtract(np.ones(agent.projection_time),
-                                            agent.parameter['proportion_bio'].projection)
-                                )
-                    )
+        np.multiply(agent.parameter['fossil_process_cost'].projection,
+                    agent.parameter['fossil_production'].projection / 12)
     )
+
     bio_cost_projection = np.add(
         np.multiply(agent.parameter['bio_feedstock_consumption'].projection,
                     agent.parameter['bio_feedstock_price'].projection),
-        np.multiply(monthly_production_projection,
-                    np.multiply(agent.parameter['bio_process_cost'].projection,
-                                agent.parameter['proportion_bio'].projection)
-                    )
+        np.multiply(agent.parameter['bio_process_cost'].projection,
+                    agent.parameter['bio_production'].projection / 12)
     )
+
     capacity_maintenance_projection = (np.add(agent.parameter['fossil_capacity'].projection,
                                               agent.parameter['bio_capacity'].projection) *
                                        agent.capacity_maintenance_cost)
@@ -604,11 +597,8 @@ def fossil_feedstock_consumption(agent) -> np.float64:
 
 
 def fossil_feedstock_consumption_projection(agent) -> np.ndarray:
-    monthly_production = agent.parameter['total_production'].projection / 12
-    production_fossil = np.multiply(monthly_production,
-                                    np.subtract(np.ones(agent.projection_time),
-                                                agent.parameter['proportion_bio'].projection))
-    proj = np.multiply(production_fossil, agent.fossil_resource_ratio)
+    production_fossil = agent.parameter['fossil_production'].projection / 12
+    proj = production_fossil * agent.fossil_resource_ratio
     return proj
 
 
@@ -620,22 +610,20 @@ def bio_feedstock_consumption(agent) -> np.float64:
 
 def bio_feedstock_consumption_projection(agent) -> np.ndarray:
     production_bio = agent.parameter['bio_production'].projection / 12
-    proj = np.multiply(production_bio, agent.bio_resource_ratio)
+    proj = production_bio * agent.bio_resource_ratio
     return proj
-
-
-"""new methods for change of Manufacturer structure to facilitate multi-objective multi-variate optimisation"""
 
 
 def fossil_capacity_alt(agent) -> np.float64:
     current = agent.parameter['fossil_capacity'].value
     target = agent.fossil_capacity_target
-    max_change = agent.build_rate
+    max_change = agent.change_rate
     distance_to_travel = current - target
 
     if agent.fossil_building:
         if abs(distance_to_travel) < max_change:
             val = target
+            agent.fossil_building = False
         elif target < current:
             val = current - max_change
         else:
@@ -650,12 +638,13 @@ def fossil_capacity_alt(agent) -> np.float64:
 def bio_capacity_alt(agent) -> np.float64:
     current = agent.parameter['bio_capacity'].value
     target = agent.bio_capacity_target
-    max_change = agent.build_rate
+    max_change = agent.change_rate
     distance_to_travel = current - target
 
-    if agent.fossil_building:
+    if agent.bio_building:
         if abs(distance_to_travel) < max_change:
             val = target
+            agent.bio_building = False
         elif target < current:
             val = current - max_change
         else:
@@ -679,7 +668,7 @@ def production_scenario(production, agent):
 
     for i in range(update_start, len(sandbox.keys)):
         key = sandbox.keys[i]
-        sandbox.parameter[key].update()
+        sandbox.parameter[key].update(sandbox)
 
     utility = -1 * sandbox.parameter['profitability'].value
 
@@ -690,16 +679,18 @@ def fossil_production(agent) -> np.float64:
     current_fossil = agent.parameter['fossil_production'].value
     capacity_fossil = agent.parameter['fossil_capacity'].value
 
-    current_bio = agent.parameter['fossil_production'].value
-    capacity_bio = agent.parameter['fossil_capacity'].value
+    current_bio = agent.parameter['bio_production'].value
+    capacity_bio = agent.parameter['bio_capacity'].value
 
-    optimum = optimize.minimize(production_scenario, np.ndarray([current_fossil, current_bio]), args=(agent),
+    x0 = np.array([current_fossil, current_bio])
+
+    optimum = optimize.minimize(production_scenario, x0, args=(agent,),
                                 method='l-bfgs-b', bounds=Bounds([0.0, 0.0], [capacity_fossil, capacity_bio]))
 
     output = optimum.x
 
-    fossil_val = output[0]
-    agent.parameter['bio_production'] = output[1]
+    fossil_val = np.round(output[0])
+    agent.parameter['bio_production'].value = np.round(output[1])
 
     return fossil_val
 
@@ -748,7 +739,7 @@ def bio_capacity_projection(agent) -> np.ndarray:
         proj = np.ones(agent.projection_time) * target
 
     else:
-        max_change = agent.build_rate
+        max_change = agent.change_rate
         distance_to_travel = abs(current - target)
         months_to_completion = int(np.ceil(distance_to_travel / max_change) + agent.bio_build_countdown)
         proj = np.zeros(agent.projection_time)
@@ -764,7 +755,6 @@ def bio_capacity_projection(agent) -> np.ndarray:
         for i in range(months_to_completion, agent.projection_time):  # finished state
             proj[i] = target
 
-        proj = np.zeros(agent.projection_time)
     return proj
 
 
@@ -775,7 +765,7 @@ def fossil_capacity_projection(agent) -> np.ndarray:
         proj = np.ones(agent.projection_time) * target
 
     else:
-        max_change = agent.build_rate
+        max_change = agent.change_rate
         distance_to_travel = abs(current - target)
         months_to_completion = int(np.ceil(distance_to_travel / max_change) + agent.fossil_build_countdown)
         proj = np.zeros(agent.projection_time)
@@ -791,7 +781,6 @@ def fossil_capacity_projection(agent) -> np.ndarray:
         for i in range(months_to_completion, agent.projection_time):  # finished state
             proj[i] = target
 
-        proj = np.zeros(agent.projection_time)
     return proj
 
 
