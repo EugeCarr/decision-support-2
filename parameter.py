@@ -691,7 +691,9 @@ def bio_capacity_projection_alt2(agent) ->np.flaot64:
         proj = np.zeros(agent.projection_time)
         baseline_capacity = agent.parameter['fossil_capacity'].history[0]
 
-        months_to_completion = int(np.ceil(agent.sim_time * np.power((distance_to_target / (1.5 * baseline_capacity)),
+        build_speed = agent.build_speed
+
+        months_to_completion = int(np.ceil(agent.sim_time * np.power((distance_to_target / (build_speed * baseline_capacity)),
                                                                      agent.capacity_root_coefficient)) + agent.bio_build_countdown)
         for i in range(agent.bio_build_countdown):
             proj[i] = current
@@ -715,9 +717,10 @@ def curve_add_capacity(month, company):
     assert isinstance(company, ag.Manufacturer), ("input", company, "is type:", type(company))
 
     baseline_capacity = company.parameter['fossil_capacity'].history[0]
+    build_speed = company.build_speed
 
-    current_added = 1.5 * baseline_capacity * np.power((month / company.sim_time), (1 / company.capacity_root_coefficient))
-    last_month_added = 1.5 * baseline_capacity * np.power(((month - 1) / company.sim_time), (1 / company.capacity_root_coefficient))
+    current_added = build_speed * baseline_capacity * np.power((month / company.sim_time), (1 / company.capacity_root_coefficient))
+    last_month_added = build_speed * baseline_capacity * np.power(((month - 1) / company.sim_time), (1 / company.capacity_root_coefficient))
     expansion_to_add = current_added - last_month_added
 
     return expansion_to_add
