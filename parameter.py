@@ -679,7 +679,7 @@ def bio_capacity_alt2(agent) -> np.float64:
     return val
 
 
-def bio_capacity_projection_alt2(agent) ->np.flaot64:
+def bio_capacity_projection_alt2(agent) ->np.ndarray:
     assert isinstance(agent, ag.Manufacturer)
     current = agent.parameter['bio_capacity'].value
     target = agent.bio_capacity_target
