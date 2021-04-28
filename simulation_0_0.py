@@ -11,10 +11,11 @@ import parameter as par
 from datetime import datetime
 from feed_supplier import Supplier
 # import pandas as pd
+import openpyxl
 
 
-# def simulate(months, table=False, plot=False, print=False):
-def simulate(months, table=False, plot=False):
+def simulate(months, table=False, plot=False, Excel_p=False):
+    # def simulate(months, table=False, plot=False):
     # create agents and specify their parameters
     month = int(0)
     initial_production_volume = np.float64(1000)
@@ -86,10 +87,11 @@ def simulate(months, table=False, plot=False):
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
     manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
-    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, fraction=0.7,ratio_jump=0.5,
+    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, fraction=0.7,
+                          ratio_jump=0.5,
                           start_levy=0.2, decade_jump=3.0)
 
-    supplier = Supplier('supplier', months, environment, 2.0, 1000.0, 1000.0, 0.01, 0.5, 10, 0.02)
+    supplier = Supplier('supplier', months, environment, 2.0)
 
     manufacturers = [
         manufacturer1,
@@ -172,15 +174,88 @@ def simulate(months, table=False, plot=False):
         # graph(environment.parameter['levy_rate'])
         graph(manufacturer1.parameter['emissions'])
 
-    # if print:
-    #     var1 = manufacturer1.parameter['total_production']
-    #     var2 = manufacturer1.parameter['proportion_bio']
-    #     var3 = manufacturer1.parameter['liquidity']
-    #     var7 = manufacturer1.parameter['profitability']
-    #     var4 = environment.parameter['levy_rate']
-    #     var5 = environment.parameter['emissions']
-    #     var6 = environment.parameter['bio_feedstock_price']
+    if Excel_p:
+        # bio_proportion_list = np.divide(manufacturer1.parameter['bio_production'].history,
+        #                                 (manufacturer1.parameter['bio_production'].history + manufacturer1.parameter[
+        #                                     'fossil_production'].history))
 
+        # when the changes from rewrite_optimisation are merged in, a new parameter needs to be made for bio_proportion
+        wb = openpyxl.load_workbook('Results from simulations.xlsx')
+        print(type(wb))
+        sheet = wb.create_sheet(title='First Try')
+        print(sheet.title)
+        date_time = datetime.now()
+
+        cell_write(sheet, (1, 1), 'Simulation of decision support tool')
+
+        cell_write(sheet, (3, 1), 'General information')
+        cell_write(sheet, (4, 1), 'Date & time:')
+        cell_write(sheet, (4, 2), date_time)
+        cell_write(sheet, (5, 1), 'No. of Manufacturers')
+        cell_write(sheet, (5, 2), len(manufacturers))
+        # cell_write(sheet, (6, 1), 'Run time')
+        # cell_write(sheet, (6, 2), elapsed)
+
+        cell_write(sheet, (3, 4), 'Regulator Settings')
+        cell_write(sheet, (4, 4), 'Tax rate')
+        cell_write(sheet, (4, 5), regulator.tax_rate)
+        cell_write(sheet, (5, 4), 'Emission fraction width')
+        cell_write(sheet, (5, 5), regulator.fraction)
+        cell_write(sheet, (6, 4), 'Emission ratio jump')
+        cell_write(sheet, (6, 5), regulator.ratio_jump)
+        cell_write(sheet, (7, 4), 'Initial levyrate')
+        cell_write(sheet, (7, 5), regulator.start_levy)
+        cell_write(sheet, (8, 4), 'Decade Change')
+        cell_write(sheet, (8, 5), regulator.dec_jump)
+
+        cell_write(sheet, (3, 6), 'Supplier Settings')
+        cell_write(sheet, (4, 6), 'Initial price')
+        cell_write(sheet, (4, 7), supplier.start_price)
+        cell_write(sheet, (5, 6), 'Price elasticity')
+        cell_write(sheet, (5, 7), supplier.price_elasticity)
+
+        cell_write(sheet, (3, 8), 'Manufacturer 1 settings')
+        cell_write(sheet, (4, 8), 'Staring liquidity')
+        cell_write(sheet, (4, 9), manufacturer1.parameter['liquidity'].history[0])
+        cell_write(sheet, (5, 8), 'Bio process cost')
+        cell_write(sheet, (5, 9), manufacturer1.parameter['bio_process_cost'].history[0])
+        cell_write(sheet, (7, 8), 'Fossil process cost')
+        cell_write(sheet, (7, 9), manufacturer1.parameter['fossil_process_cost'].history[0])
+        cell_write(sheet, (6, 8), 'Bio feedstock price')
+        cell_write(sheet, (6, 9), environment.parameter['bio_feedstock_price'].history[0])
+        print(environment.parameter['bio_feedstock_price'].history[0])
+        cell_write(sheet, (8, 8), 'Fossil feedstock price')
+        cell_write(sheet, (8, 9), environment.parameter['fossil_feedstock_price'].history[1])
+        print(environment.parameter['fossil_feedstock_price'].history[0])
+        cell_write(sheet, (9, 8), 'Starting Production')
+        cell_write(sheet, (9, 9), manufacturer1.parameter['production_volume'].history[0])
+        cell_write(sheet, (10, 8), 'Initial PET price')
+        cell_write(sheet, (10, 9), environment.parameter['pet_price'].history[0])
+        print(environment.parameter['pet_price'].history[0])
+
+        wb.save('Results from simulations.xlsx')
+
+        variables = [
+            ('m1', 'production_volume'),
+            ('m1', 'proportion_bio'),
+            ('m1', 'liquidity'),
+            ('m1', 'profitability'),
+            ('E', 'levy_rate'),
+            ('EA', 'emissions'),
+            ('E', 'bio_feedstock_price'),
+        ]
+        # var2 : ('m1', 'bio_production'),
+        # var3 : ('m1', 'fossil_production')
+
+        for variable in variables:
+            if variable[0] == 'm1':
+                history = manufacturer1.parameter[variable[1]].history
+            elif variable[0] == 'E':
+                history = environment.parameter[variable[1]].history
+            elif variable[0] == 'EA':
+                history = environment.aggregate[variable[1]].history
+            else:
+                print("invalid variable name,", variable[0])
 
     return
 
@@ -197,8 +272,6 @@ def graph(parameter):
     # ax1.set_ylabel('Proportion bio-PET')
     # ax1.set_ylabel('Levy rate')
     ax1.set_ylabel('Emissions')
-
-
 
     fig.tight_layout()
     plt.show()
@@ -230,4 +303,21 @@ def graph2(parameter1, parameter2):
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     plt.show()
+    return
+
+
+def cell_write(sheet, coordinates, val):
+    assert isinstance(sheet, openpyxl.worksheet.worksheet.Worksheet)
+    assert type(coordinates) == tuple and len(coordinates) == 2, ('wrong tuple,', coordinates)
+    assert type(coordinates[0]) == int and coordinates[0] > 0
+    assert type(coordinates[1]) == int and 27 > coordinates[1] > 0
+
+    row = coordinates[0]
+    col = coordinates[1]
+
+    col_letter = chr(col + 64)
+    excel_coord = col_letter + str(row)
+
+    sheet[excel_coord].value = val
+
     return

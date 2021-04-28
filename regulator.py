@@ -229,6 +229,8 @@ class Regulator(Agent):
         # This is a switch for compliance checking and punishment
 
         self.intercept = start_levy
+        self.ratio_jump = ratio_jump
+        self.start_levy = start_levy
         self.b = (ratio_jump * start_levy) * (3 / 10)
         self.a = self.b * (7 / 3)
         self.dec_jump = decade_jump
