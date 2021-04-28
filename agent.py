@@ -84,12 +84,14 @@ def utility_func(manufacturer):
 
 class Manufacturer(Agent):
     # object initialisation
-    def __init__(self, name, sim_time, env, parameters, value_function='profitability', target_value=0.35):
+    def __init__(self, name, sim_time, env, parameters, value_function='profitability', target_value=0.35,
+                 capacity_root_coefficient =2.0):
         super().__init__(name, sim_time, env)
         """To add a new parameter, define it in the dictionary as a Parameter object in the correct place so that 
         parameters are computed in the right order."""
         assert type(value_function) == str
         assert value_function in parameters
+        assert type(capacity_root_coefficient) == float
         for value in list(parameters.values()):
             assert isinstance(value, par.Parameter)
 
@@ -100,6 +102,9 @@ class Manufacturer(Agent):
 
         # dictionary of all variables in the order in which they should be computed
         self.parameter = parameters
+
+        self.capacity_root_coefficient = capacity_root_coefficient
+        # this is the value that is used to determine the function for capacity expansions
 
         # list of keys in the dictionary in the order passed to the object on initialisation
         # ensures computation order is preserved
@@ -131,6 +136,7 @@ class Manufacturer(Agent):
         self.fossil_building = False
         self.bio_build_countdown = int(0)
         self.bio_building = False
+        self.bio_building_month = int(0)
 
         self.fossil_capacity_cost = np.float64(10)  # capital cost of 1 unit/yr production capacity for fossil route
         self.bio_capacity_cost = np.float64(12)  # capital cost of 1 unit/yr production capacity for bio route

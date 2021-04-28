@@ -656,6 +656,73 @@ def bio_capacity_alt(agent) -> np.float64:
     return val
 
 
+def bio_capacity_alt2(agent) -> np.float64:
+    current = agent.parameter['bio_capacity'].value
+    target = agent.bio_capacity_target
+    distance_to_travel = current - target
+
+    if agent.bio_building:
+        agent.bio_building_month += 1
+
+        expansion_to_add = curve_add_capacity(agent.bio_building_month, agent)
+        if current + expansion_to_add > target:
+            val = target
+            agent.bio_building = False
+            agent.bio_building_month = 0
+        else:
+            val = current + expansion_to_add
+
+    else:
+        val = current
+        agent.bio_building_month = 0
+
+    return val
+
+
+def bio_capacity_projection_alt2(agent) ->np.flaot64:
+    assert isinstance(agent, ag.Manufacturer)
+    current = agent.parameter['bio_capacity'].value
+    target = agent.bio_capacity_target
+    distance_to_target = current - target
+
+    if target <= current:
+        proj = np.ones(agent.projection_time) * current
+    else:
+        proj = np.zeros(agent.projection_time)
+        baseline_capacity = agent.parameter['fossil_capacity'].history[0]
+
+        months_to_completion = int(np.ceil(agent.sim_time * np.power((distance_to_target / (1.5 * baseline_capacity)),
+                                                                     agent.capacity_root_coefficient)) + agent.bio_build_countdown)
+        for i in range(agent.bio_build_countdown):
+            proj[i] = current
+        for i in range(agent.bio_build_countdown, months_to_completion):
+            j = 1 + i - agent.bio_build_countdown
+            expansion_to_add = curve_add_capacity(j, agent)
+
+            if expansion_to_add > target - proj[i - 1]:
+                proj[i] = target
+            else:
+                proj[i] = proj[i - 1] + expansion_to_add
+
+        for i in range(months_to_completion, agent.projection_time):
+            proj[i] = target
+
+    return proj
+
+
+def curve_add_capacity(month, company):
+    assert type(month) == int and month > 0, ("year input", month, "for capacity build incorrect, must be 0 and int")
+    assert isinstance(company, ag.Manufacturer), ("input", company, "is type:", type(company))
+
+    baseline_capacity = company.parameter['fossil_capacity'].history[0]
+
+    current_added = 1.5 * baseline_capacity * np.power((month / company.sim_time), (1 / company.capacity_root_coefficient))
+    last_month_added = 1.5 * baseline_capacity * np.power(((month - 1) / company.sim_time), (1 / company.capacity_root_coefficient))
+    expansion_to_add = current_added - last_month_added
+
+    return expansion_to_add
+
+
 def production_scenario(production, agent):
     assert isinstance(production, np.ndarray)
     assert len(production) == 2
