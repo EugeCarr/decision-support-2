@@ -182,9 +182,9 @@ def simulate(months, table=False, plot=False, Excel_p=False):
 
         # when the changes from rewrite_optimisation are merged in, a new parameter needs to be made for bio_proportion
         wb = openpyxl.load_workbook('Results from simulations.xlsx')
-        print(type(wb))
+        # print(type(wb))
         sheet = wb.create_sheet(title='First Try')
-        print(sheet.title)
+        # print(sheet.title)
         date_time = datetime.now()
 
         cell_write(sheet, (1, 1), 'Simulation of decision support tool', title=True, width='w')
@@ -243,6 +243,13 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         # var2 : ('m1', 'bio_production'),
         # var3 : ('m1', 'fossil_production')
 
+        cell_write(sheet, (12, 1), 'Month', title=True)
+
+        for i in range(1, months + 1):
+            cell_write(sheet, (12 + i, 1), i)
+            _cell = sheet.cell(row=(13 + i), column=1)
+            _cell.number_format = '0'
+
         for i in range(len(variables)):
             variable = variables[i]
             if variable[0] == 'm1':
@@ -254,9 +261,7 @@ def simulate(months, table=False, plot=False, Excel_p=False):
             else:
                 print("invalid variable name,", variable[0])
 
-            print(type(history))
-
-            data_column = 2 * i + 1
+            data_column = 2 * (i + 1)
 
             cell_write(sheet, (12, data_column), variable[1], title=True, width='w')
             for j in range(len(history)):
