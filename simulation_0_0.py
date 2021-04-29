@@ -43,20 +43,7 @@ def simulate(months, table=False, plot=False):
     # parameters from the environment that need to be projected by the agent use par.blank for the fun argument
     # similarly for parameters calculated by the agent but which are not projected
     manufacturer1_parameters = {
-        'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months),
-        'fossil_feedstock_price': Parameter(par.blank, par.fossil_feedstock_price_projection, months,
-                                            init=np.float64(2)),
-        'bio_feedstock_price': Parameter(par.blank, par.bio_feedstock_price_projection, months),
         'demand': Parameter(par.blank, par.demand_projection, months),
-
-        # 'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
-        #                                init=initial_production_volume),
-
-        'fossil_process_cost': Parameter(par.fossil_process_cost, par.fossil_process_cost_projection, months,
-                                         init=np.float64(1)),
-        'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
-                                      init=np.float64(1.05)),
-
         'bio_capacity_max': Parameter(par.bio_capacity_max, par.bio_capacity_max_projection, months),
         'fossil_capacity_max': Parameter(par.fossil_capacity_max, par.fossil_capacity_max_projection, months),
 
@@ -75,7 +62,19 @@ def simulate(months, table=False, plot=False):
                                                   par.fossil_feedstock_consumption_projection, months),
         'bio_feedstock_consumption': Parameter(par.bio_feedstock_consumption,
                                                par.bio_feedstock_consumption_projection, months),
+        'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months),
+        'fossil_feedstock_price': Parameter(par.blank, par.fossil_feedstock_price_projection, months,
+                                            init=np.float64(2)),
+        'bio_feedstock_price': Parameter(par.blank, par.bio_feedstock_price_projection, months),
 
+
+        # 'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
+        #                                init=initial_production_volume),
+
+        'fossil_process_cost': Parameter(par.fossil_process_cost, par.fossil_process_cost_projection, months,
+                                         init=np.float64(1)),
+        'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
+                                      init=np.float64(1.05)),
         'emissions': Parameter(par.emissions, par.emissions_projection, months),
         'levy_rate': Parameter(par.blank, par.levy_rate_projection, months, init=np.float64(0.2)),
         'levies_payable': Parameter(par.levies_payable, par.levies_payable_projection, months),
