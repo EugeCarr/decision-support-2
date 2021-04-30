@@ -268,6 +268,9 @@ class Regulator(Agent):
         return val
 
     def calculate_carbon(self, carbon):
+        if self.c0 == 0.0:
+            return 0.0
+
         if self.punish_switch:
             return (carbon - self.c0) / (self.fraction * self.c0) + self.punish
         else:
