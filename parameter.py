@@ -718,7 +718,7 @@ def bio_capacity_projection_alt2(agent) -> np.ndarray:
                                                                      agent.capacity_root_coefficient)) + agent.bio_build_countdown)
         for i in range(agent.bio_build_countdown):
             proj[i] = current
-        for i in range(agent.bio_build_countdown, months_to_completion):
+        for i in range(agent.bio_build_countdown, min(119, months_to_completion)):
             j = 1 + i - agent.bio_build_countdown
             expansion_to_add = curve_add_capacity(j, agent)
 
@@ -727,8 +727,9 @@ def bio_capacity_projection_alt2(agent) -> np.ndarray:
             else:
                 proj[i] = proj[i - 1] + expansion_to_add
 
-        for i in range(months_to_completion, agent.projection_time):
-            proj[i] = target
+        if months_to_completion < 120:
+            for i in range(months_to_completion, agent.projection_time):
+                proj[i] = target
 
     return proj
 

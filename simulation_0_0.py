@@ -51,7 +51,7 @@ def simulate(months, table=False, plot=False, Excel_p=False):
 
         'fossil_capacity': Parameter(par.fossil_capacity_alt, par.fossil_capacity_projection, months,
                                      init=initial_production_volume),
-        'bio_capacity': Parameter(par.bio_capacity_alt, par.bio_capacity_projection, months),
+        'bio_capacity': Parameter(par.bio_capacity_alt2, par.bio_capacity_projection_alt2, months),
         'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
 
         'fossil_production': Parameter(par.fossil_production, par.fossil_production_projection, months,
