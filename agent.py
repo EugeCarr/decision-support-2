@@ -72,7 +72,7 @@ def utility_func(manufacturer, utility_function='net_profit'):
     assert utility_function in manufacturer.keys
 
     time_horizon = 59  # no. of months ahead to look for target
-
+    # print('manufacturer utility function at time horizon:', manufacturer.parameter[utility_function].projection[time_horizon])
     under = (manufacturer.target_value -
              manufacturer.parameter[utility_function].projection[time_horizon])
     # goes -ve if target is exceeded
@@ -309,8 +309,10 @@ class Manufacturer(Agent):
                 self.bio_capacity_target = new_targets[1]
 
                 if not self.bio_building:
+                    self.bio_building = True
                     self.bio_build_countdown = self.design_time
                 if not self.fossil_building:
+                    self.bio_building = True
                     self.fossil_build_countdown = self.design_time
 
                 self.project_variables()
