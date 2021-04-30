@@ -250,6 +250,7 @@ def simulate(months, table=False, plot=False, Excel_p=False):
             _cell = sheet.cell(row=(13 + i), column=1)
             _cell.number_format = '0'
 
+        history = []
         for i in range(len(variables)):
             variable = variables[i]
             if variable[0] == 'm1':
