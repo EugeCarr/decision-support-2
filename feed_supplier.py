@@ -74,8 +74,7 @@ class Supplier(Agent):
     def get_price(self):
         return np.float64(self.price)
 
-    def iterate_supplier(self, growth_bool):
-        assert type(growth_bool) == bool, ("growth bool must be type boolean, not:", type(growth_bool))
+    def iterate_supplier(self):
         self.get_demand()
         self.set_price()
         self.month += 1

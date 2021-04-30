@@ -122,6 +122,9 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         for agent in manufacturers:
             agent.time_step_alt()
 
+        supplier.iterate_supplier()
+        regulator.iterate_regulator()
+
         environment.reset_aggregates()
         for key in env_aggregates_keys:
             for manufacturer in manufacturers:
@@ -135,9 +138,7 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         for key in env_aggregates_keys:
             environment.aggregate[key].record(month)
 
-        supplier.iterate_supplier(False)
 
-        regulator.iterate_regulator()
 
         # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
@@ -178,9 +179,9 @@ def simulate(months, table=False, plot=False, Excel_p=False):
 
     if plot:
         # graph(manufacturer1.parameter['proportion_bio'])
-        graph(environment.parameter['bio_feedstock_price'])
+        # graph(environment.parameter['bio_feedstock_price'])
         # graph(environment.parameter['levy_rate'])
-        # graph(manufacturer1.parameter['emissions'])
+        graph(manufacturer1.parameter['emissions'])
 
     if Excel_p:
         # bio_proportion_list = np.divide(manufacturer1.parameter['bio_production'].history,
