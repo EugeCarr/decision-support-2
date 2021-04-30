@@ -68,13 +68,16 @@ class Agent(object):
         return
 
 
-def utility_func(manufacturer):
+def utility_func(manufacturer, utility_function='net_profit'):
     assert isinstance(manufacturer, Manufacturer)
+    assert type(utility_function) == str
+    assert utility_function in manufacturer.keys
 
-    time_to_target = 60
+    time_horizon = 59  # no. of months ahead to look for target
 
     under = (manufacturer.target_value -
-             manufacturer.parameter[manufacturer.value_function].projection[time_to_target])
+             manufacturer.parameter[utility_function].projection[time_horizon])
+    # goes -ve if target is exceeded
 
     if under < 0:
         manufacturer.projection_met = True
@@ -86,12 +89,15 @@ def utility_func(manufacturer):
 
 class Manufacturer(Agent):
     # object initialisation
-    def __init__(self, name, sim_time, env, parameters, value_function='profitability', target_value=0.35):
+    def __init__(self, name, sim_time, env, parameters, value_function='profitability', target_value=0.35,
+                 capacity_root_coefficient=2.0, speed_of_build=1.5):
         super().__init__(name, sim_time, env)
         """To add a new parameter, define it in the dictionary as a Parameter object in the correct place so that 
         parameters are computed in the right order."""
         assert type(value_function) == str
         assert value_function in parameters
+        assert type(capacity_root_coefficient) == float
+        assert type(speed_of_build) == float
         for value in list(parameters.values()):
             assert isinstance(value, par.Parameter)
 
@@ -102,6 +108,10 @@ class Manufacturer(Agent):
 
         # dictionary of all variables in the order in which they should be computed
         self.parameter = parameters
+
+        self.capacity_root_coefficient = capacity_root_coefficient
+        # this is the value that is used to determine the function for capacity expansions
+        self.build_speed = speed_of_build
 
         # list of keys in the dictionary in the order passed to the object on initialisation
         # ensures computation order is preserved
@@ -133,6 +143,7 @@ class Manufacturer(Agent):
         self.fossil_building = False
         self.bio_build_countdown = int(0)
         self.bio_building = False
+        self.bio_building_month = int(0)
 
         self.fossil_capacity_cost = np.float64(10)  # capital cost of 1 unit/yr production capacity for fossil route
         self.bio_capacity_cost = np.float64(12)  # capital cost of 1 unit/yr production capacity for bio route
@@ -236,25 +247,48 @@ class Manufacturer(Agent):
 
         sandbox.project_variables()
 
-        utility = utility_func(sandbox)
+        if np.amin(sandbox.parameter['liquidity'].projection) < 0.0:
+            utility = np.inf
+        else:
+            utility = utility_func(sandbox, utility_function='net_profit')
 
         return utility
 
     def optimal_strategy(self):
-        current_fossil = self.parameter['fossil_capacity'].value
-        current_bio = self.parameter['bio_capacity'].value
+        current_fossil = self.fossil_capacity_target
+        current_bio = self.bio_capacity_target
 
         max_fossil = self.parameter['fossil_capacity_max'].value
         max_bio = self.parameter['bio_capacity_max'].value
 
-        x0 = np.array([current_fossil, current_bio])
+        foss = np.arange(0.0, max_fossil, 100)
+        bio = np.arange(0.0, max_bio, 100)
 
-        res = optimize.minimize(self.capacity_scenario, x0,
-                                method='l-bfgs-b', bounds=Bounds([0.0, 0.0], [max_fossil, max_bio]))
+        n_f = len(foss)
+        n_b = len(bio)
 
-        targets = res.x
+        optimum = np.array([current_fossil, current_bio])  # default values are current target values
+        minimum = utility_func(self, utility_function='net_profit')  # optimiser has to improve on the current plan
 
-        return targets
+        for i in range(n_f):
+            for j in range(n_b):
+                targets = np.array([foss[i], bio[j]])
+                utility = self.capacity_scenario(targets)
+                if utility < minimum:
+                    minimum = utility
+                    optimum = targets
+                    print('Month:', self.month)
+                    print('new min utility function:', minimum)
+                    print('[fossil, bio] targets:', optimum, '\n')
+
+        # x0 = np.array([current_fossil, current_bio])
+        #
+        # res = optimize.minimize(self.capacity_scenario, x0,
+        #                         method='l-bfgs-b', bounds=Bounds([0.0, 0.0], [max_fossil, max_bio]))
+        #
+        # targets = res.x
+
+        return optimum
 
     def time_step_alt(self):
         if self.fossil_build_countdown > 0:
@@ -284,6 +318,7 @@ class Manufacturer(Agent):
                 self.project_variables()
                 self.projection_check()
         self.record_timestep()
+
         return
 
     # def time_step(self):

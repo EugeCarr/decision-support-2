@@ -531,8 +531,17 @@ def net_profit_projection(agent) -> np.ndarray:
 
 
 def profitability_projection(agent) -> np.ndarray:
-    proj = np.divide(agent.parameter['net_profit'].projection,
-                     agent.parameter['total_production'].projection / 12)
+    if min(agent.parameter['total_production'].projection) < 10:
+        proj = np.empty(agent.projection_time)
+        for i in range(agent.projection_time):
+            if agent.parameter['total_production'].projection[i] > 0:
+                proj[i] = (agent.parameter['net_profit'].projection[i] /
+                           (agent.parameter['total_production'].projection[i] / 12))
+            else:
+                proj[i] = np.float64(0)
+    else:
+        proj = np.divide(agent.parameter['net_profit'].projection,
+                         agent.parameter['total_production'].projection / 12)
     return proj
 
 
@@ -668,6 +677,76 @@ def bio_capacity_alt(agent) -> np.float64:
     return val
 
 
+def bio_capacity_alt2(agent) -> np.float64:
+    current = agent.parameter['bio_capacity'].value
+    target = agent.bio_capacity_target
+    distance_to_travel = current - target
+
+    if agent.bio_building:
+        agent.bio_building_month += 1
+
+        expansion_to_add = curve_add_capacity(agent.bio_building_month, agent)
+        if current + expansion_to_add > target:
+            val = target
+            agent.bio_building = False
+            agent.bio_building_month = 0
+        else:
+            val = current + expansion_to_add
+
+    else:
+        val = current
+        agent.bio_building_month = 0
+
+    return val
+
+
+def bio_capacity_projection_alt2(agent) -> np.ndarray:
+    assert isinstance(agent, ag.Manufacturer)
+    current = agent.parameter['bio_capacity'].value
+    target = agent.bio_capacity_target
+    distance_to_target = current - target
+
+    if target <= current:
+        proj = np.ones(agent.projection_time) * current
+    else:
+        proj = np.zeros(agent.projection_time)
+        baseline_capacity = agent.parameter['fossil_capacity'].history[0]
+
+        build_speed = agent.build_speed
+
+        months_to_completion = int(np.ceil(agent.sim_time * np.power((distance_to_target / (build_speed * baseline_capacity)),
+                                                                     agent.capacity_root_coefficient)) + agent.bio_build_countdown)
+        for i in range(agent.bio_build_countdown):
+            proj[i] = current
+        for i in range(agent.bio_build_countdown, months_to_completion):
+            j = 1 + i - agent.bio_build_countdown
+            expansion_to_add = curve_add_capacity(j, agent)
+
+            if expansion_to_add > target - proj[i - 1]:
+                proj[i] = target
+            else:
+                proj[i] = proj[i - 1] + expansion_to_add
+
+        for i in range(months_to_completion, agent.projection_time):
+            proj[i] = target
+
+    return proj
+
+
+def curve_add_capacity(month, company):
+    assert type(month) == int and month > 0, ("year input", month, "for capacity build incorrect, must be 0 and int")
+    assert isinstance(company, ag.Manufacturer), ("input", company, "is type:", type(company))
+
+    baseline_capacity = company.parameter['fossil_capacity'].history[0]
+    build_speed = company.build_speed
+
+    current_added = build_speed * baseline_capacity * np.power((month / company.sim_time), (1 / company.capacity_root_coefficient))
+    last_month_added = build_speed * baseline_capacity * np.power(((month - 1) / company.sim_time), (1 / company.capacity_root_coefficient))
+    expansion_to_add = current_added - last_month_added
+
+    return expansion_to_add
+
+
 def production_scenario(production, agent):
     assert isinstance(production, np.ndarray)
     assert len(production) == 2
@@ -676,7 +755,7 @@ def production_scenario(production, agent):
     sandbox.parameter['bio_production'].value = production[1]
 
     update_start = max(sandbox.keys.index('fossil_production'),
-                       sandbox.keys.index('bio_production'))
+                       sandbox.keys.index('bio_production')) + 1
 
     for i in range(update_start, len(sandbox.keys)):
         key = sandbox.keys[i]
@@ -684,6 +763,11 @@ def production_scenario(production, agent):
 
     utility = -1 * sandbox.parameter['profitability'].value
 
+    return utility
+
+
+def production_scenario_fossil(production, agent):
+    utility = production_scenario(np.array([production, 0.0]), agent)
     return utility
 
 
@@ -696,13 +780,22 @@ def fossil_production(agent) -> np.float64:
 
     x0 = np.array([current_fossil, current_bio])
 
-    optimum = optimize.minimize(production_scenario, x0, args=(agent,),
-                                method='l-bfgs-b', bounds=Bounds([0.0, 0.0], [capacity_fossil, capacity_bio]))
+    if capacity_bio > 0:
+        optimum = optimize.minimize(production_scenario, x0, args=(agent,),
+                                    method='l-bfgs-b', bounds=Bounds([0.0, 0.0], [capacity_fossil, capacity_bio]))
 
-    output = optimum.x
+        output = optimum.x
 
-    fossil_val = np.round(output[0])
-    agent.parameter['bio_production'].value = np.round(output[1])
+        fossil_val = np.round(output[0])
+        agent.parameter['bio_production'].value = np.round(output[1])
+
+    else:
+        optimum = optimize.minimize_scalar(production_scenario_fossil, bounds=(0.0, capacity_fossil),
+                                           args=(agent,), method='bounded')
+
+        output = optimum.x
+        fossil_val = np.round(output)
+        agent.parameter['bio_production'].value = 0.0
 
     return fossil_val
 
