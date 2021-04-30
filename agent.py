@@ -2,8 +2,6 @@
 import numpy as np
 import parameter as par
 import copy
-from scipy import optimize
-from scipy.optimize import Bounds
 
 
 def run_check():
