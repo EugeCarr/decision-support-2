@@ -86,11 +86,11 @@ class Regulator(Agent):
 
         if self.punish_switch:
             normalised_carbon = (carbon - self.c0) / (self.fraction * self.c0) + self.punish
-            print(carbon)
+
             return normalised_carbon
         else:
             normalised_carbon = (carbon - self.c0) / (self.fraction * self.c0)
-            print(carbon)
+
             return normalised_carbon
 
     # fraction is the gap in emissions between levels. The gap is a fraction of the starter level.
@@ -134,7 +134,7 @@ class Regulator(Agent):
 
     def change_level_ex(self):
         self.level += 1
-        print("Month", self.month, ", level", self.level, " Excessive emissions in month:", (self.month - self.notice))
+        print("Month", self.month, ". New level", self.level, ", due to excessive emissions in month:", (self.month - self.notice))
         self.changing_excess = False
         return
 
