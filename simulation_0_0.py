@@ -1,5 +1,6 @@
 """This file defines simulation parameters for the first build of the model"""
 import agent as ag
+from agent import Environment
 from regulator import Regulator
 import numpy as np
 from tabulate import tabulate
@@ -49,16 +50,21 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         'fossil_feedstock_price': Parameter(par.blank, par.fossil_feedstock_price_projection, months,
                                             init=np.float64(2)),
         'bio_feedstock_price': Parameter(par.blank, par.bio_feedstock_price_projection, months),
+        'demand': Parameter(par.blank, par.demand_projection, months),
 
-        'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
-                                       init=initial_production_volume),
+        # 'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
+        #                                init=initial_production_volume),
 
         'fossil_process_cost': Parameter(par.fossil_process_cost, par.fossil_process_cost_projection, months,
                                          init=np.float64(1)),
         'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
                                       init=np.float64(1.05)),
 
-        'proportion_bio': Parameter(par.proportion_bio, par.proportion_bio_projection, months),
+        'fossil_production': Parameter(par.fossil_production, par.fossil_production_projection, months,
+                                       init=np.float64(1000)),
+        'bio_production': Parameter(par.bio_production, par.bio_production_projection, months),
+        'total_production': Parameter(par.total_production, par.total_production_projection, months,
+                                      init=np.float64(1000)),
 
         'fossil_feedstock_consumption': Parameter(par.fossil_feedstock_consumption,
                                                   par.fossil_feedstock_consumption_projection, months),
@@ -68,6 +74,8 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         'bio_capacity': Parameter(par.bio_capacity, par.bio_capacity_projection, months),
         'fossil_capacity': Parameter(par.fossil_capacity, par.fossil_capacity_projection, months,
                                      init=initial_production_volume),
+        'bio_capacity_max': Parameter(par.bio_capacity_max, par.bio_capacity_max_projection, months),
+        'fossil_capacity_max': Parameter(par.fossil_capacity_max, par.fossil_capacity_max_projection, months),
         'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
 
         'emissions': Parameter(par.emissions, par.emissions_projection, months),
@@ -83,20 +91,15 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
     }
 
-    manufacturer2_parameters = copy.deepcopy(manufacturer1_parameters)
-
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
-    manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
-    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, fraction=0.7,
-                          ratio_jump=0.5,
-                          start_levy=0.2, decade_jump=3.0)
+    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=18,
+                          fraction=0.5, start_levy=0.2, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=0.1)
 
     supplier = Supplier('supplier', months, environment, 2.0)
 
     manufacturers = [
-        manufacturer1,
-        manufacturer2
+        manufacturer1
     ]
 
     agents = manufacturers + [regulator, supplier]
@@ -110,15 +113,15 @@ def simulate(months, table=False, plot=False, Excel_p=False):
 
             environment.parameter[key].record(month)
 
+        # advance time counter in environment
+        environment.month = month
         # advance time counter in each agent
         for agent in agents:
             agent.month = month
 
         # execute monthly routines on manufacturers
         for agent in manufacturers:
-            agent.time_step()
-        regulator.iterate_regulator()
-        supplier.iterate_supplier(False)
+            agent.time_step_alt()
 
         environment.reset_aggregates()
         for key in env_aggregates_keys:
@@ -132,6 +135,10 @@ def simulate(months, table=False, plot=False, Excel_p=False):
 
         for key in env_aggregates_keys:
             environment.aggregate[key].record(month)
+
+        supplier.iterate_supplier(False)
+
+        regulator.iterate_regulator()
 
         # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
@@ -155,7 +162,8 @@ def simulate(months, table=False, plot=False, Excel_p=False):
     print('\n ============ \n FINAL STATE \n ============',
           '\n Regulation level:', regulator.level,
           '\n Levy rate:', environment.parameter['levy_rate'].value,
-          '\n Bio proportion 1:', manufacturer1.parameter['proportion_bio'].value)
+          '\n Bio capacity 1:', manufacturer1.parameter['bio_capacity'].value)
+    print(' Target:', manufacturer1.bio_capacity_target)
 
     # data output & analysis
     t = np.arange(0, months, 1)
