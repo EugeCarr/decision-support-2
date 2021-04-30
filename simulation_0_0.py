@@ -10,9 +10,13 @@ from parameter import Environment_Variable
 import parameter as par
 from datetime import datetime
 from feed_supplier import Supplier
+# import pandas as pd
+import openpyxl
+from openpyxl.styles import Font
 
 
-def simulate(months, table=False, plot=False):
+def simulate(months, table=False, plot=False, Excel_p=False):
+    # def simulate(months, table=False, plot=False):
     # create agents and specify their parameters
     month = int(0)
     initial_production_volume = np.float64(1000)
@@ -84,10 +88,11 @@ def simulate(months, table=False, plot=False):
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
     manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
 
-    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, fraction=0.7,ratio_jump=0.5,
+    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, fraction=0.7,
+                          ratio_jump=0.5,
                           start_levy=0.2, decade_jump=3.0)
 
-    supplier = Supplier('supplier', months, environment, 2.0, 1000.0, 1000.0, 0.01, 0.5, 10, 0.02)
+    supplier = Supplier('supplier', months, environment, 2.0)
 
     manufacturers = [
         manufacturer1,
@@ -165,10 +170,104 @@ def simulate(months, table=False, plot=False):
         print(tabulate(table, headers))
 
     if plot:
-        # graph(manufacturer1.parameter['bio_capacity'])
+        # graph(manufacturer1.parameter['proportion_bio'])
         # graph(environment.parameter['bio_feedstock_price'])
-        graph(environment.parameter['levy_rate'])
+        # graph(environment.parameter['levy_rate'])
+        graph(manufacturer1.parameter['emissions'])
 
+    if Excel_p:
+        # bio_proportion_list = np.divide(manufacturer1.parameter['bio_production'].history,
+        #                                 (manufacturer1.parameter['bio_production'].history + manufacturer1.parameter[
+        #                                     'fossil_production'].history))
+
+        # when the changes from rewrite_optimisation are merged in, a new parameter needs to be made for bio_proportion
+        wb = openpyxl.load_workbook('Results from simulations.xlsx')
+        # print(type(wb))
+        sheet = wb.create_sheet(title='First Try')
+        # print(sheet.title)
+        date_time = datetime.now()
+
+        cell_write(sheet, (1, 1), 'Simulation of decision support tool', title=True, width='w')
+
+        cell_write(sheet, (3, 1), 'General information', title=True)
+        cell_write(sheet, (4, 1), 'Date & time:', title=True)
+        cell_write(sheet, (4, 2), date_time, title=False, width='w')
+        cell_write(sheet, (5, 1), 'No. of Manufacturers', title=True)
+        cell_write(sheet, (5, 2), len(manufacturers))
+        # cell_write(sheet, (6, 1), 'Run time')
+        # cell_write(sheet, (6, 2), elapsed)
+
+        cell_write(sheet, (3, 4), 'Regulator Settings', title=True)
+        cell_write(sheet, (4, 4), 'Tax rate', title=True)
+        cell_write(sheet, (4, 5), regulator.tax_rate)
+        cell_write(sheet, (5, 4), 'Emission fraction width', title=True)
+        cell_write(sheet, (5, 5), regulator.fraction)
+        cell_write(sheet, (6, 4), 'Emission ratio jump', title=True)
+        cell_write(sheet, (6, 5), regulator.ratio_jump)
+        cell_write(sheet, (7, 4), 'Initial levyrate', title=True)
+        cell_write(sheet, (7, 5), regulator.start_levy)
+        cell_write(sheet, (8, 4), 'Decade Change', title=True)
+        cell_write(sheet, (8, 5), regulator.dec_jump)
+
+        cell_write(sheet, (3, 6), 'Supplier Settings', title=True, width='w')
+        cell_write(sheet, (4, 6), 'Initial price', title=True)
+        cell_write(sheet, (4, 7), supplier.start_price)
+        cell_write(sheet, (5, 6), 'Price elasticity', title=True)
+        cell_write(sheet, (5, 7), supplier.price_elasticity)
+
+        cell_write(sheet, (3, 8), 'Manufacturer 1 settings', title=True, width='w')
+        cell_write(sheet, (4, 8), 'Staring liquidity', title=True)
+        cell_write(sheet, (4, 9), manufacturer1.parameter['liquidity'].history[0])
+        cell_write(sheet, (5, 8), 'Bio process cost', title=True)
+        cell_write(sheet, (5, 9), manufacturer1.parameter['bio_process_cost'].history[0])
+        cell_write(sheet, (7, 8), 'Fossil process cost', title=True)
+        cell_write(sheet, (7, 9), manufacturer1.parameter['fossil_process_cost'].history[0])
+        cell_write(sheet, (6, 8), 'Bio feedstock price', title=True)
+        cell_write(sheet, (6, 9), environment.parameter['bio_feedstock_price'].history[0])
+        cell_write(sheet, (8, 8), 'Fossil feedstock price', title=True)
+        cell_write(sheet, (8, 9), environment.parameter['fossil_feedstock_price'].history[0])
+        cell_write(sheet, (9, 8), 'Starting Production', title=True)
+        cell_write(sheet, (9, 9), manufacturer1.parameter['production_volume'].history[0])
+        cell_write(sheet, (10, 8), 'Initial PET price', title=True)
+        cell_write(sheet, (10, 9), environment.parameter['pet_price'].history[0])
+
+        variables = [
+            ('m1', 'production_volume'),
+            ('m1', 'proportion_bio'),
+            ('m1', 'liquidity'),
+            ('m1', 'profitability'),
+            ('E', 'levy_rate'),
+            ('EA', 'emissions'),
+            ('E', 'bio_feedstock_price'),
+        ]
+        # var2 : ('m1', 'bio_production'),
+        # var3 : ('m1', 'fossil_production')
+
+        cell_write(sheet, (12, 1), 'Month', title=True)
+
+        for i in range(1, months + 1):
+            cell_write(sheet, (12 + i, 1), i)
+            _cell = sheet.cell(row=(13 + i), column=1)
+            _cell.number_format = '0'
+
+        for i in range(len(variables)):
+            variable = variables[i]
+            if variable[0] == 'm1':
+                history = list(manufacturer1.parameter[variable[1]].history)
+            elif variable[0] == 'E':
+                history = list(environment.parameter[variable[1]].history)
+            elif variable[0] == 'EA':
+                history = list(environment.aggregate[variable[1]].history)
+            else:
+                print("invalid variable name,", variable[0])
+
+            data_column = 2 * (i + 1)
+
+            cell_write(sheet, (12, data_column), variable[1], title=True, width='w')
+            for j in range(len(history)):
+                cell_write(sheet, (13 + j, data_column), history[j])
+
+        wb.save('Results from simulations.xlsx')
     return
 
 
@@ -182,7 +281,8 @@ def graph(parameter):
     ax1.set_xlabel('Month')
     # ax1.set_ylabel('Price of bio feedstock')
     # ax1.set_ylabel('Proportion bio-PET')
-    ax1.set_ylabel('Levy rate')
+    # ax1.set_ylabel('Levy rate')
+    ax1.set_ylabel('Emissions')
 
     fig.tight_layout()
     plt.show()
@@ -214,4 +314,47 @@ def graph2(parameter1, parameter2):
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     plt.show()
+    return
+
+
+def cell_write(sheet, coordinates, val, title=False, width='s'):
+    assert isinstance(sheet, openpyxl.worksheet.worksheet.Worksheet)
+    assert type(coordinates) == tuple and len(coordinates) == 2, ('wrong tuple,', coordinates)
+    assert type(coordinates[0]) == int and coordinates[0] > 0
+    assert type(coordinates[1]) == int and 27 > coordinates[1] > 0
+    assert width == 'w' or width == 'ww' or width == 's', 'width input incorrect. Must be "w" or "ww"'
+    row = coordinates[0]
+    col = coordinates[1]
+
+    col_letter = chr(col + 64)
+    excel_coord = col_letter + str(row)
+
+    _cell = sheet.cell(row=row, column=col)
+
+
+    if not type(val) == str or type(val):
+        if type(val) == np.float64:
+
+            if abs(val) > 1000:
+                _cell.number_format = '0.0'
+            elif abs(val) > 100:
+                _cell.number_format = '0.00'
+            elif abs(val) > 10:
+                _cell.number_format = '0.000'
+            else:
+                _cell.number_format = '0.0000'
+
+        # _cell.number_format = '0.0000E+00'
+
+    sheet[excel_coord].value = val
+
+    if width == 'w':
+        sheet.column_dimensions[col_letter].width = 15
+    elif width == 'ww':
+        sheet.column_dimensions[col_letter].width = 40
+
+    if title:
+        big_font = Font(size=12, bold=True)
+        sheet[excel_coord].font = big_font
+
     return
