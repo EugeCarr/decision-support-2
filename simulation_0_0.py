@@ -331,6 +331,7 @@ def cell_write(sheet, coordinates, val, title=False, width='s'):
 
     _cell = sheet.cell(row=row, column=col)
 
+
     if not type(val) == str or type(val):
         if type(val) == np.float64:
 
