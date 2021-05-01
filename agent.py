@@ -72,7 +72,7 @@ def utility_func(manufacturer, utility_function='net_profit'):
     assert utility_function in manufacturer.keys
 
     time_horizon = 59  # no. of months ahead to look for target
-    # print('manufacturer utility function at time horizon:', manufacturer.parameter[utility_function].projection[time_horizon])
+    # attempts to maximise the net profit 5 years from now
     under = (manufacturer.target_value -
              manufacturer.parameter[utility_function].projection[time_horizon])
     # goes -ve if target is exceeded
@@ -139,6 +139,7 @@ class Manufacturer(Agent):
 
         self.fossil_build_countdown = int(0)
         self.fossil_building = False
+        self.fossil_building_month = int(0)
         self.bio_build_countdown = int(0)
         self.bio_building = False
         self.bio_building_month = int(0)
@@ -266,7 +267,8 @@ class Manufacturer(Agent):
         n_b = len(bio)
 
         optimum = np.array([current_fossil, current_bio])  # default values are current target values
-        minimum = utility_func(self, utility_function='net_profit')  # optimiser has to improve on the current plan
+        minimum = self.capacity_scenario(optimum)
+        # minimum = utility_func(self, utility_function='net_profit')  # optimiser has to improve on the current plan
 
         for i in range(n_f):
             for j in range(n_b):
@@ -296,7 +298,7 @@ class Manufacturer(Agent):
         if self.bio_build_countdown > 0:
             self.bio_build_countdown -= 1
             if self.bio_build_countdown == 0:
-                self.bio_build_countdown = True
+                self.bio_building = True
 
         self.update_variables()
         if self.month % 12 == 1:
@@ -308,11 +310,11 @@ class Manufacturer(Agent):
                 self.fossil_capacity_target = new_targets[0]
                 self.bio_capacity_target = new_targets[1]
 
-                if not self.bio_building:
+                if not self.bio_building and self.parameter['bio_capacity'].value != self.bio_capacity_target:
                     self.bio_building = True
                     self.bio_build_countdown = self.design_time
-                if not self.fossil_building:
-                    self.bio_building = True
+                if not self.fossil_building and self.parameter['fossil_capacity'].value != self.fossil_capacity_target:
+                    self.fossil_building = True
                     self.fossil_build_countdown = self.design_time
 
                 self.project_variables()
