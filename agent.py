@@ -66,7 +66,7 @@ class Agent(object):
         return
 
 
-def utility_func(manufacturer, utility_function='profitability'):
+def utility_func(manufacturer, utility_function='net_profit'):
     assert isinstance(manufacturer, Manufacturer)
     assert type(utility_function) == str
     assert utility_function in manufacturer.keys
@@ -87,7 +87,7 @@ def utility_func(manufacturer, utility_function='profitability'):
 
 class Manufacturer(Agent):
     # object initialisation
-    def __init__(self, name, sim_time, env, parameters, value_function='profitability', target_value=0.35,
+    def __init__(self, name, sim_time, env, parameters, value_function='net_profit', target_value=0.35,
                  capacity_root_coefficient=2.0, speed_of_build=1.5):
         super().__init__(name, sim_time, env)
         """To add a new parameter, define it in the dictionary as a Parameter object in the correct place so that 
@@ -145,13 +145,13 @@ class Manufacturer(Agent):
         self.bio_building = False
         self.bio_building_month = int(0)
 
-        self.fossil_capacity_cost = np.float64(10)  # capital cost of 1 unit/yr production capacity for fossil route
-        self.bio_capacity_cost = np.float64(12)  # capital cost of 1 unit/yr production capacity for bio route
+        self.fossil_capacity_cost = np.float64(12)  # capital cost of 1 unit/yr production capacity for fossil route
+        self.bio_capacity_cost = np.float64(17)  # capital cost of 1 unit/yr production capacity for bio route
 
         self.fossil_resource_ratio = np.float64(1)  # no. of units of fossil resource used per unit of PET produced
         self.bio_resource_ratio = np.float64(1)  # no. of units of bio resource used per unit of PET produced
 
-        self.capacity_maintenance_cost = np.float64(0.001)  # cost of maintaining manufacturing
+        self.capacity_maintenance_cost = np.float64(0.1)  # cost of maintaining manufacturing
         # capacity per unit per month
 
         self.negative_liquidity = False
@@ -199,13 +199,15 @@ class Manufacturer(Agent):
         time_to_target2 = time_to_target1 + 60
 
         if time_to_target1 > 12:
-            if self.parameter[self.value_function].projection[time_to_target1] >= self.target_value:
+            if self.parameter[self.value_function].projection[time_to_target1] >= self.target_value * \
+                    self.parameter[self.value_function].history[0]:
                 self.projection_met = True
             else:
                 self.projection_met = False
 
         else:
-            if self.parameter[self.value_function].projection[time_to_target2] >= self.target_value:
+            if self.parameter[self.value_function].projection[time_to_target2] >= self.target_value * \
+                    self.parameter[self.value_function].history[0]:
                 self.projection_met = True
             else:
                 self.projection_met = False
@@ -250,7 +252,7 @@ class Manufacturer(Agent):
         if np.amin(sandbox.parameter['liquidity'].projection) < 0.0:
             utility = np.inf
         else:
-            utility = utility_func(sandbox, utility_function='profitability')
+            utility = utility_func(sandbox, utility_function='net_profit')
 
         return utility
 
