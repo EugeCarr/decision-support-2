@@ -250,6 +250,31 @@ def fossil_capacity_alt(agent) -> np.float64:
     return val
 
 
+def fossil_capacity_alt2(agent) -> np.float64:
+    current = agent.parameter['fossil_capacity'].value
+    target = agent.fossil_capacity_target
+    distance_to_target = target - current
+
+    if agent.fossil_building:
+        print('building fossil, current capacity:', current, 'target:', target)
+        agent.fossil_building_month += 1
+
+        expansion_change = curve_change_capacity(agent.fossil_building_month, agent)
+        if abs(distance_to_target) < expansion_change:
+            val = target
+            agent.fossil_building = False
+            agent.fossil_building_month = 0
+        elif abs(distance_to_target) > expansion_change and distance_to_target > 0:
+            val = current + expansion_change
+        elif abs(distance_to_target) > expansion_change and distance_to_target < 0:
+            val = current - expansion_change
+
+    else:
+        val = current
+        agent.fossil_building_month = 0
+
+    return val
+
 def bio_capacity_max(agent) -> np.float64:
     baseline_capacity = agent.parameter['total_production'].history[0]
     if agent.month == 0:
@@ -283,18 +308,21 @@ def bio_capacity_alt(agent) -> np.float64:
 def bio_capacity_alt2(agent) -> np.float64:
     current = agent.parameter['bio_capacity'].value
     target = agent.bio_capacity_target
-    distance_to_travel = current - target
+    distance_to_travel = target - current
 
     if agent.bio_building:
+        print('building')
         agent.bio_building_month += 1
 
-        expansion_to_add = curve_add_capacity(agent.bio_building_month, agent)
-        if current + expansion_to_add > target:
+        expansion_change = curve_change_capacity(agent.bio_building_month, agent)
+        if abs(distance_to_travel) < expansion_change:
             val = target
             agent.bio_building = False
             agent.bio_building_month = 0
-        else:
-            val = current + expansion_to_add
+        elif abs(distance_to_travel) > expansion_change and distance_to_travel > 0:
+            val = current + expansion_change
+        elif abs(distance_to_travel) > expansion_change and distance_to_travel < 0:
+            val = current - expansion_change
 
     else:
         val = current
@@ -303,7 +331,7 @@ def bio_capacity_alt2(agent) -> np.float64:
     return val
 
 
-def curve_add_capacity(month, company):
+def curve_change_capacity(month, company):
     assert type(month) == int and month > 0, ("year input", month, "for capacity build incorrect, must be 0 and int")
     assert isinstance(company, ag.Manufacturer), ("input", company, "is type:", type(company))
 
@@ -789,31 +817,55 @@ def bio_capacity_projection_alt2(agent) -> np.ndarray:
     assert isinstance(agent, ag.Manufacturer)
     current = agent.parameter['bio_capacity'].value
     target = agent.bio_capacity_target
-    distance_to_target = current - target
+    distance_to_target = abs(current - target)
 
-    if target <= current:
+    if target == current:
         proj = np.ones(agent.projection_time) * current
-    else:
+    elif target > current:
         proj = np.zeros(agent.projection_time)
         baseline_capacity = agent.parameter['fossil_capacity'].history[0]
 
         build_speed = agent.build_speed
 
         months_to_completion = int(
-            np.ceil(agent.sim_time * np.power((distance_to_target / (build_speed * baseline_capacity)),
-                                              agent.capacity_root_coefficient)) + agent.bio_build_countdown)
-        for i in range(agent.bio_build_countdown):
+            np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
+                                              agent.capacity_root_coefficient)) + agent.design_time)
+        for i in range(agent.design_time):
             proj[i] = current
-        for i in range(agent.bio_build_countdown, min(119, months_to_completion)):
-            j = 1 + i - agent.bio_build_countdown
-            expansion_to_add = curve_add_capacity(j, agent)
+        for i in range(agent.design_time, min(agent.projection_time - 1, months_to_completion)):
+            j = 1 + i - agent.design_time
+            expansion_to_add = curve_change_capacity(j, agent)
 
             if expansion_to_add > target - proj[i - 1]:
                 proj[i] = target
             else:
                 proj[i] = proj[i - 1] + expansion_to_add
 
-        if months_to_completion < 120:
+        if months_to_completion < agent.projection_time:
+            for i in range(months_to_completion, agent.projection_time):
+                proj[i] = target
+
+    elif target < current:
+        proj = np.zeros(agent.projection_time)
+        baseline_capacity = agent.parameter['fossil_capacity'].history[0]
+
+        build_speed = agent.build_speed
+
+        months_to_completion = int(
+            np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
+                                              agent.capacity_root_coefficient)) + agent.design_time)
+        for i in range(agent.design_time):
+            proj[i] = current
+        for i in range(agent.design_time, min(agent.projection_time - 1, months_to_completion)):
+            j = 1 + i - agent.design_time
+            expansion_to_add = curve_change_capacity(j, agent)
+
+            if expansion_to_add > abs(target - proj[i - 1]):
+                proj[i] = target
+            else:
+                proj[i] = proj[i - 1] - expansion_to_add
+
+        if months_to_completion < agent.projection_time:
             for i in range(months_to_completion, agent.projection_time):
                 proj[i] = target
 
@@ -897,5 +949,63 @@ def fossil_capacity_projection(agent) -> np.ndarray:
                 proj[i] = current - max_change * j
         for i in range(months_to_completion, agent.projection_time):  # finished state
             proj[i] = target
+
+    return proj
+
+def fossil_capacity_projection_alt2(agent) -> np.ndarray:
+    assert isinstance(agent, ag.Manufacturer)
+    current = agent.parameter['fossil_capacity'].value
+    target = agent.fossil_capacity_target
+    distance_to_target = abs(current - target)
+
+    if target == current:
+        proj = np.ones(agent.projection_time) * current
+    elif target > current:
+        proj = np.zeros(agent.projection_time)
+        baseline_capacity = agent.parameter['fossil_capacity'].history[0]
+
+        build_speed = agent.build_speed
+
+        months_to_completion = int(
+            np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
+                                              agent.capacity_root_coefficient)) + agent.design_time)
+        for i in range(agent.design_time):
+            proj[i] = current
+        for i in range(agent.design_time, min(agent.projection_time - 1, months_to_completion)):
+            j = 1 + i - agent.design_time
+            expansion_to_add = curve_change_capacity(j, agent)
+
+            if expansion_to_add > target - proj[i - 1]:
+                proj[i] = target
+            else:
+                proj[i] = proj[i - 1] + expansion_to_add
+
+        if months_to_completion < agent.projection_time:
+            for i in range(months_to_completion, agent.projection_time):
+                proj[i] = target
+
+    elif target < current:
+        proj = np.zeros(agent.projection_time)
+        baseline_capacity = agent.parameter['fossil_capacity'].history[0]
+
+        build_speed = agent.build_speed
+
+        months_to_completion = int(
+            np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
+                                              agent.capacity_root_coefficient)) + agent.design_time)
+        for i in range(agent.design_time):
+            proj[i] = current
+        for i in range(agent.design_time, min(agent.projection_time - 1, months_to_completion)):
+            j = 1 + i - agent.design_time
+            expansion_to_add = curve_change_capacity(j, agent)
+
+            if expansion_to_add > abs(target - proj[i - 1]):
+                proj[i] = target
+            else:
+                proj[i] = proj[i - 1] - expansion_to_add
+
+        if months_to_completion < agent.projection_time:
+            for i in range(months_to_completion, agent.projection_time):
+                proj[i] = target
 
     return proj
