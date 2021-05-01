@@ -66,7 +66,7 @@ class Agent(object):
         return
 
 
-def utility_func(manufacturer, utility_function='net_profit'):
+def utility_func(manufacturer, utility_function='profitability'):
     assert isinstance(manufacturer, Manufacturer)
     assert type(utility_function) == str
     assert utility_function in manufacturer.keys
@@ -140,6 +140,7 @@ class Manufacturer(Agent):
         self.fossil_build_countdown = int(0)
         self.fossil_building = False
         self.fossil_building_month = int(0)
+
         self.bio_build_countdown = int(0)
         self.bio_building = False
         self.bio_building_month = int(0)
@@ -249,7 +250,7 @@ class Manufacturer(Agent):
         if np.amin(sandbox.parameter['liquidity'].projection) < 0.0:
             utility = np.inf
         else:
-            utility = utility_func(sandbox, utility_function='net_profit')
+            utility = utility_func(sandbox, utility_function='profitability')
 
         return utility
 
@@ -274,12 +275,16 @@ class Manufacturer(Agent):
             for j in range(n_b):
                 targets = np.array([foss[i], bio[j]])
                 utility = self.capacity_scenario(targets)
+                # print(utility)
                 if utility < minimum:
                     minimum = utility
                     optimum = targets
                     print('Month:', self.month)
                     print('new min utility function:', minimum)
                     print('[fossil, bio] targets:', optimum, '\n')
+
+        if minimum == np.inf:
+            print('Year:', np.floor(self.month / 12), 'No optimal solution found')
 
         # x0 = np.array([current_fossil, current_bio])
         #
@@ -304,9 +309,11 @@ class Manufacturer(Agent):
         if self.month % 12 == 1:
             self.project_variables()
             self.projection_check()
+            print(self.projection_met)
 
             if not self.projection_met:
                 new_targets = self.optimal_strategy()
+                print(new_targets)
                 self.fossil_capacity_target = new_targets[0]
                 self.bio_capacity_target = new_targets[1]
 

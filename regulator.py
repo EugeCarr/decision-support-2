@@ -101,7 +101,7 @@ class Regulator(Agent):
         if self.changing_punish:
             return
         curr_carbon = self.calculate_carbon(self.emissions)
-        # print('Month:', self.month, 'current level:', self.level, 'normalised carbon:', curr_carbon)
+        print('Month:', self.month, 'current level:', self.level, 'normalised carbon:', curr_carbon, 'emissions:', self.emissions)
         if curr_carbon > (self.level + 1):
             self.trigger_exc_change()
 

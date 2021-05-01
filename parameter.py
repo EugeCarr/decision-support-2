@@ -276,6 +276,7 @@ def fossil_capacity_alt2(agent) -> np.float64:
 
     return val
 
+
 def bio_capacity_max(agent) -> np.float64:
     baseline_capacity = agent.parameter['total_production'].history[0]
     if agent.month == 0:
@@ -314,14 +315,18 @@ def bio_capacity_alt2(agent) -> np.float64:
     if agent.bio_building:
         print('building')
         agent.bio_building_month += 1
+        print('building bio, current capacity:', current, 'target:', target)
 
         expansion_change = curve_change_capacity(agent.bio_building_month, agent)
         if abs(distance_to_travel) < expansion_change:
+            print('Change finished, current bio cap:', current, 'future capacity:', target)
             val = target
             agent.bio_building = False
             agent.bio_building_month = 0
+
         elif abs(distance_to_travel) > expansion_change and distance_to_travel > 0:
             val = current + expansion_change
+
         elif abs(distance_to_travel) > expansion_change and distance_to_travel < 0:
             val = current - expansion_change
 

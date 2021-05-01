@@ -42,11 +42,11 @@ def get_values(header, highest_row):
 
 wb = openpyxl.load_workbook('Results from simulations.xlsx')
 
-sheet = wb['First Try6']
+sheet = wb['First Try4']
 
 x_var_name = 'Month'
 
-y_var_name = 'levy_rate'
+y_var_name = 'liquidity'
 
 y2_var_name = 'fossil_capacity'
 
@@ -60,8 +60,8 @@ y2_var_header = search_var_header(y2_var_name)
 y2_values = get_values(y2_var_header, sheet.max_row)
 
 fig, ax1 = plt.subplots()
-ax1.plot(x_values, y_values, label='Levy rate')
-ax1.set_ylabel('Levy_rate')
+ax1.plot(x_values, y_values, label='liquidity')
+ax1.set_ylabel('liquidity')
 ax1.set_xlabel(x_var_name)
 
 # ax1.set_ylabel('Liquidity')

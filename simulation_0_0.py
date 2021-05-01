@@ -22,10 +22,10 @@ def simulate(months, table=False, plot=True, Excel_p=False):
 
     # the dictionary of environment variables (see parameter.py) to pass to the Environment object
     env_variables = {
-        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5)),
+        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(10.0)),
         'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2)),
         'bio_feedstock_price': Environment_Variable(par.bio_feedstock_price, months, init=np.float64(2)),
-        'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(1.0)),
+        'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.2)),
         'demand': Environment_Variable(par.demand, months, init=np.float64(1000))
     }
 
@@ -76,7 +76,7 @@ def simulate(months, table=False, plot=True, Excel_p=False):
         'fossil_process_cost': Parameter(par.fossil_process_cost, par.fossil_process_cost_projection, months,
                                          init=np.float64(1)),
         'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
-                                      init=np.float64(2.05)),
+                                      init=np.float64(0.5)),
         'emissions': Parameter(par.emissions, par.emissions_projection, months),
         'levy_rate': Parameter(par.blank, par.levy_rate_projection, months, init=np.float64(0.2)),
         'levies_payable': Parameter(par.levies_payable, par.levies_payable_projection, months),
@@ -91,10 +91,10 @@ def simulate(months, table=False, plot=True, Excel_p=False):
     }
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters,
-                                    capacity_root_coefficient=4.0, speed_of_build=0.25)
+                                    capacity_root_coefficient=4.0, speed_of_build=0.2)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=18,
-                          fraction=0.5, start_levy=1.0, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=0.1)
+                          fraction=0.7, start_levy=0.2, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=2.5)
 
     supplier = Supplier('supplier', months, environment, 2.0)
 
@@ -184,8 +184,9 @@ def simulate(months, table=False, plot=True, Excel_p=False):
         # graph(manufacturer1.parameter['bio_capacity'])
         # graph(environment.parameter['bio_feedstock_price'])
         # graph(environment.parameter['levy_rate'])
-        graph(manufacturer1.parameter['bio_production'])
+        # graph(manufacturer1.parameter['bio_production'])
         # graph(environment.aggregate['emissions'])
+        graph(environment.parameter['demand'])
 
     if Excel_p:
         # bio_proportion_list = np.divide(manufacturer1.parameter['bio_production'].history,
@@ -252,7 +253,8 @@ def simulate(months, table=False, plot=True, Excel_p=False):
             ('EA', 'emissions'),
             ('E', 'bio_feedstock_price'),
             ('m1', 'bio_capacity'),
-            ('m1', 'fossil_capacity')
+            ('m1', 'fossil_capacity'),
+            ('E', 'demand')
         ]
         # var2 : ('m1', 'bio_production'),
         # var3 : ('m1', 'fossil_production')
@@ -298,7 +300,7 @@ def graph(parameter):
     # ax1.set_ylabel('Capacity bio')
     # ax1.set_ylabel('Proportion bio-PET')
     # ax1.set_ylabel('Levy rate')
-    ax1.set_ylabel('bio-based PET production')
+    ax1.set_ylabel('Demand')
     # ax1.set_ylabel('Emissions')
 
 
