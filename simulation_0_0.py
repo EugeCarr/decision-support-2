@@ -14,7 +14,7 @@ import openpyxl
 from openpyxl.styles import Font
 
 
-def simulate(months, table=False, plot=False, Excel_p=False):
+def simulate(months, table=False, plot=True, Excel_p=False):
     # def simulate(months, table=False, plot=False):
     # create agents and specify their parameters
     month = int(0)
@@ -94,7 +94,7 @@ def simulate(months, table=False, plot=False, Excel_p=False):
                                     capacity_root_coefficient=4.0, speed_of_build=0.25)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=18,
-                          fraction=0.5, start_levy=0.2, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=0.1)
+                          fraction=0.5, start_levy=1.0, ratio_jump=0.5, compliance_threshold=0.5, decade_jump=0.1)
 
     supplier = Supplier('supplier', months, environment, 2.0)
 
@@ -181,10 +181,10 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         print(tabulate(table, headers))
 
     if plot:
-        graph(manufacturer1.parameter['bio_capacity'])
+        # graph(manufacturer1.parameter['bio_capacity'])
         # graph(environment.parameter['bio_feedstock_price'])
         # graph(environment.parameter['levy_rate'])
-        # graph(manufacturer1.parameter['bio_production'])
+        graph(manufacturer1.parameter['bio_production'])
         # graph(environment.aggregate['emissions'])
 
     if Excel_p:
@@ -251,7 +251,8 @@ def simulate(months, table=False, plot=False, Excel_p=False):
             ('E', 'levy_rate'),
             ('EA', 'emissions'),
             ('E', 'bio_feedstock_price'),
-            ('m1', 'bio_capacity')
+            ('m1', 'bio_capacity'),
+            ('m1', 'fossil_capacity')
         ]
         # var2 : ('m1', 'bio_production'),
         # var3 : ('m1', 'fossil_production')
@@ -294,10 +295,10 @@ def graph(parameter):
 
     ax1.set_xlabel('Month')
     # ax1.set_ylabel('Price of bio feedstock')
-    ax1.set_ylabel('Capacity bio')
+    # ax1.set_ylabel('Capacity bio')
     # ax1.set_ylabel('Proportion bio-PET')
     # ax1.set_ylabel('Levy rate')
-    # ax1.set_ylabel('bio-based PET production')
+    ax1.set_ylabel('bio-based PET production')
     # ax1.set_ylabel('Emissions')
 
 

@@ -42,13 +42,13 @@ def get_values(header, highest_row):
 
 wb = openpyxl.load_workbook('Results from simulations.xlsx')
 
-sheet = wb['First Try']
+sheet = wb['First Try6']
 
 x_var_name = 'Month'
 
-y_var_name = 'liquidity'
+y_var_name = 'levy_rate'
 
-y2_var_name = 'proportion_bio'
+y2_var_name = 'fossil_capacity'
 
 x_var_header = search_var_header(x_var_name)
 x_values = get_values(x_var_header, sheet.max_row)
@@ -60,8 +60,8 @@ y2_var_header = search_var_header(y2_var_name)
 y2_values = get_values(y2_var_header, sheet.max_row)
 
 fig, ax1 = plt.subplots()
-ax1.plot(x_values, y_values, label='Liquidity')
-ax1.set_ylabel('Liquidity')
+ax1.plot(x_values, y_values, label='Levy rate')
+ax1.set_ylabel('Levy_rate')
 ax1.set_xlabel(x_var_name)
 
 # ax1.set_ylabel('Liquidity')
@@ -71,8 +71,8 @@ ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 
 # ax2.set_ylabel('Proportion bio')  # we already handled the x-label with ax1
 # h2, l2 = ax2.get_legend_handles_labels()
-ax2.plot(x_values, y2_values, 'm--', label='Proportion bio-based')
-ax2.set_ylabel('Proportion bio-based')
+ax2.plot(x_values, y2_values, 'm--', label='fossil-based PET production')
+ax2.set_ylabel('fossil-based PET production')
 
 # ax2.tick_params(axis='y')
 #
@@ -97,58 +97,3 @@ ax1.tick_params(labelsize=8)
 
 fig.tight_layout()
 plt.show()
-
-
-# from matplotlib import rc
-# rc('mathtext', default='regular')
-
-
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-#
-# lns1 = ax.plot(time, Swdown, '-', label = 'Swdown')
-# lns2 = ax.plot(time, Rn, '-', label = 'Rn')
-# ax2 = ax.twinx()
-# lns3 = ax2.plot(time, temp, '-r', label = 'temp')
-#
-# # added these three lines
-# lns = lns1+lns2+lns3
-# labs = [l.get_label() for l in lns]
-# ax.legend(lns, labs, loc=0)
-#
-# ax.grid()
-# ax.set_xlabel("Time (h)")
-# ax.set_ylabel(r"Radiation ($MJ\,m^{-2}\,d^{-1}$)")
-# ax2.set_ylabel(r"Temperature ($^\circ$C)")
-# ax2.set_ylim(0, 35)
-# ax.set_ylim(-20,100)
-# plt.show()
-
-# fig = plt.figure(figsize=(17,11))
-# ax1 = fig.add_subplot(111)
-# ax2 = ax1.twiny()
-# 5
-# ax1.set_xlim(-90,170)
-# ax2.set_xlim(91,320)
-# ax1.plot(dateN,hetN,color='magenta',lw=3, label='Arctic Climatology Flux')
-# ax2.plot(dateS,hetS,color='lime',lw=3, label='Antarctic Climatology Flux')
-# ax1.plot(dateN,stdaboveN,color='magenta', alpha=0.2,lw=3, label='Arctic Standard Deviation')
-# ax2.plot(dateS,stdaboveS,color='lime', alpha=0.2,lw=3, label='Antarctic Standard Deviation')
-# ax1.plot(dateN,stdbelowN,color='magenta', alpha=0.2,lw=3)
-# ax2.plot(dateS,stdbelowS,color='lime', alpha=0.2,lw=3)
-# ax1.plot(dateN,het2010_11,color='b',alpha=1,lw=3, label='2011 Arctic Flux')
-# ax1.plot(dateN2020,het2019_20,color='r',lw=3, label='2020 Arctic Flux')
-# #ax1.axvline(x=74,color='k')
-# ax2.fill_between(dateS,stdaboveS, stdbelowS, color='lime',alpha=0.2)
-# ax1.fill_between(dateN,stdaboveN, stdbelowN, color='magenta',alpha=0.3)
-# ax2.legend(fontsize=8,loc=(0.01,0.823),frameon=False)
-# ax1.legend(loc=(0.01,0.57),fontsize=8,frameon=False)
-# ax1.set_xlabel(r"Arctic Scale: Begins October 1$^{st}$, as Days from January 1$^{st}$",fontsize=28)
-# ax2.set_xlabel(r"Antarctic Scale: Begins April 1$^{st}$",fontsize=28)
-# plt.tick_params(labelsize=24)
-# ax1.tick_params(labelsize=24)
-# ax1.set_ylim(0,120)
-# ax1.set_ylabel("Reaction Flux [10$^1$$^9$ molecules s$^-$$^1$ cm$^-$$^2$]", fontsize=28, labelpad=0)
-# plt.title("Reaction Flux HCl+ClONO$_2$", fontsize=38, pad=0)
-# plt.tight_layout()
-# plt.savefig('reactionflux.png')

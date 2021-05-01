@@ -261,6 +261,7 @@ def fossil_capacity_alt2(agent) -> np.float64:
 
         expansion_change = curve_change_capacity(agent.fossil_building_month, agent)
         if abs(distance_to_target) < expansion_change:
+            print('Change finished, current fossil cap:', current, 'future capacity:', target)
             val = target
             agent.fossil_building = False
             agent.fossil_building_month = 0
@@ -535,13 +536,15 @@ def production_scenario(production, agent):
 
     update_start = max(sandbox.keys.index('fossil_production'),
                        sandbox.keys.index('bio_production')) + 1
-
+    # starts from the highest index of bio and fossil production adds 1 for the starting index
     for i in range(update_start, len(sandbox.keys)):
         key = sandbox.keys[i]
         sandbox.parameter[key].update(sandbox)
+    # the list of keys gives the order of parameter calculations
+    # the rest of the parameters that depend on production rates are then calculated
 
     utility = -1 * sandbox.parameter['profitability'].value
-
+    # the utility is minus the profitability at this point in time, with the input production parameters
     return utility
 
 

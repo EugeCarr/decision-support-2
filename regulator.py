@@ -81,14 +81,16 @@ class Regulator(Agent):
         return val
 
     def calculate_carbon(self, carbon):
-        # if self.c0 == 0.0:
-        #     return 0.0
+        if self.c0 == 0.0:
+            return 0.0
 
         if self.punish_switch:
+            # print(carbon)
             normalised_carbon = (carbon - self.c0) / (self.fraction * self.c0) + self.punish
 
             return normalised_carbon
         else:
+            # print(carbon)
             normalised_carbon = (carbon - self.c0) / (self.fraction * self.c0)
 
             return normalised_carbon
@@ -99,6 +101,7 @@ class Regulator(Agent):
         if self.changing_punish:
             return
         curr_carbon = self.calculate_carbon(self.emissions)
+        # print('Month:', self.month, 'current level:', self.level, 'normalised carbon:', curr_carbon)
         if curr_carbon > (self.level + 1):
             self.trigger_exc_change()
 
