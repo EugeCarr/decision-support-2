@@ -259,6 +259,9 @@ def fossil_capacity_alt2(agent) -> np.float64:
         print('building fossil, current capacity:', current, 'target:', target)
         agent.fossil_building_month += 1
 
+        if agent.env.recent_levy_change:
+            agent.fossil_building_month = 1
+
         expansion_change = curve_change_capacity(agent.fossil_building_month, agent)
         if abs(distance_to_target) < expansion_change:
             print('Change finished, current fossil cap:', current, 'future capacity:', target)
@@ -313,9 +316,11 @@ def bio_capacity_alt2(agent) -> np.float64:
     distance_to_travel = target - current
 
     if agent.bio_building:
-        print('building')
         agent.bio_building_month += 1
         print('building bio, current capacity:', current, 'target:', target)
+
+        if agent.env.recent_levy_change:
+            agent.bio_building_month = 1
 
         expansion_change = curve_change_capacity(agent.bio_building_month, agent)
         if abs(distance_to_travel) < expansion_change:
@@ -346,11 +351,11 @@ def curve_change_capacity(month, company):
     # print(company.time_to_build * 12)
     # current_added = build_speed * baseline_capacity * np.power((month / company.sim_time),
     #                                                            (1 / company.capacity_root_coefficient))
-    current_added = build_speed * baseline_capacity * np.power((month / int(company.time_to_build * 12)),
+    current_added = build_speed * baseline_capacity * np.power(((1 + month) / int(company.time_to_build * 12)),
                                                                (1 / company.capacity_root_coefficient))
     # last_month_added = build_speed * baseline_capacity * np.power(((month - 1) / company.sim_time),
     #                                                               (1 / company.capacity_root_coefficient))
-    last_month_added = build_speed * baseline_capacity * np.power(((month - 1) / int(company.time_to_build * 12)),
+    last_month_added = build_speed * baseline_capacity * np.power((month / int(company.time_to_build * 12)),
                                                                   (1 / company.capacity_root_coefficient))
     expansion_to_add = current_added - last_month_added
 

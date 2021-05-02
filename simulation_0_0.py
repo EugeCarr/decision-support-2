@@ -91,7 +91,7 @@ def simulate(months, table=False, plot=True, Excel_p=False):
     }
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters,
-                                    capacity_root_coefficient=4.0, speed_of_build=0.2, time_to_build=15.0)
+                                    capacity_root_coefficient=4.0, speed_of_build=0.3, time_to_build=6.0)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=24,
                           fraction=0.1, start_levy=1.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5, decade_jump=0.5)
@@ -141,12 +141,15 @@ def simulate(months, table=False, plot=True, Excel_p=False):
         for key in env_aggregates_keys:
             environment.aggregate[key].record(month)
 
+        if environment.recent_levy_change:
+            environment.recent_levy_change = False
 
         # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
             environment.parameter['levy_rate'].value = regulator.levy_rate
             environment.time_to_levy_change = regulator.time_to_change()
             environment.levy_rate_changing = False
+            environment.recent_levy_change = True
 
         # if a change in the levy rate is approaching, add this information to the environment
         if regulator.change_check():
