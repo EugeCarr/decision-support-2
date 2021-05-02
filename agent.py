@@ -137,7 +137,7 @@ class Manufacturer(Agent):
         self.bio_capacity_target = np.float64(0)
 
         self.change_rate = 100  # maximum amount of production capacity that can be built/decommissioned in a month
-        self.design_time = int(15)  # delay between decision to build and start of construction if not already building
+        self.design_time = int(24)  # delay between decision to build and start of construction if not already building
 
         self.fossil_build_countdown = int(0)
         self.fossil_building = False
@@ -147,19 +147,20 @@ class Manufacturer(Agent):
         self.bio_building = False
         self.bio_building_month = int(0)
 
-        self.fossil_capacity_cost = np.float64(2)  # capital cost of 1 unit/yr production capacity for fossil route
-        self.bio_capacity_cost = np.float64(3)  # capital cost of 1 unit/yr production capacity for bio route
+        self.fossil_capacity_cost = np.float64(3)  # capital cost of 1 unit/yr production capacity for fossil route
+        self.bio_capacity_cost = np.float64(4.5)  # capital cost of 1 unit/yr production capacity for bio route
 
         self.fossil_resource_ratio = np.float64(1)  # no. of units of fossil resource used per unit of PET produced
         self.bio_resource_ratio = np.float64(1.2)  # no. of units of bio resource used per unit of PET produced
 
-        self.capacity_maintenance_cost = np.float64(0.5)  # cost of maintaining manufacturing
+        self.capacity_maintenance_cost = np.float64(0.05)  # cost of maintaining manufacturing
         # capacity per unit per month
 
         self.negative_liquidity = False
 
         self.fossil_utilisation_target = 0.9  # capacity utilisation targets
         self.bio_utilisation_target = 0.9
+        self.min_utilisation = 0.5
 
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'
@@ -204,6 +205,7 @@ class Manufacturer(Agent):
         if time_to_target1 > 12:
             if self.parameter[self.value_function].projection[time_to_target1] >= self.target_value * \
                     self.parameter[self.value_function].history[0]:
+            # if self.parameter[self.value_function].projection[time_to_target1] >= self.target_value:
                 self.projection_met = True
             else:
                 self.projection_met = False
@@ -211,6 +213,7 @@ class Manufacturer(Agent):
         else:
             if self.parameter[self.value_function].projection[time_to_target2] >= self.target_value * \
                     self.parameter[self.value_function].history[0]:
+            # if self.parameter[self.value_function].projection[time_to_target2] >= self.target_value:
                 self.projection_met = True
             else:
                 self.projection_met = False

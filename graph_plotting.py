@@ -46,7 +46,7 @@ sheet = wb['Reac R, flex manu']
 
 x_var_name = 'Month'
 
-y_var_name = 'levy_rate'
+y_var_name = 'net_profit'
 
 y2_var_name = 'fossil_production'
 
@@ -69,8 +69,10 @@ same_axes = False
 if not same_axes:
 
     fig, ax1 = plt.subplots()
-    ax1.plot(x_values, y_values, label='Levy rate')
-    ax1.set_ylabel('Levy rate')
+    # ax1.plot(x_values, y_values, label='Levy rate')
+    # ax1.set_ylabel('Levy rate')
+    ax1.plot(x_values, y_values, label='Net profit')
+    ax1.set_ylabel('Net profit')
     ax1.set_xlabel(x_var_name)
 
     # ax1.set_ylabel('Liquidity')
