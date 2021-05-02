@@ -386,7 +386,7 @@ def fossil_production(agent) -> np.float64:
 
     if capacity_bio > 0:
         optimum = optimize.minimize(production_scenario, x0, args=(agent,),
-                                    method='l-bfgs-b', bounds=Bounds([capacity_fossil * 0.7, capacity_bio * 0.7],
+                                    method='l-bfgs-b', bounds=Bounds([capacity_fossil * agent.min_utilisation, capacity_bio * agent.min_utilisation],
                                                                      [capacity_fossil, capacity_bio]))
 
         output = optimum.x

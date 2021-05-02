@@ -42,13 +42,15 @@ def get_values(header, highest_row):
 
 wb = openpyxl.load_workbook('Results from simulations.xlsx')
 
-sheet = wb['smoother fast build']
+sheet = wb['Reac R, flex manu']
 
 x_var_name = 'Month'
 
-y_var_name = 'fossil_capacity'
+y_var_name = 'levy_rate'
 
 y2_var_name = 'fossil_production'
+
+y3_var_name = 'fossil_capacity'
 
 x_var_header = search_var_header(x_var_name)
 x_values = get_values(x_var_header, sheet.max_row)
@@ -59,41 +61,60 @@ y_values = get_values(y_var_header, sheet.max_row)
 y2_var_header = search_var_header(y2_var_name)
 y2_values = get_values(y2_var_header, sheet.max_row)
 
-fig, ax1 = plt.subplots()
-ax1.plot(x_values, y_values, label='Fossil fuel based capacity')
-ax1.set_ylabel('Fossil fuel based capacity')
-ax1.set_xlabel(x_var_name)
+y3_var_header = search_var_header(y3_var_name)
+y3_values = get_values(y3_var_header, sheet.max_row)
 
-# ax1.set_ylabel('Liquidity')
-# h1, l1 = ax1.get_legend_handles_labels()
+same_axes = False
 
-ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+if not same_axes:
 
-# ax2.set_ylabel('Proportion bio')  # we already handled the x-label with ax1
-# h2, l2 = ax2.get_legend_handles_labels()
-ax2.plot(x_values, y2_values, 'm--', label='Fossil fuel based production')
-ax2.set_ylabel('Fossil fuel based production')
+    fig, ax1 = plt.subplots()
+    ax1.plot(x_values, y_values, label='Levy rate')
+    ax1.set_ylabel('Levy rate')
+    ax1.set_xlabel(x_var_name)
 
-# ax2.tick_params(axis='y')
-#
-# ax2.set_xlabel(x_var_name)
+    # ax1.set_ylabel('Liquidity')
+    # h1, l1 = ax1.get_legend_handles_labels()
 
-# plt.legend(handles=[p1, p2], loc="best")
-# plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-ax2.legend(fontsize=8, loc=(0.50, -0.15), frameon=False)
-# ax1.legend(loc=0, frameon=False)
-ax1.legend(loc=(0.00, -0.15), fontsize=8, frameon=False)
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 
-plt.tick_params(labelsize=8)
-ax1.tick_params(labelsize=8)
+    # ax2.set_ylabel('Proportion bio')  # we already handled the x-label with ax1
+    # h2, l2 = ax2.get_legend_handles_labels()
+    ax2.plot(x_values, y2_values, 'm--', label='Fossil fuel based production')
+    ax2.plot(x_values, y3_values, 'r--', label='Fossil fuel based capacity')
+    ax2.set_ylabel('Fossil fuel based production')
 
-# lines_1, labels_1 = ax1.get_legend_handles_labels()
-# lines_2, labels_2 = ax2.get_legend_handles_labels()
-#
-# lines = lines_1 + lines_2
-# labels = labels_1 + labels_2
+    # ax2.tick_params(axis='y')
+    #
+    # ax2.set_xlabel(x_var_name)
 
-# ax1.legend(lines, labels, loc=0)
+    # plt.legend(handles=[p1, p2], loc="best")
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    ax2.legend(fontsize=8, loc=(0.50, -0.15), frameon=False)
+    # ax1.legend(loc=0, frameon=False)
+    ax1.legend(loc=(0.00, -0.15), fontsize=8, frameon=False)
 
-fig.tight_layout()
-plt.show()
+    plt.tick_params(labelsize=8)
+    ax1.tick_params(labelsize=8)
+
+
+
+    fig.tight_layout()
+    plt.show()
+
+else:
+    fig, ax1 = plt.subplots()
+    ax1.plot(x_values, y_values, label='Fossil fuel based capacity')
+    ax1.plot(x_values, y2_values,  'm--',label='Fossil fuel based production')
+    ax1.set_ylabel('Fossil fuel based capacity')
+    ax1.set_xlabel(x_var_name)
+
+    ax1.legend(loc=(0.00, -0.15), fontsize=8, frameon=False)
+
+    plt.tick_params(labelsize=8)
+    ax1.tick_params(labelsize=8)
+
+
+
+    fig.tight_layout()
+    plt.show()

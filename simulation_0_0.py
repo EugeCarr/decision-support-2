@@ -91,10 +91,10 @@ def simulate(months, table=False, plot=True, Excel_p=False):
     }
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters,
-                                    capacity_root_coefficient=1.5, time_to_build=6.0)
+                                    capacity_root_coefficient=4.0, speed_of_build=0.2, time_to_build=15.0)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=24,
-                          fraction=0.1, start_levy=0.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5, decade_jump=0.2)
+                          fraction=0.1, start_levy=1.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5, decade_jump=0.5)
 
     supplier = Supplier('supplier', months, environment, 2.0, elasticity=0.1)
 
@@ -142,7 +142,6 @@ def simulate(months, table=False, plot=True, Excel_p=False):
             environment.aggregate[key].record(month)
 
 
-
         # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
             environment.parameter['levy_rate'].value = regulator.levy_rate
@@ -188,6 +187,7 @@ def simulate(months, table=False, plot=True, Excel_p=False):
         graph(manufacturer1.parameter['bio_capacity'])
         graph(manufacturer1.parameter['bio_production'])
         graph(manufacturer1.parameter['net_profit'])
+        graph(manufacturer1.parameter['liquidity'])
 
         # graph(environment.aggregate['emissions'])
         # graph(environment.parameter['demand'])
@@ -200,7 +200,7 @@ def simulate(months, table=False, plot=True, Excel_p=False):
         # when the changes from rewrite_optimisation are merged in, a new parameter needs to be made for bio_proportion
         wb = openpyxl.load_workbook('Results from simulations.xlsx')
         # print(type(wb))
-        sheet = wb.create_sheet(title='smoother fast build')
+        sheet = wb.create_sheet(title='Reac R, flex manu')
         # print(sheet.title)
         date_time = datetime.now()
 
@@ -225,6 +225,10 @@ def simulate(months, table=False, plot=True, Excel_p=False):
         cell_write(sheet, (7, 5), regulator.start_levy)
         cell_write(sheet, (8, 4), 'Decade Change', title=True)
         cell_write(sheet, (8, 5), regulator.dec_jump)
+        cell_write(sheet, (9, 4), 'Wait Period', title=True)
+        cell_write(sheet, (9, 5), regulator.wait_time)
+        cell_write(sheet, (10, 4), 'Notice Period', title=True)
+        cell_write(sheet, (10, 5), regulator.notice)
 
         cell_write(sheet, (3, 6), 'Supplier Settings', title=True, width='w')
         cell_write(sheet, (4, 6), 'Initial price', title=True)
@@ -245,18 +249,24 @@ def simulate(months, table=False, plot=True, Excel_p=False):
         cell_write(sheet, (8, 9), environment.parameter['fossil_feedstock_price'].history[0])
         cell_write(sheet, (9, 8), 'Starting Production', title=True)
         cell_write(sheet, (9, 9), manufacturer1.parameter['total_production'].history[0])
-        cell_write(sheet, (10, 8), 'Initial PET price', title=True)
-        cell_write(sheet, (10, 9), environment.parameter['pet_price'].history[0])
+        cell_write(sheet, (10, 8), 'Minimum utilisation (%)', title=True)
+        cell_write(sheet, (10, 9), manufacturer1.min_utilisation * 100)
+        cell_write(sheet, (11, 8), 'Initial PET price', title=True)
+        cell_write(sheet, (11, 9), environment.parameter['pet_price'].history[0])
+
         cell_write(sheet, (4, 10), 'Maintenance cost', title=True)
         cell_write(sheet, (4, 11), manufacturer1.capacity_maintenance_cost)
         cell_write(sheet, (5, 10), 'Bio capacity cost', title=True, width='w')
         cell_write(sheet, (5, 11), manufacturer1.bio_capacity_cost)
         cell_write(sheet, (6, 10), 'Fossil capacity cost', title=True, width='w')
         cell_write(sheet, (6, 11), manufacturer1.fossil_capacity_cost)
-        cell_write(sheet, (8, 10), 'Build speed', title=True, width='w')
-        cell_write(sheet, (8, 11), manufacturer1.build_speed)
         cell_write(sheet, (7, 10), 'Root capacity coefficient', title=True, width='ww')
         cell_write(sheet, (7, 11), manufacturer1.capacity_root_coefficient)
+        cell_write(sheet, (8, 10), 'Build speed', title=True, width='w')
+        cell_write(sheet, (8, 11), manufacturer1.build_speed)
+        cell_write(sheet, (9, 10), 'Time to build', title=True, width='w')
+        cell_write(sheet, (9, 11), manufacturer1.time_to_build)
+
 
         variables = [
             ('m1', 'fossil_production'),
@@ -268,7 +278,8 @@ def simulate(months, table=False, plot=True, Excel_p=False):
             ('E', 'bio_feedstock_price'),
             ('m1', 'bio_capacity'),
             ('m1', 'fossil_capacity'),
-            ('E', 'demand')
+            ('E', 'demand'),
+            ('m1', 'net_profit')
         ]
         # var2 : ('m1', 'bio_production'),
         # var3 : ('m1', 'fossil_production')
