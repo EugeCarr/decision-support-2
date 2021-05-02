@@ -7,7 +7,7 @@ import math
 
 
 class Regulator(Agent):
-    def __init__(self, name, sim_time, env, tax_rate, fraction, ratio_jump, start_levy, compliance_threshold=0.1,
+    def __init__(self, name, sim_time, env, tax_rate, fraction, ratio_jump, start_levy, wait_time, compliance_threshold=0.1,
                  notice_period=18, decade_jump=0.1):
         super().__init__(name, sim_time, env)
         assert type(notice_period) == int, 'notice period must be an integer'
@@ -22,6 +22,7 @@ class Regulator(Agent):
         "ratio jump between level 0 and level 1 must be a float, not a", type(ratio_jump))
         assert type(compliance_threshold) == float and 0.0 < compliance_threshold < 1.0, (
             "compliance threshold input", compliance_threshold, "must be a float between 0 and 1")
+        assert type(wait_time) == int, ("wait timer fo regulator must be an integer not:", type(wait_time))
 
         self.month = 0
 
@@ -53,12 +54,18 @@ class Regulator(Agent):
         self.changing_punish = False
         self.changing_decade = False
         self.changing_excess = bool(False)
+        self.changing_start = True
+
+        self.timer_start = 0
+        self.wait_time = wait_time
 
         self.comp_check = False
         self.comp_timer = 0
         self.tax_rate = np.float64(tax_rate)
-        self.levy_rate = np.float64(start_levy)
-        self.future_levy_rate = np.float64(start_levy)
+        # self.levy_rate = np.float64(start_levy)
+        self.levy_rate = np.float64(0.0)
+        # self.future_levy_rate = np.float64(start_levy)
+        self.future_levy_rate = np.float64(0.0)
 
         return
 
@@ -199,6 +206,8 @@ class Regulator(Agent):
             return True
         elif self.changing_decade:
             return True
+        elif self.changing_start:
+            return True
         else:
             return False
 
@@ -213,6 +222,9 @@ class Regulator(Agent):
 
             elif self.changing_decade:
                 return self.timer_decade
+
+            elif self.changing_start:
+                return self.timer_start
         else:
             return None
 
@@ -233,6 +245,28 @@ class Regulator(Agent):
                 if self.timer_decade == 0:
                     self.change_level_decade()
 
+            elif self.changing_start:
+                self.timer_start -= 1
+                if self.timer_start == 0:
+                    self.changing_start = False
+
+        return
+
+
+    def start_routine(self):
+        if self.month == 0:
+            self.levy_rate = np.float64(0.0)
+
+            self.future_levy_rate = np.float64(0.0)
+        elif 0 < self.month < self.wait_time:
+            self.levy_rate = np.float64(0.0)
+            self.decrement_timer()
+
+        if self.month == self.wait_time - self.notice:
+            self.future_levy_rate = np.float64(self.start_levy)
+            self.changing_start = True
+            self.timer_start = self.wait_time - 1
+        #     tells the system that levies are about to be imposed
         return
 
     def generate_levy_rate(self):
@@ -243,6 +277,10 @@ class Regulator(Agent):
     def iterate_regulator(self):
         self.set_emissions(self.env.aggregate['emissions'].value)
         # needs the clock function to take time from the simulator for processing too
+        if self.month < self.wait_time:
+            self.start_routine()
+            return
+
         self.decade_check()
         if self.change_check():
             self.decrement_timer()

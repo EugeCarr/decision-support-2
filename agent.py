@@ -145,8 +145,8 @@ class Manufacturer(Agent):
         self.bio_building = False
         self.bio_building_month = int(0)
 
-        self.fossil_capacity_cost = np.float64(12)  # capital cost of 1 unit/yr production capacity for fossil route
-        self.bio_capacity_cost = np.float64(17)  # capital cost of 1 unit/yr production capacity for bio route
+        self.fossil_capacity_cost = np.float64(0.5)  # capital cost of 1 unit/yr production capacity for fossil route
+        self.bio_capacity_cost = np.float64(4.5)  # capital cost of 1 unit/yr production capacity for bio route
 
         self.fossil_resource_ratio = np.float64(1)  # no. of units of fossil resource used per unit of PET produced
         self.bio_resource_ratio = np.float64(1)  # no. of units of bio resource used per unit of PET produced
@@ -248,6 +248,7 @@ class Manufacturer(Agent):
         sandbox.bio_capacity_target = bio_target
 
         sandbox.project_variables()
+        profit_baseline = sandbox.parameter['net_profit'].history[0]
 
         if np.amin(sandbox.parameter['liquidity'].projection) < 0.0:
             utility = np.inf

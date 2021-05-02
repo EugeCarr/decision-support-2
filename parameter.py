@@ -75,7 +75,7 @@ def demand(env) -> np.float64:
     current = env.parameter['demand'].value
 
     # demand is defined by constant growth rate, plus some randomness
-    growth_rate = 1.02  # YoY growth rate, expressed as a ratio
+    growth_rate = 1.05  # YoY growth rate, expressed as a ratio
     growth_rate_monthly = np.power(growth_rate, 1 / 12)  # annual growth rate changed to month-on-month
     val = current * growth_rate_monthly
     # std_dev = 1
@@ -163,7 +163,7 @@ def blank(agent):
 
 def demand_projection(agent) -> np.ndarray:
     current = agent.env.parameter['demand'].value
-    growth_rate = 1.02  # YoY growth rate for the simulation period, expressed as a ratio
+    growth_rate = 1.05  # YoY growth rate for the simulation period, expressed as a ratio
     growth_rate_monthly = np.power(growth_rate, 1 / 12)  # annual growth rate changed to month-on-month
 
     proj = np.empty(agent.projection_time)
@@ -382,7 +382,7 @@ def fossil_production(agent) -> np.float64:
 
     if capacity_bio > 0:
         optimum = optimize.minimize(production_scenario, x0, args=(agent,),
-                                    method='l-bfgs-b', bounds=Bounds([0.0, 0.0], [capacity_fossil, capacity_bio]))
+                                    method='l-bfgs-b', bounds=Bounds([capacity_fossil * 0.7, capacity_bio * 0.7], [capacity_fossil, capacity_bio]))
 
         output = optimum.x
 

@@ -42,13 +42,13 @@ def get_values(header, highest_row):
 
 wb = openpyxl.load_workbook('Results from simulations.xlsx')
 
-sheet = wb['First Try4']
+sheet = wb['smoother fast build']
 
 x_var_name = 'Month'
 
-y_var_name = 'liquidity'
+y_var_name = 'fossil_capacity'
 
-y2_var_name = 'fossil_capacity'
+y2_var_name = 'fossil_production'
 
 x_var_header = search_var_header(x_var_name)
 x_values = get_values(x_var_header, sheet.max_row)
@@ -60,8 +60,8 @@ y2_var_header = search_var_header(y2_var_name)
 y2_values = get_values(y2_var_header, sheet.max_row)
 
 fig, ax1 = plt.subplots()
-ax1.plot(x_values, y_values, label='liquidity')
-ax1.set_ylabel('liquidity')
+ax1.plot(x_values, y_values, label='Fossil fuel based capacity')
+ax1.set_ylabel('Fossil fuel based capacity')
 ax1.set_xlabel(x_var_name)
 
 # ax1.set_ylabel('Liquidity')
@@ -71,8 +71,8 @@ ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 
 # ax2.set_ylabel('Proportion bio')  # we already handled the x-label with ax1
 # h2, l2 = ax2.get_legend_handles_labels()
-ax2.plot(x_values, y2_values, 'm--', label='fossil-based PET production')
-ax2.set_ylabel('fossil-based PET production')
+ax2.plot(x_values, y2_values, 'm--', label='Fossil fuel based production')
+ax2.set_ylabel('Fossil fuel based production')
 
 # ax2.tick_params(axis='y')
 #
