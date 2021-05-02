@@ -91,10 +91,10 @@ def simulate(months, table=False, plot=True, Excel_p=False):
     }
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters,
-                                    capacity_root_coefficient=1.5, speed_of_build=1.0)
+                                    capacity_root_coefficient=1.25, time_to_build=6.0)
 
-    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=24,
-                          fraction=0.5, start_levy=0.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5, decade_jump=0.2)
+    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=12,
+                          fraction=0.5, start_levy=1.0, ratio_jump=0.5, wait_time=120, compliance_threshold=0.5, decade_jump=0.2)
 
     supplier = Supplier('supplier', months, environment, 2.0, elasticity=0.5)
 

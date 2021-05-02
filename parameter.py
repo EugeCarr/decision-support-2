@@ -343,10 +343,14 @@ def curve_change_capacity(month, company):
 
     baseline_capacity = company.parameter['fossil_capacity'].history[0]
     build_speed = company.build_speed
-
-    current_added = build_speed * baseline_capacity * np.power((month / company.sim_time),
+    # print(company.time_to_build * 12)
+    # current_added = build_speed * baseline_capacity * np.power((month / company.sim_time),
+    #                                                            (1 / company.capacity_root_coefficient))
+    current_added = build_speed * baseline_capacity * np.power((month / int(company.time_to_build * 12)),
                                                                (1 / company.capacity_root_coefficient))
-    last_month_added = build_speed * baseline_capacity * np.power(((month - 1) / company.sim_time),
+    # last_month_added = build_speed * baseline_capacity * np.power(((month - 1) / company.sim_time),
+    #                                                               (1 / company.capacity_root_coefficient))
+    last_month_added = build_speed * baseline_capacity * np.power(((month - 1) / int(company.time_to_build * 12)),
                                                                   (1 / company.capacity_root_coefficient))
     expansion_to_add = current_added - last_month_added
 
@@ -382,7 +386,8 @@ def fossil_production(agent) -> np.float64:
 
     if capacity_bio > 0:
         optimum = optimize.minimize(production_scenario, x0, args=(agent,),
-                                    method='l-bfgs-b', bounds=Bounds([capacity_fossil * 0.7, capacity_bio * 0.7], [capacity_fossil, capacity_bio]))
+                                    method='l-bfgs-b', bounds=Bounds([capacity_fossil * 0.7, capacity_bio * 0.7],
+                                                                     [capacity_fossil, capacity_bio]))
 
         output = optimum.x
 
@@ -835,9 +840,12 @@ def bio_capacity_projection_alt2(agent) -> np.ndarray:
 
         build_speed = agent.build_speed
 
+        # months_to_completion = int(
+        #     np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
+        #                                       agent.capacity_root_coefficient)) + agent.design_time)
         months_to_completion = int(
-            np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
-                                              agent.capacity_root_coefficient)) + agent.design_time)
+            np.ceil(int(agent.time_to_build * 12) * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
+                                                         agent.capacity_root_coefficient)) + agent.design_time)
         for i in range(agent.design_time):
             proj[i] = current
         for i in range(agent.design_time, min(agent.projection_time - 1, months_to_completion)):
@@ -859,9 +867,13 @@ def bio_capacity_projection_alt2(agent) -> np.ndarray:
 
         build_speed = agent.build_speed
 
+        # months_to_completion = int(
+        #     np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
+        #                                       agent.capacity_root_coefficient)) + agent.design_time)
         months_to_completion = int(
-            np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
-                                              agent.capacity_root_coefficient)) + agent.design_time)
+            np.ceil(
+                int(agent.time_to_build * 12) * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
+                                                         agent.capacity_root_coefficient)) + agent.design_time)
         for i in range(agent.design_time):
             proj[i] = current
         for i in range(agent.design_time, min(agent.projection_time - 1, months_to_completion)):
@@ -960,6 +972,7 @@ def fossil_capacity_projection(agent) -> np.ndarray:
 
     return proj
 
+
 def fossil_capacity_projection_alt2(agent) -> np.ndarray:
     assert isinstance(agent, ag.Manufacturer)
     current = agent.parameter['fossil_capacity'].value
@@ -974,9 +987,13 @@ def fossil_capacity_projection_alt2(agent) -> np.ndarray:
 
         build_speed = agent.build_speed
 
+        # months_to_completion = int(
+        #     np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
+        #                                       agent.capacity_root_coefficient)) + agent.design_time)
         months_to_completion = int(
-            np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
-                                              agent.capacity_root_coefficient)) + agent.design_time)
+            np.ceil(
+                int(agent.time_to_build * 12) * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
+                                                         agent.capacity_root_coefficient)) + agent.design_time)
         for i in range(agent.design_time):
             proj[i] = current
         for i in range(agent.design_time, min(agent.projection_time - 1, months_to_completion)):
@@ -998,9 +1015,13 @@ def fossil_capacity_projection_alt2(agent) -> np.ndarray:
 
         build_speed = agent.build_speed
 
+        # months_to_completion = int(
+        #     np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
+        #                                       agent.capacity_root_coefficient)) + agent.design_time)
         months_to_completion = int(
-            np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
-                                              agent.capacity_root_coefficient)) + agent.design_time)
+            np.ceil(
+                int(agent.time_to_build * 12) * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
+                                                         agent.capacity_root_coefficient)) + agent.design_time)
         for i in range(agent.design_time):
             proj[i] = current
         for i in range(agent.design_time, min(agent.projection_time - 1, months_to_completion)):
