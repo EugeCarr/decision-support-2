@@ -18,12 +18,12 @@ def simulate(months, table=False, plot=True, Excel_p=False):
     # def simulate(months, table=False, plot=False):
     # create agents and specify their parameters
     month = int(0)
-    initial_production_volume = np.float64(1000)
+    initial_production_capacity = np.float64(1200)
 
     # the dictionary of environment variables (see parameter.py) to pass to the Environment object
     env_variables = {
         'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(10.0)),
-        'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(3)),
+        'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2)),
         'bio_feedstock_price': Environment_Variable(par.bio_feedstock_price, months, init=np.float64(2)),
         'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.0)),
         'demand': Environment_Variable(par.demand, months, init=np.float64(1000))
@@ -50,7 +50,7 @@ def simulate(months, table=False, plot=True, Excel_p=False):
         'fossil_capacity_max': Parameter(par.fossil_capacity_max, par.fossil_capacity_max_projection, months),
 
         'fossil_capacity': Parameter(par.fossil_capacity_alt2, par.fossil_capacity_projection_alt2, months,
-                                     init=initial_production_volume),
+                                     init=initial_production_capacity),
         'bio_capacity': Parameter(par.bio_capacity_alt2, par.bio_capacity_projection_alt2, months),
         'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
 
@@ -71,7 +71,7 @@ def simulate(months, table=False, plot=True, Excel_p=False):
 
 
         # 'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
-        #                                init=initial_production_volume),
+        #                                init=initial_production_capacity),
 
         'fossil_process_cost': Parameter(par.fossil_process_cost, par.fossil_process_cost_projection, months,
                                          init=np.float64(1)),
@@ -91,12 +91,12 @@ def simulate(months, table=False, plot=True, Excel_p=False):
     }
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters,
-                                    capacity_root_coefficient=1.25, time_to_build=6.0)
+                                    capacity_root_coefficient=1.5, time_to_build=6.0)
 
-    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=12,
-                          fraction=0.5, start_levy=1.0, ratio_jump=0.5, wait_time=120, compliance_threshold=0.5, decade_jump=0.2)
+    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=24,
+                          fraction=0.1, start_levy=0.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5, decade_jump=0.2)
 
-    supplier = Supplier('supplier', months, environment, 2.0, elasticity=0.5)
+    supplier = Supplier('supplier', months, environment, 2.0, elasticity=0.1)
 
     manufacturers = [
         manufacturer1

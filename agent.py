@@ -123,7 +123,7 @@ class Manufacturer(Agent):
         # projection
 
         self.tax_rate = np.float64(0.19)  # tax on profits, 19%
-        self.emissions_rate = np.float64(5)  # units of emissions per unit of PET produced from non-bio route
+        self.emissions_rate = np.float64(3)  # units of emissions per unit of PET produced from non-bio route
 
         # additional projection variables
         self.tax_rate_projection = np.ones(self.projection_time) * self.tax_rate
@@ -147,13 +147,13 @@ class Manufacturer(Agent):
         self.bio_building = False
         self.bio_building_month = int(0)
 
-        self.fossil_capacity_cost = np.float64(0.5)  # capital cost of 1 unit/yr production capacity for fossil route
-        self.bio_capacity_cost = np.float64(4.5)  # capital cost of 1 unit/yr production capacity for bio route
+        self.fossil_capacity_cost = np.float64(2)  # capital cost of 1 unit/yr production capacity for fossil route
+        self.bio_capacity_cost = np.float64(3)  # capital cost of 1 unit/yr production capacity for bio route
 
         self.fossil_resource_ratio = np.float64(1)  # no. of units of fossil resource used per unit of PET produced
-        self.bio_resource_ratio = np.float64(1)  # no. of units of bio resource used per unit of PET produced
+        self.bio_resource_ratio = np.float64(1.2)  # no. of units of bio resource used per unit of PET produced
 
-        self.capacity_maintenance_cost = np.float64(0.1)  # cost of maintaining manufacturing
+        self.capacity_maintenance_cost = np.float64(0.5)  # cost of maintaining manufacturing
         # capacity per unit per month
 
         self.negative_liquidity = False
