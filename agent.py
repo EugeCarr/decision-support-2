@@ -199,24 +199,17 @@ class Manufacturer(Agent):
         # at the next 5-year interval
         # when the next 5-year interval is less than 1 year away the logic is based on the following interval
 
-        time_to_target1 = 60 - self.month % 60
-        time_to_target2 = time_to_target1 + 60
+        time_horizon = 59  # no. of months ahead to look for target
+        # attempts to maximise the net profit 5 years from now
+        under = (self.target_value -
+                 self.parameter[self.value_function].projection[time_horizon])
 
-        if time_to_target1 > 12:
-            if self.parameter[self.value_function].projection[time_to_target1] >= self.target_value * \
-                    self.parameter[self.value_function].history[0]:
+        if self.parameter[self.value_function].projection[time_horizon] >= self.target_value * \
+                self.parameter[self.value_function].history[0]:
             # if self.parameter[self.value_function].projection[time_to_target1] >= self.target_value:
-                self.projection_met = True
-            else:
-                self.projection_met = False
-
+            self.projection_met = True
         else:
-            if self.parameter[self.value_function].projection[time_to_target2] >= self.target_value * \
-                    self.parameter[self.value_function].history[0]:
-            # if self.parameter[self.value_function].projection[time_to_target2] >= self.target_value:
-                self.projection_met = True
-            else:
-                self.projection_met = False
+            self.projection_met = False
 
         return
 
@@ -322,7 +315,7 @@ class Manufacturer(Agent):
 
             if not self.projection_met:
                 new_targets = self.optimal_strategy()
-                print(new_targets)
+
                 self.fossil_capacity_target = new_targets[0]
                 self.bio_capacity_target = new_targets[1]
 
