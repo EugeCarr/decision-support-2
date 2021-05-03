@@ -281,9 +281,6 @@ class Manufacturer(Agent):
                 if utility < minimum:
                     minimum = utility
                     optimum = targets
-                    print('Month:', self.month)
-                    print('new min utility function:', minimum)
-                    print('[fossil, bio] targets:', optimum, '\n')
 
         if minimum == np.inf:
             print('Year:', np.floor(self.month / 12), 'No optimal solution found')
@@ -298,6 +295,9 @@ class Manufacturer(Agent):
         return optimum
 
     def time_step_alt(self):
+        if self.month % 5 == 0:  # progress indicator
+            print('Month', self.month, 'of', self.sim_time)
+
         if self.fossil_build_countdown > 0:
             self.fossil_build_countdown -= 1
             if self.fossil_build_countdown == 0:
@@ -311,13 +311,15 @@ class Manufacturer(Agent):
         if self.month % 12 == 1:
             self.project_variables()
             self.projection_check()
-            print(self.projection_met)
 
             if not self.projection_met:
                 new_targets = self.optimal_strategy()
-
-                self.fossil_capacity_target = new_targets[0]
-                self.bio_capacity_target = new_targets[1]
+                if new_targets[0] != self.fossil_capacity_target and new_targets[1] != self.bio_capacity_target:
+                    print('Month', self.month, ': new capacity targets determined',
+                          '\n Fossil capacity target:', new_targets[0],
+                          '\n Bio capacity target:', new_targets[1])
+                    self.fossil_capacity_target = new_targets[0]
+                    self.bio_capacity_target = new_targets[1]
 
                 if not self.bio_building and self.parameter['bio_capacity'].value != self.bio_capacity_target:
                     self.bio_building = True
