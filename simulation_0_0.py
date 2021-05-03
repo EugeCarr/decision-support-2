@@ -69,7 +69,6 @@ def simulate(months, table=False, plot=True, Excel_p=False):
                                             init=np.float64(3)),
         'bio_feedstock_price': Parameter(par.blank, par.bio_feedstock_price_projection, months),
 
-
         # 'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
         #                                init=initial_production_capacity),
 
@@ -94,7 +93,8 @@ def simulate(months, table=False, plot=True, Excel_p=False):
                                     capacity_root_coefficient=4.0, speed_of_build=0.2, time_to_build=15.0)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=24,
-                          fraction=0.1, start_levy=1.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5, decade_jump=0.5)
+                          fraction=0.1, start_levy=1.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5,
+                          decade_jump=0.5)
 
     supplier = Supplier('supplier', months, environment, 2.0, elasticity=0.1)
 
@@ -123,8 +123,6 @@ def simulate(months, table=False, plot=True, Excel_p=False):
         for agent in manufacturers:
             agent.time_step_alt()
 
-
-
         environment.reset_aggregates()
         for key in env_aggregates_keys:
             for manufacturer in manufacturers:
@@ -140,7 +138,6 @@ def simulate(months, table=False, plot=True, Excel_p=False):
 
         for key in env_aggregates_keys:
             environment.aggregate[key].record(month)
-
 
         # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
@@ -267,7 +264,6 @@ def simulate(months, table=False, plot=True, Excel_p=False):
         cell_write(sheet, (9, 10), 'Time to build', title=True, width='w')
         cell_write(sheet, (9, 11), manufacturer1.time_to_build)
 
-
         variables = [
             ('m1', 'fossil_production'),
             ('m1', 'bio_production'),
@@ -328,7 +324,6 @@ def graph(parameter):
     # ax1.set_ylabel('Levy rate')
     # ax1.set_ylabel('Demand')
     # ax1.set_ylabel('Emissions')
-
 
     fig.tight_layout()
     plt.show()

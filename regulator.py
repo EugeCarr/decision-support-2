@@ -3,11 +3,9 @@ import numpy as np
 import math
 
 
-
-
-
 class Regulator(Agent):
-    def __init__(self, name, sim_time, env, tax_rate, fraction, ratio_jump, start_levy, wait_time, compliance_threshold=0.1,
+    def __init__(self, name, sim_time, env, tax_rate, fraction, ratio_jump, start_levy, wait_time,
+                 compliance_threshold=0.1,
                  notice_period=18, decade_jump=0.1):
         super().__init__(name, sim_time, env)
         assert type(notice_period) == int, 'notice period must be an integer'
@@ -16,10 +14,10 @@ class Regulator(Agent):
         assert type(tax_rate) == float and 0.0 < tax_rate < 1.0, ("Starter tax rate input", tax_rate, 'must be a float '
                                                                                                       'between 0 and 1')
         assert type(decade_jump) == float and 0.0 < decade_jump, ("decade_jump input", decade_jump,
-                                                                        'must be a float above 0')
+                                                                  'must be a float above 0')
         assert type(start_levy) == float, ("starting levy must be a float, not a", type(start_levy))
         assert type(ratio_jump) == float, (
-        "ratio jump between level 0 and level 1 must be a float, not a", type(ratio_jump))
+            "ratio jump between level 0 and level 1 must be a float, not a", type(ratio_jump))
         assert type(compliance_threshold) == float and 0.0 < compliance_threshold < 1.0, (
             "compliance threshold input", compliance_threshold, "must be a float between 0 and 1")
         assert type(wait_time) == int, ("wait timer fo regulator must be an integer not:", type(wait_time))
@@ -108,7 +106,8 @@ class Regulator(Agent):
         if self.changing_punish:
             return
         curr_carbon = self.calculate_carbon(self.emissions)
-        # print('Month:', self.month, 'current level:', self.level, 'normalised carbon:', curr_carbon, 'emissions:', self.emissions)
+        # print('Month:', self.month, 'current level:', self.level,
+        # 'normalised carbon:', curr_carbon, 'emissions:', self.emissions)
         if curr_carbon > (self.level + 1):
             self.trigger_exc_change()
 
@@ -144,7 +143,8 @@ class Regulator(Agent):
 
     def change_level_ex(self):
         self.level += 1
-        print("Month", self.month, ". New level", self.level, ", due to excessive emissions in month:", (self.month - self.notice))
+        print("Month", self.month, ". New level", self.level, ", due to excessive emissions in month:",
+              (self.month - self.notice))
         self.changing_excess = False
         return
 

@@ -11,7 +11,7 @@ if __name__ == '__main__':
           '===============================================',
           )
 
-    months = 240 +48
+    months = 240 + 48
 
     simulate(months, table=False, plot=True, Excel_p=False)
 

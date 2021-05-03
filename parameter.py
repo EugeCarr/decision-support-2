@@ -263,9 +263,9 @@ def fossil_capacity_alt2(agent) -> np.float64:
             val = target
             agent.fossil_building = False
             agent.fossil_building_month = 0
-        elif abs(distance_to_target) > expansion_change and distance_to_target > 0:
+        elif distance_to_target > 0:
             val = current + expansion_change
-        elif abs(distance_to_target) > expansion_change and distance_to_target < 0:
+        else:
             val = current - expansion_change
 
     else:
@@ -319,10 +319,10 @@ def bio_capacity_alt2(agent) -> np.float64:
             agent.bio_building = False
             agent.bio_building_month = 0
 
-        elif abs(distance_to_travel) > expansion_change and distance_to_travel > 0:
+        elif distance_to_travel > 0:
             val = current + expansion_change
 
-        elif abs(distance_to_travel) > expansion_change and distance_to_travel < 0:
+        else:
             val = current - expansion_change
 
     else:
@@ -381,8 +381,10 @@ def fossil_production(agent) -> np.float64:
 
     if capacity_bio > 0:
         optimum = optimize.minimize(production_scenario, x0, args=(agent,),
-                                    method='l-bfgs-b', bounds=Bounds([capacity_fossil * agent.min_utilisation, capacity_bio * agent.min_utilisation],
-                                                                     [capacity_fossil, capacity_bio]))
+                                    method='l-bfgs-b',
+                                    bounds=Bounds([capacity_fossil * agent.min_utilisation,
+                                                   capacity_bio * agent.min_utilisation],
+                                                  [capacity_fossil, capacity_bio]))
 
         output = optimum.x
 
@@ -848,8 +850,9 @@ def bio_capacity_projection_alt2(agent) -> np.ndarray:
         #     np.ceil(agent.sim_time * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
         #                                       agent.capacity_root_coefficient)) + agent.design_time)
         months_to_completion = int(
-            np.ceil(int(agent.time_to_build * 12) * np.power((abs(distance_to_target) / (build_speed * baseline_capacity)),
-                                                         agent.capacity_root_coefficient)) + agent.design_time)
+            np.ceil(int(agent.time_to_build * 12) * np.power((abs(distance_to_target) /
+                                                              (build_speed * baseline_capacity)),
+                                                             agent.capacity_root_coefficient)) + agent.design_time)
         for i in range(agent.design_time):
             proj[i] = current
         for i in range(agent.design_time, min(agent.projection_time - 1, months_to_completion)):
@@ -865,7 +868,7 @@ def bio_capacity_projection_alt2(agent) -> np.ndarray:
             for i in range(months_to_completion, agent.projection_time):
                 proj[i] = target
 
-    elif target < current:
+    else:
         proj = np.zeros(agent.projection_time)
         baseline_capacity = agent.parameter['fossil_capacity'].history[0]
 
@@ -1013,7 +1016,7 @@ def fossil_capacity_projection_alt2(agent) -> np.ndarray:
             for i in range(months_to_completion, agent.projection_time):
                 proj[i] = target
 
-    elif target < current:
+    else:
         proj = np.zeros(agent.projection_time)
         baseline_capacity = agent.parameter['fossil_capacity'].history[0]
 
