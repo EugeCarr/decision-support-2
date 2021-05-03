@@ -256,7 +256,6 @@ def fossil_capacity_alt2(agent) -> np.float64:
     distance_to_target = target - current
 
     if agent.fossil_building:
-        print('building fossil, current capacity:', current, 'target:', target)
         agent.fossil_building_month += 1
 
         if agent.env.recent_levy_change:
@@ -264,7 +263,6 @@ def fossil_capacity_alt2(agent) -> np.float64:
 
         expansion_change = curve_change_capacity(agent.fossil_building_month, agent)
         if abs(distance_to_target) < expansion_change:
-            print('Change finished, current fossil cap:', current, 'future capacity:', target)
             val = target
             agent.fossil_building = False
             agent.fossil_building_month = 0
@@ -317,14 +315,13 @@ def bio_capacity_alt2(agent) -> np.float64:
 
     if agent.bio_building:
         agent.bio_building_month += 1
-        print('building bio, current capacity:', current, 'target:', target)
+        # print('building bio, current capacity:', current, 'target:', target)
 
         if agent.env.recent_levy_change:
             agent.bio_building_month = 1
 
         expansion_change = curve_change_capacity(agent.bio_building_month, agent)
         if abs(distance_to_travel) < expansion_change:
-            print('Change finished, current bio cap:', current, 'future capacity:', target)
             val = target
             agent.bio_building = False
             agent.bio_building_month = 0
@@ -815,7 +812,16 @@ def liquidity_projection(agent) -> np.ndarray:
 
 def profit_margin_projection(agent) -> np.ndarray:
     monthly_production_projection = agent.parameter['total_production'].projection / 12
-    proj = np.divide(agent.parameter['net_profit'].projection, monthly_production_projection)
+    if np.amin(monthly_production_projection) <= 0.0:
+        proj = np.zeros(agent.projection_time)
+
+        for i in range(agent.projection_time):
+            if monthly_production_projection[i] != 0.0:
+                proj[i] = agent.parameter['net_profit'].projection[i] / monthly_production_projection[i]
+            else:
+                pass  # leaves projected value as zero
+    else:
+        proj = np.divide(agent.parameter['net_profit'].projection, monthly_production_projection)
     return proj
 
 

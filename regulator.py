@@ -108,7 +108,7 @@ class Regulator(Agent):
         if self.changing_punish:
             return
         curr_carbon = self.calculate_carbon(self.emissions)
-        print('Month:', self.month, 'current level:', self.level, 'normalised carbon:', curr_carbon, 'emissions:', self.emissions)
+        # print('Month:', self.month, 'current level:', self.level, 'normalised carbon:', curr_carbon, 'emissions:', self.emissions)
         if curr_carbon > (self.level + 1):
             self.trigger_exc_change()
 
@@ -154,7 +154,7 @@ class Regulator(Agent):
         self.punish += 1
         # so that subsequent level calculations take this punishment into account
         self.level += 1
-        print("Month", self.month, ", level", self.level, " Failure to comply by:", (self.month - self.notice))
+        # print("Month", self.month, ", level", self.level, " Failure to comply by:", (self.month - self.notice))
 
         self.changing_punish = False
         return
@@ -251,7 +251,6 @@ class Regulator(Agent):
                     self.changing_start = False
 
         return
-
 
     def start_routine(self):
         if self.month == 0:
