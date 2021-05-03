@@ -13,7 +13,12 @@ if __name__ == '__main__':
 
     months = 240 + 48
 
-    simulate(months, table=False, plot=True, Excel_p=False)
+    simulate(months, table=False, plot=True, Excel_p=False,
+             # manufacturer settings
+             capacity_root_coeff=4.0, speed_of_build=0.2, time_to_build=15.0,
+             # regulator settings
+             notice_period=24, fraction=0.1, start_levy=1.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5,
+             decade_jump=0.5)
 
     end = datetime.now()
     now = end.strftime("%d/%m/%Y %H:%M:%S")
