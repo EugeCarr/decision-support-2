@@ -14,7 +14,7 @@ def run(param):
 
     months = 240 + 48
 
-    simulate(months, table=False, plot=True, Excel_p=False,
+    simulate(months, table=False, plot=False, Excel_p=True,
              # manufacturer settings
              capacity_root_coeff=4.0, speed_of_build=0.2, time_to_build=15.0,
              # regulator settings
@@ -32,5 +32,4 @@ def run(param):
 
 
 if __name__ == '__main__':
-    for x in [0.2, 0.4, 0.6, 0.8, 1.0, 1.5, 2.0]:
-        run(x)
+    run(0.6)

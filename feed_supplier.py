@@ -30,7 +30,7 @@ class Supplier(Agent):
         self.demand_history = []
         self.ratio_baseline = np.float()
 
-        self.random_switch = True
+        self.random_switch = False
 
         return
 
@@ -77,6 +77,5 @@ class Supplier(Agent):
     def iterate_supplier(self):
         self.get_demand()
         self.set_price()
-        self.month += 1
         self.env.parameter['bio_feedstock_price'].value = self.price
         return
