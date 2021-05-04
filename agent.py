@@ -180,7 +180,6 @@ class Manufacturer(Agent):
             self.parameter[key].update(self)
         return
 
-
     def record_timestep(self):
         # method to write current variables (independent and dependent) to records
         for key in self.keys:
