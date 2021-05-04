@@ -42,6 +42,7 @@ class Environment(object):
         self.levy_rate_changing = False
         self.time_to_levy_change = int()
         self.future_levy_rate = np.float64()
+        self.recent_levy_change = False
         return
 
     def reset_aggregates(self):
@@ -281,6 +282,9 @@ class Manufacturer(Agent):
                 if utility < minimum:
                     minimum = utility
                     optimum = targets
+                    print('Month:', self.month)
+                    print('new min utility function:', minimum)
+                    print('[fossil, bio] targets:', optimum, '\n')
 
         if minimum == np.inf:
             print('Year:', np.floor(self.month / 12), 'No optimal solution found')
