@@ -14,7 +14,12 @@ import openpyxl
 from openpyxl.styles import Font
 
 
-def simulate(months, table=False, plot=True, Excel_p=False):
+def simulate(months, table=False, plot=True, Excel_p=False,
+             capacity_root_coeff=4.0, speed_of_build=0.2, time_to_build=15.0,
+
+             notice_period=24, fraction=0.1, start_levy=1.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5,
+             decade_jump=0.5
+             ):
     # def simulate(months, table=False, plot=False):
     # create agents and specify their parameters
     month = int(0)
@@ -91,10 +96,18 @@ def simulate(months, table=False, plot=True, Excel_p=False):
     }
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters,
-                                    capacity_root_coefficient=4.0, speed_of_build=0.2, time_to_build=15.0)
+                                    capacity_root_coefficient=capacity_root_coeff,
+                                    speed_of_build=speed_of_build,
+                                    time_to_build=time_to_build)
 
-    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=24,
-                          fraction=0.1, start_levy=1.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5, decade_jump=0.5)
+    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19,
+                          notice_period=notice_period,
+                          fraction=fraction,
+                          start_levy=start_levy,
+                          ratio_jump=ratio_jump,
+                          wait_time=wait_time,
+                          compliance_threshold=compliance_threshold,
+                          decade_jump=decade_jump)
 
     supplier = Supplier('supplier', months, environment, 2.0, elasticity=0.1)
 
@@ -270,7 +283,6 @@ def simulate(months, table=False, plot=True, Excel_p=False):
         cell_write(sheet, (9, 10), 'Time to build', title=True, width='w')
         cell_write(sheet, (9, 11), manufacturer1.time_to_build)
 
-
         variables = [
             ('m1', 'fossil_production'),
             ('m1', 'bio_production'),
@@ -331,7 +343,6 @@ def graph(parameter):
     # ax1.set_ylabel('Levy rate')
     # ax1.set_ylabel('Demand')
     # ax1.set_ylabel('Emissions')
-
 
     fig.tight_layout()
     plt.show()
