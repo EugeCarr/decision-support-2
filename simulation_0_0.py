@@ -91,7 +91,7 @@ def simulate(months, table=False, plot=True, Excel_p=False):
     }
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters,
-                                    capacity_root_coefficient=4.0, speed_of_build=0.3, time_to_build=6.0)
+                                    capacity_root_coefficient=1.0, speed_of_build=0.2, time_to_build=15.0)
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, notice_period=24,
                           fraction=0.1, start_levy=1.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5, decade_jump=0.5)
@@ -203,7 +203,7 @@ def simulate(months, table=False, plot=True, Excel_p=False):
         # when the changes from rewrite_optimisation are merged in, a new parameter needs to be made for bio_proportion
         wb = openpyxl.load_workbook('Results from simulations.xlsx')
         # print(type(wb))
-        sheet = wb.create_sheet(title='Reac R, flex manu')
+        sheet = wb.create_sheet(title='Cap_demo_linear')
         # print(sheet.title)
         date_time = datetime.now()
 
