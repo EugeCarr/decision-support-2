@@ -42,6 +42,7 @@ class Environment(object):
         self.levy_rate_changing = False
         self.time_to_levy_change = int()
         self.future_levy_rate = np.float64()
+        self.recent_levy_change = False
         return
 
     def reset_aggregates(self):

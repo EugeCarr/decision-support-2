@@ -151,11 +151,15 @@ def simulate(months, table=False, plot=True, Excel_p=False,
         for key in env_aggregates_keys:
             environment.aggregate[key].record(month)
 
+        if environment.recent_levy_change:
+            environment.recent_levy_change = False
+
         # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
             environment.parameter['levy_rate'].value = regulator.levy_rate
             environment.time_to_levy_change = regulator.time_to_change()
             environment.levy_rate_changing = False
+            environment.recent_levy_change = True
 
         # if a change in the levy rate is approaching, add this information to the environment
         if regulator.change_check():
