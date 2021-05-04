@@ -64,7 +64,7 @@ class Supplier(Agent):
             # print(new_price)
 
         if self.random_switch:
-            std_dev_ratio = 0.005
+            std_dev_ratio = 0.01
             deviation = np.float64(np.random.normal(0, (std_dev_ratio * new_price), None))
             self.price = new_price + deviation
         else:

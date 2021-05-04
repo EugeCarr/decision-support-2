@@ -36,7 +36,7 @@ class Environment(object):
 
         self.parameter = variables
         self.aggregate = aggregates
-        self.ann_feed_price_decrease = 0.008
+        self.ann_feed_price_decrease = 0.0045
         # assumed rate of annual price decrease. Used by both feed_supplier and manufacturer
 
         self.levy_rate_changing = False
@@ -148,20 +148,20 @@ class Manufacturer(Agent):
         self.bio_building = False
         self.bio_building_month = int(0)
 
-        self.fossil_capacity_cost = np.float64(3)  # capital cost of 1 unit/yr production capacity for fossil route
-        self.bio_capacity_cost = np.float64(4.5)  # capital cost of 1 unit/yr production capacity for bio route
+        self.fossil_capacity_cost = np.float64(7)  # capital cost of 1 unit/yr production capacity for fossil route
+        self.bio_capacity_cost = np.float64(7)  # capital cost of 1 unit/yr production capacity for bio route
 
         self.fossil_resource_ratio = np.float64(1)  # no. of units of fossil resource used per unit of PET produced
         self.bio_resource_ratio = np.float64(1.2)  # no. of units of bio resource used per unit of PET produced
 
-        self.capacity_maintenance_cost = np.float64(0.05)  # cost of maintaining manufacturing
+        self.capacity_maintenance_cost = np.float64(0.2)  # cost of maintaining manufacturing
         # capacity per unit per month
 
         self.negative_liquidity = False
 
         self.fossil_utilisation_target = 0.9  # capacity utilisation targets
         self.bio_utilisation_target = 0.9
-        self.min_utilisation = 0.5
+        self.min_utilisation = 0.7
 
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'

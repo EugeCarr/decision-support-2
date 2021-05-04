@@ -42,15 +42,15 @@ def get_values(header, highest_row):
 
 wb = openpyxl.load_workbook('Results from simulations.xlsx')
 
-sheet = wb['Reac R, flex manu']
+sheet = wb['Test B2']
 
 x_var_name = 'Month'
 
 y_var_name = 'net_profit'
 
-y2_var_name = 'fossil_production'
+y2_var_name = 'liquidity'
 
-y3_var_name = 'fossil_capacity'
+# y3_var_name = 'fossil_capacity'
 
 x_var_header = search_var_header(x_var_name)
 x_values = get_values(x_var_header, sheet.max_row)
@@ -61,18 +61,18 @@ y_values = get_values(y_var_header, sheet.max_row)
 y2_var_header = search_var_header(y2_var_name)
 y2_values = get_values(y2_var_header, sheet.max_row)
 
-y3_var_header = search_var_header(y3_var_name)
-y3_values = get_values(y3_var_header, sheet.max_row)
+# y3_var_header = search_var_header(y3_var_name)
+# y3_values = get_values(y3_var_header, sheet.max_row)
 
 same_axes = False
 
 if not same_axes:
 
     fig, ax1 = plt.subplots()
-    # ax1.plot(x_values, y_values, label='Levy rate')
-    # ax1.set_ylabel('Levy rate')
-    ax1.plot(x_values, y_values, label='Net profit')
-    ax1.set_ylabel('Net profit')
+    ax1.plot(x_values, y_values, label='Net monthly profit')
+    ax1.set_ylabel('Profit amu/month')
+    # ax1.plot(x_values, y2_values, label='Liquidity')
+    # ax1.set_ylabel('Total Liquidity amu')
     ax1.set_xlabel(x_var_name)
 
     # ax1.set_ylabel('Liquidity')
@@ -82,9 +82,9 @@ if not same_axes:
 
     # ax2.set_ylabel('Proportion bio')  # we already handled the x-label with ax1
     # h2, l2 = ax2.get_legend_handles_labels()
-    ax2.plot(x_values, y2_values, 'm--', label='Fossil fuel based production')
-    ax2.plot(x_values, y3_values, 'r--', label='Fossil fuel based capacity')
-    ax2.set_ylabel('Fossil fuel based production')
+    ax2.plot(x_values, y2_values, 'r--', label='Liquidity')
+    # ax2.plot(x_values, y2_values, 'b', label=' Capacity')
+    ax2.set_ylabel('Total Liquidity amu')
 
     # ax2.tick_params(axis='y')
     #
@@ -106,12 +106,12 @@ if not same_axes:
 
 else:
     fig, ax1 = plt.subplots()
-    ax1.plot(x_values, y_values, label='Fossil fuel based capacity')
-    ax1.plot(x_values, y2_values,  'm--',label='Fossil fuel based production')
-    ax1.set_ylabel('Fossil fuel based capacity')
+    ax1.plot(x_values, y_values, 'b', label='Production')
+    # ax1.plot(x_values, y2_values, 'b', label=' Capacity')
+    ax1.set_ylabel('Levy rate')
     ax1.set_xlabel(x_var_name)
 
-    ax1.legend(loc=(0.00, -0.15), fontsize=8, frameon=False)
+    # ax1.legend(loc=(0.80, 0.90), fontsize=8, frameon=False)
 
     plt.tick_params(labelsize=8)
     ax1.tick_params(labelsize=8)
