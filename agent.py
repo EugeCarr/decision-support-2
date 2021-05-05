@@ -36,7 +36,7 @@ class Environment(object):
 
         self.parameter = variables
         self.aggregate = aggregates
-        self.ann_feed_price_decrease = 0.008
+        self.ann_feed_price_decrease = 0.0045
         # assumed rate of annual price decrease. Used by both feed_supplier and manufacturer
 
         self.levy_rate_changing = False
@@ -130,7 +130,7 @@ class Manufacturer(Agent):
         self.tax_rate_projection = np.ones(self.projection_time) * self.tax_rate
 
         self.proportion_change_rate = np.float64(0.1 / 9)  # greatest possible monthly change in self.proportion_bio
-        self.implementation_delay = int(15)  # time delay between investment decision and movement of bio_proportion
+        self.implementation_delay = int(6)  # time delay between investment decision and movement of bio_proportion
         self.implementation_countdown = int(0)  # countdown to start of increase in bio proportion
         self.under_construction = False  # is change in bio capacity occurring?
 
@@ -138,30 +138,32 @@ class Manufacturer(Agent):
         self.bio_capacity_target = np.float64(0)
 
         self.change_rate = 100  # maximum amount of production capacity that can be built/decommissioned in a month
-        self.design_time = int(12)  # delay between decision to build and start of construction if not already building
+        self.design_time = int(6)  # delay between decision to build and start of construction if not already building
 
         self.fossil_build_countdown = int(0)
+        self.fossil_designing = False
         self.fossil_building = False
         self.fossil_building_month = int(0)
 
         self.bio_build_countdown = int(0)
+        self.bio_designing = False
         self.bio_building = False
         self.bio_building_month = int(0)
 
-        self.fossil_capacity_cost = np.float64(3)  # capital cost of 1 unit/yr production capacity for fossil route
-        self.bio_capacity_cost = np.float64(4.5)  # capital cost of 1 unit/yr production capacity for bio route
+        self.fossil_capacity_cost = np.float64(7)  # capital cost of 1 unit/yr production capacity for fossil route
+        self.bio_capacity_cost = np.float64(7)  # capital cost of 1 unit/yr production capacity for bio route
 
         self.fossil_resource_ratio = np.float64(1)  # no. of units of fossil resource used per unit of PET produced
         self.bio_resource_ratio = np.float64(1.2)  # no. of units of bio resource used per unit of PET produced
 
-        self.capacity_maintenance_cost = np.float64(0.05)  # cost of maintaining manufacturing
+        self.capacity_maintenance_cost = np.float64(0.2)  # cost of maintaining manufacturing
         # capacity per unit per month
 
         self.negative_liquidity = False
 
         self.fossil_utilisation_target = 0.9  # capacity utilisation targets
         self.bio_utilisation_target = 0.9
-        self.min_utilisation = 0.5
+        self.min_utilisation = 0.7
 
         # output initialisation state to console
         print(' INITIAL STATE \n -------------'
@@ -296,14 +298,16 @@ class Manufacturer(Agent):
         if self.month % 5 == 0:  # progress indicator
             print('Month', self.month, 'of', self.sim_time)
 
-        if self.fossil_build_countdown > 0:
+        if self.fossil_build_countdown > 0 and self.fossil_designing:
             self.fossil_build_countdown -= 1
             if self.fossil_build_countdown == 0:
                 self.fossil_building = True
-        if self.bio_build_countdown > 0:
+                self.fossil_designing = False
+        if self.bio_build_countdown > 0 and self.bio_designing:
             self.bio_build_countdown -= 1
             if self.bio_build_countdown == 0:
                 self.bio_building = True
+                self.bio_designing = False
 
         self.update_variables()
         if self.month % 12 == 1:
@@ -320,11 +324,15 @@ class Manufacturer(Agent):
                     self.bio_capacity_target = new_targets[1]
 
                 if not self.bio_building and self.parameter['bio_capacity'].value != self.bio_capacity_target:
-                    self.bio_building = True
-                    self.bio_build_countdown = self.design_time
+                    # self.bio_building = True
+                    if not self.bio_designing:
+                        self.bio_build_countdown = self.design_time
+                        self.bio_designing = True
                 if not self.fossil_building and self.parameter['fossil_capacity'].value != self.fossil_capacity_target:
-                    self.fossil_building = True
-                    self.fossil_build_countdown = self.design_time
+                    # self.fossil_building = True
+                    if not self.fossil_designing:
+                        self.fossil_build_countdown = self.design_time
+                        self.fossil_designing = True
 
                 self.project_variables()
                 self.projection_check()
