@@ -395,8 +395,8 @@ def fossil_production(agent) -> np.float64:
 
         output = optimum.x
 
-        fossil_val = np.round(output[0])
-        agent.parameter['bio_production'].value = np.round(output[1])
+        fossil_val = output[0]
+        agent.parameter['bio_production'].value = output[1]
 
     else:
         optimum = optimize.minimize_scalar(production_scenario_fossil, bounds=(0.0, capacity_fossil),
