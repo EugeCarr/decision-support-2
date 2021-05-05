@@ -48,7 +48,7 @@ x_var_name = 'Month'
 
 y_var_name = 'levy_rate'
 
-y2_var_name = 'fossil_production'
+y2_var_name = 'fossil_capacity'
 
 y3_var_name = 'fossil_capacity'
 
@@ -64,7 +64,7 @@ y2_values = get_values(y2_var_header, sheet.max_row)
 y3_var_header = search_var_header(y3_var_name)
 y3_values = get_values(y3_var_header, sheet.max_row)
 
-same_axes = False
+same_axes = True
 
 if not same_axes:
 
@@ -106,12 +106,12 @@ if not same_axes:
 
 else:
     fig, ax1 = plt.subplots()
-    ax1.plot(x_values, y_values, label='Fossil fuel based capacity')
-    ax1.plot(x_values, y2_values,  'm--',label='Fossil fuel based production')
-    ax1.set_ylabel('Fossil fuel based capacity')
+    # ax1.plot(x_values, y_values, label='Fossil fuel based capacity')
+    ax1.plot(x_values, y_values,  'b--', label='Levy rate')
+    ax1.set_ylabel('Levy rate')
     ax1.set_xlabel(x_var_name)
 
-    ax1.legend(loc=(0.00, -0.15), fontsize=8, frameon=False)
+    # ax1.legend(loc=(0.00, 0.95), fontsize=8, frameon=False)
 
     plt.tick_params(labelsize=8)
     ax1.tick_params(labelsize=8)
