@@ -138,7 +138,7 @@ class Manufacturer(Agent):
         self.bio_capacity_target = np.float64(0)
 
         self.change_rate = 100  # maximum amount of production capacity that can be built/decommissioned in a month
-        self.design_time = int(24)  # delay between decision to build and start of construction if not already building
+        self.design_time = int(12)  # delay between decision to build and start of construction if not already building
 
         self.fossil_build_countdown = int(0)
         self.fossil_building = False

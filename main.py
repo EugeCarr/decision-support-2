@@ -32,5 +32,5 @@ def run(param):
 
 
 if __name__ == '__main__':
-    for x in [0.5, 1.0, 1.5, 2.0]:
+    for x in [1.0]:
         run(x)
