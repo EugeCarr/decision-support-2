@@ -16,9 +16,9 @@ def run(param):
 
     simulate(months, table=False, plot=False, Excel_p=True,
              # manufacturer settings
-             capacity_root_coeff=param, speed_of_build=0.2, time_to_build=15.0,
+             capacity_root_coeff=4.0, speed_of_build=0.2, time_to_build=15.0,
              # regulator settings
-             notice_period=24, fraction=0.1, start_levy=1.0, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5,
+             notice_period=24, fraction=0.1, start_levy=param, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5,
              decade_jump=0.5)
 
     end = datetime.now()
@@ -32,5 +32,5 @@ def run(param):
 
 
 if __name__ == '__main__':
-    for x in [1.0, 2.0, 3.0, 4.0]:
+    for x in [0.5, 1.0, 1.5, 2.0]:
         run(x)

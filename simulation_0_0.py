@@ -213,7 +213,7 @@ def simulate(months, table=False, plot=True, Excel_p=False,
         # when the changes from rewrite_optimisation are merged in, a new parameter needs to be made for bio_proportion
         wb = openpyxl.load_workbook('Results from simulations.xlsx')
         # print(type(wb))
-        sheet = wb.create_sheet(title='Root coeff,')
+        sheet = wb.create_sheet(title='Start levy,')
         # print(sheet.title)
         date_time = datetime.now()
 

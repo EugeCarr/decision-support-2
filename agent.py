@@ -74,21 +74,21 @@ def utility_func(manufacturer, utility_function='net_profit'):
 
     time_horizon = 59  # no. of months ahead to look for target
     # attempts to maximise the net profit 5 years from now
-    under = (manufacturer.target_value -
-             manufacturer.parameter[utility_function].projection[time_horizon])
-    # goes -ve if target is exceeded
+    utility = -1 * manufacturer.parameter[utility_function].projection[time_horizon]
+
+    under = manufacturer.target_value * manufacturer.parameter[utility_function].history[0] - utility
 
     if under < 0:
         manufacturer.projection_met = True
     else:
         manufacturer.projection_met = False
 
-    return under
+    return utility
 
 
 class Manufacturer(Agent):
     # object initialisation
-    def __init__(self, name, sim_time, env, parameters, value_function='net_profit', target_value=0.35,
+    def __init__(self, name, sim_time, env, parameters, value_function='net_profit', target_value=0.8,
                  capacity_root_coefficient=2.0, speed_of_build=1.0, time_to_build=8.0):
         super().__init__(name, sim_time, env)
         """To add a new parameter, define it in the dictionary as a Parameter object in the correct place so that 
@@ -195,18 +195,13 @@ class Manufacturer(Agent):
     # endregion
 
     def projection_check(self):
-        # checks whether the profitability target will be met on the basis of latest projection
-        # at the next 5-year interval
-        # when the next 5-year interval is less than 1 year away the logic is based on the following interval
-
+        # checks whether the target will be met on the basis of latest projection
         time_horizon = 59  # no. of months ahead to look for target
-        # attempts to maximise the net profit 5 years from now
-        under = (self.target_value -
-                 self.parameter[self.value_function].projection[time_horizon])
 
-        if self.parameter[self.value_function].projection[time_horizon] >= self.target_value * \
-                self.parameter[self.value_function].history[0]:
-            # if self.parameter[self.value_function].projection[time_to_target1] >= self.target_value:
+        # finds the value function [time_horizon] months from now
+        if (self.parameter[self.value_function].projection[time_horizon] >=
+                self.target_value * self.parameter[self.value_function].history[0]):
+
             self.projection_met = True
         else:
             self.projection_met = False
@@ -269,7 +264,7 @@ class Manufacturer(Agent):
         n_f = len(foss)
         n_b = len(bio)
 
-        optimum = np.array([current_fossil, current_bio])  # default values are current target values
+        optimum = np.array([current_fossil, current_bio])  # starting values are current target values
         minimum = self.capacity_scenario(optimum)
         # minimum = utility_func(self, utility_function='net_profit')  # optimiser has to improve on the current plan
 
@@ -283,7 +278,7 @@ class Manufacturer(Agent):
                     optimum = targets
 
         if minimum == np.inf:
-            print('Year:', np.floor(self.month / 12), 'No optimal solution found')
+            print('Year:', np.floor(self.month / 12), 'No possible solution maintains liquidity')
 
         # x0 = np.array([current_fossil, current_bio])
         #
