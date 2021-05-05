@@ -276,6 +276,9 @@ class Manufacturer(Agent):
                 if utility < minimum:
                     minimum = utility
                     optimum = targets
+                    print('Month:', self.month)
+                    print('new min utility function:', minimum)
+                    print('[fossil, bio] targets:', optimum, '\n')
 
         if minimum == np.inf:
             print('Year:', np.floor(self.month / 12), 'No possible solution maintains liquidity')

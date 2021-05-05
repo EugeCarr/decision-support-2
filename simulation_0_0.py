@@ -74,6 +74,7 @@ def simulate(months, table=False, plot=True, Excel_p=False,
                                             init=np.float64(3)),
         'bio_feedstock_price': Parameter(par.blank, par.bio_feedstock_price_projection, months),
 
+
         # 'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
         #                                init=initial_production_capacity),
 
@@ -134,6 +135,8 @@ def simulate(months, table=False, plot=True, Excel_p=False,
         # execute monthly routines on manufacturers
         for agent in manufacturers:
             agent.time_step_alt()
+
+
 
         environment.reset_aggregates()
         for key in env_aggregates_keys:
