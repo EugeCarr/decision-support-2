@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     months = 240 + 48
 
-    simulate(months, table=False, plot=True, Excel_p=True,
+    simulate(months, table=False, plot=True, Excel_p=False,
              # manufacturer settings
              capacity_root_coeff=2.0, speed_of_build=0.3, time_to_build=6.0,
              # regulator settings

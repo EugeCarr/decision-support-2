@@ -197,7 +197,7 @@ def simulate(months, table=False, plot=True, Excel_p=False,
 
     if plot:
         graph(environment.parameter['levy_rate'])
-        graph(manufacturer1.parameter['fossil_capacity'])
+        graph2(manufacturer1.parameter['fossil_capacity'], environment.parameter['levy_rate'])
         graph(manufacturer1.parameter['fossil_production'])
         graph(manufacturer1.parameter['bio_capacity'])
         graph(manufacturer1.parameter['bio_production'])
@@ -215,7 +215,7 @@ def simulate(months, table=False, plot=True, Excel_p=False,
         # when the changes from rewrite_optimisation are merged in, a new parameter needs to be made for bio_proportion
         wb = openpyxl.load_workbook('Results from simulations.xlsx')
         # print(type(wb))
-        sheet = wb.create_sheet(title='Test C1')
+        sheet = wb.create_sheet(title='Fix Build')
         # print(sheet.title)
         date_time = datetime.now()
 
