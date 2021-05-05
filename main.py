@@ -2,7 +2,8 @@
 from datetime import datetime
 from simulation_0_0 import simulate
 
-if __name__ == '__main__':
+
+def run(param):
     start = datetime.now()
     now = start.strftime("%d/%m/%Y %H:%M:%S")
     print(' =============================================== \n',
@@ -11,9 +12,14 @@ if __name__ == '__main__':
           '===============================================',
           )
 
-    months = 240
+    months = 240 + 48
 
-    simulate(months, table=False, plot=False, Excel_p=True)
+    simulate(months, table=False, plot=False, Excel_p=True,
+             # manufacturer settings
+             capacity_root_coeff=4.0, speed_of_build=0.2, time_to_build=15.0,
+             # regulator settings
+             notice_period=24, fraction=0.1, start_levy=param, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5,
+             decade_jump=0.5)
 
     end = datetime.now()
     now = end.strftime("%d/%m/%Y %H:%M:%S")
@@ -22,3 +28,9 @@ if __name__ == '__main__':
           now, '\n',
           '==================== \n',
           )
+    return
+
+
+if __name__ == '__main__':
+    for x in [1.0]:
+        run(x)

@@ -4,7 +4,6 @@ from regulator import Regulator
 import numpy as np
 from tabulate import tabulate
 from matplotlib import pyplot as plt
-import copy
 from parameter import Parameter
 from parameter import Environment_Variable
 import parameter as par
@@ -15,18 +14,24 @@ import openpyxl
 from openpyxl.styles import Font
 
 
-def simulate(months, table=False, plot=False, Excel_p=False):
+def simulate(months, table=False, plot=True, Excel_p=False,
+             capacity_root_coeff=4.0, speed_of_build=0.2, time_to_build=15.0,
+
+             notice_period=24, fraction=0.1, start_levy=1.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5,
+             decade_jump=0.5
+             ):
     # def simulate(months, table=False, plot=False):
     # create agents and specify their parameters
     month = int(0)
-    initial_production_volume = np.float64(1000)
+    initial_production_capacity = np.float64(1200)
 
     # the dictionary of environment variables (see parameter.py) to pass to the Environment object
     env_variables = {
-        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(4.5)),
-        'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2)),
+        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(10.0)),
+        'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2.0)),
         'bio_feedstock_price': Environment_Variable(par.bio_feedstock_price, months, init=np.float64(2)),
-        'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.2))
+        'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.0)),
+        'demand': Environment_Variable(par.demand, months, init=np.float64(1000))
     }
 
     env_keys = list(env_variables.keys())
@@ -45,33 +50,40 @@ def simulate(months, table=False, plot=False, Excel_p=False):
     # parameters from the environment that need to be projected by the agent use par.blank for the fun argument
     # similarly for parameters calculated by the agent but which are not projected
     manufacturer1_parameters = {
-        'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months),
-        'fossil_feedstock_price': Parameter(par.blank, par.fossil_feedstock_price_projection, months,
-                                            init=np.float64(2)),
-        'bio_feedstock_price': Parameter(par.blank, par.bio_feedstock_price_projection, months),
+        'demand': Parameter(par.blank, par.demand_projection, months),
+        'bio_capacity_max': Parameter(par.bio_capacity_max, par.bio_capacity_max_projection, months),
+        'fossil_capacity_max': Parameter(par.fossil_capacity_max, par.fossil_capacity_max_projection, months),
 
-        'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
-                                       init=initial_production_volume),
+        'fossil_capacity': Parameter(par.fossil_capacity_alt2, par.fossil_capacity_projection_alt2, months,
+                                     init=initial_production_capacity),
+        'bio_capacity': Parameter(par.bio_capacity_alt2, par.bio_capacity_projection_alt2, months),
+        'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
 
-        'fossil_process_cost': Parameter(par.fossil_process_cost, par.fossil_process_cost_projection, months,
-                                         init=np.float64(1)),
-        'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
-                                      init=np.float64(1.05)),
-
-        'proportion_bio': Parameter(par.proportion_bio, par.proportion_bio_projection, months),
+        'fossil_production': Parameter(par.fossil_production, par.fossil_production_projection, months,
+                                       init=np.float64(1000)),
+        'bio_production': Parameter(par.bio_production, par.bio_production_projection, months),
+        'total_production': Parameter(par.total_production, par.total_production_projection, months,
+                                      init=np.float64(1000)),
 
         'fossil_feedstock_consumption': Parameter(par.fossil_feedstock_consumption,
                                                   par.fossil_feedstock_consumption_projection, months),
         'bio_feedstock_consumption': Parameter(par.bio_feedstock_consumption,
                                                par.bio_feedstock_consumption_projection, months),
+        'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months),
+        'fossil_feedstock_price': Parameter(par.blank, par.fossil_feedstock_price_projection, months,
+                                            init=np.float64(2.0)),
+        'bio_feedstock_price': Parameter(par.blank, par.bio_feedstock_price_projection, months),
 
-        'bio_capacity': Parameter(par.bio_capacity, par.bio_capacity_projection, months),
-        'fossil_capacity': Parameter(par.fossil_capacity, par.fossil_capacity_projection, months,
-                                     init=initial_production_volume),
-        'expansion_cost': Parameter(par.expansion_cost, par.expansion_cost_projection, months),
 
+        # 'production_volume': Parameter(par.production_volume, par.production_volume_projection, months,
+        #                                init=initial_production_capacity),
+
+        'fossil_process_cost': Parameter(par.fossil_process_cost, par.fossil_process_cost_projection, months,
+                                         init=np.float64(1)),
+        'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
+                                      init=np.float64(1)),
         'emissions': Parameter(par.emissions, par.emissions_projection, months),
-        'levy_rate': Parameter(par.blank, par.levy_rate_projection, months, init=np.float64(0.2)),
+        'levy_rate': Parameter(par.blank, par.levy_rate_projection, months, init=np.float64(start_levy)),
         'levies_payable': Parameter(par.levies_payable, par.levies_payable_projection, months),
 
         'gross_profit': Parameter(par.gross_profit, par.gross_profit_projection, months),
@@ -79,24 +91,29 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         'net_profit': Parameter(par.net_profit, par.net_profit_projection, months),
 
         'profitability': Parameter(par.profitability, par.profitability_projection, months),
-        'liquidity': Parameter(par.liquidity, par.liquidity_projection, months, init=np.float64(5000)),
+        'liquidity': Parameter(par.liquidity, par.liquidity_projection, months, init=np.float64(7000)),
         'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
     }
 
-    manufacturer2_parameters = copy.deepcopy(manufacturer1_parameters)
+    manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters,
+                                    target_value=0.5,
+                                    capacity_root_coefficient=capacity_root_coeff,
+                                    speed_of_build=speed_of_build,
+                                    time_to_build=time_to_build)
 
-    manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters)
-    manufacturer2 = ag.Manufacturer('PET Manufacturer 2', months, environment, manufacturer2_parameters)
+    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19,
+                          notice_period=notice_period,
+                          fraction=fraction,
+                          start_levy=start_levy,
+                          ratio_jump=ratio_jump,
+                          wait_time=wait_time,
+                          compliance_threshold=compliance_threshold,
+                          decade_jump=decade_jump)
 
-    regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19, fraction=0.7,
-                          ratio_jump=0.5,
-                          start_levy=0.2, decade_jump=3.0)
-
-    supplier = Supplier('supplier', months, environment, 2.0)
+    supplier = Supplier('supplier', months, environment, 2.0, elasticity=0.3)
 
     manufacturers = [
-        manufacturer1,
-        manufacturer2
+        manufacturer1
     ]
 
     agents = manufacturers + [regulator, supplier]
@@ -110,15 +127,17 @@ def simulate(months, table=False, plot=False, Excel_p=False):
 
             environment.parameter[key].record(month)
 
+        # advance time counter in environment
+        environment.month = month
         # advance time counter in each agent
         for agent in agents:
             agent.month = month
 
         # execute monthly routines on manufacturers
         for agent in manufacturers:
-            agent.time_step()
-        regulator.iterate_regulator()
-        supplier.iterate_supplier(False)
+            agent.time_step_alt()
+
+
 
         environment.reset_aggregates()
         for key in env_aggregates_keys:
@@ -128,10 +147,16 @@ def simulate(months, table=False, plot=False, Excel_p=False):
                 except KeyError:
                     pass
 
-        environment.aggregate['bio_feedstock_consumption'].value += 500
+        environment.aggregate['bio_feedstock_consumption'].value += 250
+
+        supplier.iterate_supplier()
+        regulator.iterate_regulator()
 
         for key in env_aggregates_keys:
             environment.aggregate[key].record(month)
+
+        if environment.recent_levy_change:
+            environment.recent_levy_change = False
 
         # if the regulator rate has just changed then update it in the environment
         if environment.parameter['levy_rate'].value != regulator.levy_rate:
@@ -143,7 +168,13 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         if regulator.change_check():
             environment.levy_rate_changing = True
             environment.time_to_levy_change = regulator.time_to_change()
-            environment.future_levy_rate = regulator.future_levy_rate
+            if environment.future_levy_rate != regulator.future_levy_rate:
+                environment.future_levy_rate = regulator.future_levy_rate
+                environment.recent_levy_change = True
+            else:
+                environment.future_levy_rate = regulator.future_levy_rate
+
+
         else:
             pass
 
@@ -155,7 +186,8 @@ def simulate(months, table=False, plot=False, Excel_p=False):
     print('\n ============ \n FINAL STATE \n ============',
           '\n Regulation level:', regulator.level,
           '\n Levy rate:', environment.parameter['levy_rate'].value,
-          '\n Bio proportion 1:', manufacturer1.parameter['proportion_bio'].value)
+          '\n Bio capacity 1:', manufacturer1.parameter['bio_capacity'].value)
+    print(' Target:', manufacturer1.bio_capacity_target)
 
     # data output & analysis
     t = np.arange(0, months, 1)
@@ -170,10 +202,16 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         print(tabulate(table, headers))
 
     if plot:
-        # graph(manufacturer1.parameter['proportion_bio'])
-        # graph(environment.parameter['bio_feedstock_price'])
-        # graph(environment.parameter['levy_rate'])
-        graph(manufacturer1.parameter['emissions'])
+        graph(environment.parameter['levy_rate'])
+        graph2(manufacturer1.parameter['fossil_capacity'], environment.parameter['levy_rate'])
+        graph(manufacturer1.parameter['fossil_production'])
+        graph(manufacturer1.parameter['bio_capacity'])
+        graph(manufacturer1.parameter['bio_production'])
+        graph(manufacturer1.parameter['net_profit'])
+        graph(manufacturer1.parameter['liquidity'])
+        graph(environment.parameter['bio_feedstock_price'])
+        # graph(environment.aggregate['emissions'])
+        # graph(environment.parameter['demand'])
 
     if Excel_p:
         # bio_proportion_list = np.divide(manufacturer1.parameter['bio_production'].history,
@@ -183,7 +221,7 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         # when the changes from rewrite_optimisation are merged in, a new parameter needs to be made for bio_proportion
         wb = openpyxl.load_workbook('Results from simulations.xlsx')
         # print(type(wb))
-        sheet = wb.create_sheet(title='First Try')
+        sheet = wb.create_sheet(title='Fix Build')
         # print(sheet.title)
         date_time = datetime.now()
 
@@ -204,10 +242,14 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         cell_write(sheet, (5, 5), regulator.fraction)
         cell_write(sheet, (6, 4), 'Emission ratio jump', title=True)
         cell_write(sheet, (6, 5), regulator.ratio_jump)
-        cell_write(sheet, (7, 4), 'Initial levyrate', title=True)
+        cell_write(sheet, (7, 4), 'Initial levy rate', title=True)
         cell_write(sheet, (7, 5), regulator.start_levy)
         cell_write(sheet, (8, 4), 'Decade Change', title=True)
         cell_write(sheet, (8, 5), regulator.dec_jump)
+        cell_write(sheet, (9, 4), 'Wait Period', title=True)
+        cell_write(sheet, (9, 5), regulator.wait_time)
+        cell_write(sheet, (10, 4), 'Notice Period', title=True)
+        cell_write(sheet, (10, 5), regulator.notice)
 
         cell_write(sheet, (3, 6), 'Supplier Settings', title=True, width='w')
         cell_write(sheet, (4, 6), 'Initial price', title=True)
@@ -216,7 +258,7 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         cell_write(sheet, (5, 7), supplier.price_elasticity)
 
         cell_write(sheet, (3, 8), 'Manufacturer 1 settings', title=True, width='w')
-        cell_write(sheet, (4, 8), 'Staring liquidity', title=True)
+        cell_write(sheet, (4, 8), 'Starting liquidity', title=True)
         cell_write(sheet, (4, 9), manufacturer1.parameter['liquidity'].history[0])
         cell_write(sheet, (5, 8), 'Bio process cost', title=True)
         cell_write(sheet, (5, 9), manufacturer1.parameter['bio_process_cost'].history[0])
@@ -227,18 +269,37 @@ def simulate(months, table=False, plot=False, Excel_p=False):
         cell_write(sheet, (8, 8), 'Fossil feedstock price', title=True)
         cell_write(sheet, (8, 9), environment.parameter['fossil_feedstock_price'].history[0])
         cell_write(sheet, (9, 8), 'Starting Production', title=True)
-        cell_write(sheet, (9, 9), manufacturer1.parameter['production_volume'].history[0])
-        cell_write(sheet, (10, 8), 'Initial PET price', title=True)
-        cell_write(sheet, (10, 9), environment.parameter['pet_price'].history[0])
+        cell_write(sheet, (9, 9), manufacturer1.parameter['total_production'].history[0])
+        cell_write(sheet, (10, 8), 'Minimum utilisation (%)', title=True)
+        cell_write(sheet, (10, 9), manufacturer1.min_utilisation * 100)
+        cell_write(sheet, (11, 8), 'Initial PET price', title=True)
+        cell_write(sheet, (11, 9), environment.parameter['pet_price'].history[0])
+
+        cell_write(sheet, (4, 10), 'Maintenance cost', title=True)
+        cell_write(sheet, (4, 11), manufacturer1.capacity_maintenance_cost)
+        cell_write(sheet, (5, 10), 'Bio capacity cost', title=True, width='w')
+        cell_write(sheet, (5, 11), manufacturer1.bio_capacity_cost)
+        cell_write(sheet, (6, 10), 'Fossil capacity cost', title=True, width='w')
+        cell_write(sheet, (6, 11), manufacturer1.fossil_capacity_cost)
+        cell_write(sheet, (7, 10), 'Root capacity coefficient', title=True, width='ww')
+        cell_write(sheet, (7, 11), manufacturer1.capacity_root_coefficient)
+        cell_write(sheet, (8, 10), 'Build speed', title=True, width='w')
+        cell_write(sheet, (8, 11), manufacturer1.build_speed)
+        cell_write(sheet, (9, 10), 'Time to build', title=True, width='w')
+        cell_write(sheet, (9, 11), manufacturer1.time_to_build)
 
         variables = [
-            ('m1', 'production_volume'),
-            ('m1', 'proportion_bio'),
+            ('m1', 'fossil_production'),
+            ('m1', 'bio_production'),
             ('m1', 'liquidity'),
             ('m1', 'profitability'),
             ('E', 'levy_rate'),
             ('EA', 'emissions'),
             ('E', 'bio_feedstock_price'),
+            ('m1', 'bio_capacity'),
+            ('m1', 'fossil_capacity'),
+            ('E', 'demand'),
+            ('m1', 'net_profit')
         ]
         # var2 : ('m1', 'bio_production'),
         # var3 : ('m1', 'fossil_production')
@@ -281,9 +342,12 @@ def graph(parameter):
 
     ax1.set_xlabel('Month')
     # ax1.set_ylabel('Price of bio feedstock')
+    # ax1.set_ylabel('Capacity bio')
+    ax1.set_ylabel('Capacity')
     # ax1.set_ylabel('Proportion bio-PET')
     # ax1.set_ylabel('Levy rate')
-    ax1.set_ylabel('Emissions')
+    # ax1.set_ylabel('Demand')
+    # ax1.set_ylabel('Emissions')
 
     fig.tight_layout()
     plt.show()
@@ -331,7 +395,6 @@ def cell_write(sheet, coordinates, val, title=False, width='s'):
     excel_coord = col_letter + str(row)
 
     _cell = sheet.cell(row=row, column=col)
-
 
     if not type(val) == str or type(val):
         if type(val) == np.float64:
