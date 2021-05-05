@@ -96,6 +96,7 @@ def simulate(months, table=False, plot=True, Excel_p=False,
     }
 
     manufacturer1 = ag.Manufacturer('PET Manufacturer 1', months, environment, manufacturer1_parameters,
+                                    target_value=0.5,
                                     capacity_root_coefficient=capacity_root_coeff,
                                     speed_of_build=speed_of_build,
                                     time_to_build=time_to_build)
