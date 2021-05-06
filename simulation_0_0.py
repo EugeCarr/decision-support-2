@@ -15,10 +15,13 @@ from openpyxl.styles import Font
 
 
 def simulate(months, table=False, plot=True, Excel_p=False,
-             capacity_root_coeff=4.0, speed_of_build=0.2, time_to_build=15.0,
+             capacity_root_coeff=4.0, speed_of_build=0.2, time_to_build=15.0, fossil_process_cost=1, bio_process_cost=1,
+             starting_liquidity=7000, PET_price=10.0, foss_cap_price=5, bio_cap_price=7,
 
              notice_period=24, fraction=0.1, start_levy=1.5, ratio_jump=0.5, wait_time=48, compliance_threshold=0.5,
-             decade_jump=0.5
+             decade_jump=0.5,
+
+             price_elas=0.1, start_feed_price=2.0,
              ):
     # def simulate(months, table=False, plot=False):
     # create agents and specify their parameters
@@ -27,8 +30,8 @@ def simulate(months, table=False, plot=True, Excel_p=False,
 
     # the dictionary of environment variables (see parameter.py) to pass to the Environment object
     env_variables = {
-        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(10.0)),
-        'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(2.0)),
+        'pet_price': Environment_Variable(par.pet_price, months, init=np.float64(PET_price)),
+        'fossil_feedstock_price': Environment_Variable(par.fossil_feedstock_price, months, init=np.float64(start_feed_price)),
         'bio_feedstock_price': Environment_Variable(par.bio_feedstock_price, months, init=np.float64(2)),
         'levy_rate': Environment_Variable(par.levy_rate, months, init=np.float64(0.0)),
         'demand': Environment_Variable(par.demand, months, init=np.float64(1000))
@@ -71,7 +74,7 @@ def simulate(months, table=False, plot=True, Excel_p=False,
                                                par.bio_feedstock_consumption_projection, months),
         'unit_sale_price': Parameter(par.blank, par.unit_sale_price_projection, months),
         'fossil_feedstock_price': Parameter(par.blank, par.fossil_feedstock_price_projection, months,
-                                            init=np.float64(2.0)),
+                                            init=np.float64(start_feed_price)),
         'bio_feedstock_price': Parameter(par.blank, par.bio_feedstock_price_projection, months),
 
 
@@ -79,9 +82,9 @@ def simulate(months, table=False, plot=True, Excel_p=False,
         #                                init=initial_production_capacity),
 
         'fossil_process_cost': Parameter(par.fossil_process_cost, par.fossil_process_cost_projection, months,
-                                         init=np.float64(1)),
+                                         init=np.float64(fossil_process_cost)),
         'bio_process_cost': Parameter(par.bio_process_cost, par.bio_process_cost_projection, months,
-                                      init=np.float64(1)),
+                                      init=np.float64(bio_process_cost)),
         'emissions': Parameter(par.emissions, par.emissions_projection, months),
         'levy_rate': Parameter(par.blank, par.levy_rate_projection, months, init=np.float64(start_levy)),
         'levies_payable': Parameter(par.levies_payable, par.levies_payable_projection, months),
@@ -91,7 +94,7 @@ def simulate(months, table=False, plot=True, Excel_p=False,
         'net_profit': Parameter(par.net_profit, par.net_profit_projection, months),
 
         'profitability': Parameter(par.profitability, par.profitability_projection, months),
-        'liquidity': Parameter(par.liquidity, par.liquidity_projection, months, init=np.float64(7000)),
+        'liquidity': Parameter(par.liquidity, par.liquidity_projection, months, init=np.float64(starting_liquidity)),
         'profit_margin': Parameter(par.profit_margin, par.profit_margin_projection, months)
     }
 
@@ -100,6 +103,9 @@ def simulate(months, table=False, plot=True, Excel_p=False,
                                     capacity_root_coefficient=capacity_root_coeff,
                                     speed_of_build=speed_of_build,
                                     time_to_build=time_to_build)
+
+    manufacturer1.fossil_capacity_cost = foss_cap_price
+    manufacturer1.bio_capacity_cost = bio_cap_price
 
     regulator = Regulator(name='Regulator', sim_time=months, env=environment, tax_rate=0.19,
                           notice_period=notice_period,
@@ -110,7 +116,7 @@ def simulate(months, table=False, plot=True, Excel_p=False,
                           compliance_threshold=compliance_threshold,
                           decade_jump=decade_jump)
 
-    supplier = Supplier('supplier', months, environment, 2.0, elasticity=0.3)
+    supplier = Supplier('supplier', months, environment, start_feed_price, elasticity=price_elas)
 
     manufacturers = [
         manufacturer1
@@ -188,6 +194,7 @@ def simulate(months, table=False, plot=True, Excel_p=False,
           '\n Levy rate:', environment.parameter['levy_rate'].value,
           '\n Bio capacity 1:', manufacturer1.parameter['bio_capacity'].value)
     print(' Target:', manufacturer1.bio_capacity_target)
+
 
     # data output & analysis
     t = np.arange(0, months, 1)
@@ -330,7 +337,12 @@ def simulate(months, table=False, plot=True, Excel_p=False,
                 cell_write(sheet, (13 + j, data_column), history[j])
 
         wb.save('Results from simulations.xlsx')
-    return
+    # return
+    return [manufacturer1.parameter['liquidity'].value, manufacturer1.parameter['liquidity'].history[0],
+            np.sum(manufacturer1.parameter['net_profit'].history) / months, manufacturer1.parameter['emissions'].value,
+            np.sum(manufacturer1.parameter['emissions'].history) / months,
+            (manufacturer1.parameter['bio_production'].value / (manufacturer1.parameter['bio_production'].value +
+                                                                manufacturer1.parameter['fossil_production'].value))]
 
 
 def graph(parameter):
